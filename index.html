@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>The Stack — personal book catalogue</title>
+<meta name="description" content="A personal reading list, filtered by format, retailer, price, and rating." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<style>
+  html, body, #root { height: 100%; margin: 0; background: #EDEEEA; }
+  #boot { font: 12px/1.4 ui-monospace, monospace; color: #787D77;
+          letter-spacing: .1em; text-transform: uppercase; padding: 32px 20px; }
+</style>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7/babel.min.js" crossorigin></script>
+</head>
+<body>
+<div id="root"><div id="boot">Opening the catalogue…</div></div>
+<script type="text/babel" data-type="module">
+const { useState, useEffect, useMemo, useRef } = React;
+
+/* ─────────────────────────────── data model ─────────────────────────────── */
+
+const FORMATS = [
+  { id: "hardcover", label: "Hardcover", tone: "#7A4A38", kind: "physical" },
+  { id: "paperback", label: "Paperback", tone: "#9A7742", kind: "physical" },
+  { id: "kindle", label: "Kindle", tone: "#2F4C74", kind: "digital" },
+  { id: "kobo", label: "Kobo", tone: "#3A6B58", kind: "digital" },
+  { id: "audiobook", label: "Audiobook", tone: "#5E4A78", kind: "digital" },
+];
+
+const RETAILERS = [
+  "Amazon",
+  "Kobo",
+  "Bookshop.org",
+  "AbeBooks",
+  "Local shop",
+  "Library",
+  "Already own",
+];
+
+const STATUSES = [
+  { id: "want", label: "Want" },
+  { id: "reading", label: "Reading" },
+  { id: "read", label: "Read" },
+];
+
+const SEED = [
+  {
+    id: "b1",
+    title: "The Brothers Karamazov",
+    author: "Fyodor Dostoevsky",
+    format: "hardcover",
+    retailer: "Bookshop.org",
+    price: 24,
+    rating: 4.4,
+    status: "want",
+    note: "The one the whole comment section is arguing about.",
+    added: 1,
+  },
+  {
+    id: "b2",
+    title: "Crime and Punishment",
+    author: "Fyodor Dostoevsky",
+    format: "paperback",
+    retailer: "Amazon",
+    price: 12,
+    rating: 4.3,
+    status: "want",
+    note: "",
+    added: 2,
+  },
+  {
+    id: "b3",
+    title: "Giovanni's Room",
+    author: "James Baldwin",
+    format: "paperback",
+    retailer: "Local shop",
+    price: 14,
+    rating: 4.3,
+    status: "want",
+    note: "",
+    added: 3,
+  },
+  {
+    id: "b4",
+    title: "Ward No. 6",
+    author: "Anton Chekhov",
+    format: "kindle",
+    retailer: "Amazon",
+    price: 3,
+    rating: 4.2,
+    status: "want",
+    note: "Short — good Oasis reading.",
+    added: 4,
+  },
+  {
+    id: "b5",
+    title: "Beware of Pity",
+    author: "Stefan Zweig",
+    format: "paperback",
+    retailer: "AbeBooks",
+    price: 16,
+    rating: 4.2,
+    status: "want",
+    note: "",
+    added: 5,
+  },
+];
+
+const STORE_KEY = "library:books";
+
+const fmt = (id) => FORMATS.find((f) => f.id === id) || FORMATS[1];
+const money = (n) =>
+  n === null || n === undefined || n === "" ? "—" : `$${Number(n).toFixed(2)}`;
+
+const links = (b) => {
+  const q = encodeURIComponent(`${b.title} ${b.author}`);
+  return {
+    goodreads: `https://www.goodreads.com/search?q=${q}`,
+    amazon: `https://www.amazon.com/s?k=${q}`,
+    kobo: `https://www.kobo.com/us/en/search?query=${q}`,
+    bookshop: `https://bookshop.org/beta-search?keywords=${q}`,
+  };
+};
+
+/* ─────────────────────────────── component ─────────────────────────────── */
+
+function Library() {
+  const [books, setBooks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [problem, setProblem] = useState(null);
+
+  const [query, setQuery] = useState("");
+  const [status, setStatus] = useState("all");
+  const [formatFilter, setFormatFilter] = useState("all");
+  const [retailerFilter, setRetailerFilter] = useState("all");
+  const [maxPrice, setMaxPrice] = useState(60);
+  const [minRating, setMinRating] = useState(0);
+  const [sort, setSort] = useState("added");
+
+  const [editing, setEditing] = useState(null);
+  const [panelOpen, setPanelOpen] = useState(false);
+  const titleRef = useRef(null);
+
+  /* load */
+  useEffect(() => {
+    (async () => {
+      try {
+        const raw = localStorage.getItem(STORE_KEY);
+        const parsed = raw ? JSON.parse(raw) : null;
+        setBooks(Array.isArray(parsed) && parsed.length ? parsed : SEED);
+      } catch {
+        setBooks(SEED);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  /* save */
+  const persist = async (next) => {
+    setBooks(next);
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify(next));
+      setProblem(null);
+    } catch {
+      setProblem("Changes are showing here but didn't save. Try again.");
+    }
+  };
+
+  const upsert = (book) => {
+    const exists = books.some((b) => b.id === book.id);
+    persist(
+      exists ? books.map((b) => (b.id === book.id ? book : b)) : [...books, book]
+    );
+    setEditing(null);
+    setPanelOpen(false);
+  };
+
+  const remove = (id) => persist(books.filter((b) => b.id !== id));
+
+  const cycleStatus = (b) => {
+    const i = STATUSES.findIndex((s) => s.id === b.status);
+    const next = STATUSES[(i + 1) % STATUSES.length].id;
+    persist(books.map((x) => (x.id === b.id ? { ...x, status: next } : x)));
+  };
+
+  /* filter + sort */
+  const shown = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    let out = books.filter((b) => {
+      if (q && !`${b.title} ${b.author} ${b.note || ""}`.toLowerCase().includes(q))
+        return false;
+      if (status !== "all" && b.status !== status) return false;
+      if (formatFilter !== "all") {
+        if (formatFilter === "physical" || formatFilter === "digital") {
+          if (fmt(b.format).kind !== formatFilter) return false;
+        } else if (b.format !== formatFilter) return false;
+      }
+      if (retailerFilter !== "all" && b.retailer !== retailerFilter) return false;
+      if (maxPrice < 60 && Number(b.price || 0) > maxPrice) return false;
+      if (minRating > 0 && Number(b.rating || 0) < minRating) return false;
+      return true;
+    });
+    const by = {
+      added: (a, b) => b.added - a.added,
+      title: (a, b) => a.title.localeCompare(b.title),
+      author: (a, b) => a.author.localeCompare(b.author),
+      price: (a, b) => Number(a.price || 0) - Number(b.price || 0),
+      rating: (a, b) => Number(b.rating || 0) - Number(a.rating || 0),
+    };
+    return [...out].sort(by[sort]);
+  }, [books, query, status, formatFilter, retailerFilter, maxPrice, minRating, sort]);
+
+  const wantTotal = books
+    .filter((b) => b.status === "want")
+    .reduce((s, b) => s + Number(b.price || 0), 0);
+  const physCount = books.filter((b) => fmt(b.format).kind === "physical").length;
+
+  const resetFilters = () => {
+    setQuery("");
+    setStatus("all");
+    setFormatFilter("all");
+    setRetailerFilter("all");
+    setMaxPrice(60);
+    setMinRating(0);
+  };
+
+  const openNew = () => {
+    setEditing({
+      id: `b${Date.now()}`,
+      title: "",
+      author: "",
+      format: "paperback",
+      retailer: "Amazon",
+      price: "",
+      rating: "",
+      status: "want",
+      note: "",
+      added: Date.now(),
+    });
+    setPanelOpen(true);
+    setTimeout(() => titleRef.current?.focus(), 60);
+  };
+
+  const openEdit = (b) => {
+    setEditing({ ...b });
+    setPanelOpen(true);
+    setTimeout(() => titleRef.current?.focus(), 60);
+  };
+
+  return (
+    <div className="lib">
+      <style>{css}</style>
+
+      <header className="masthead">
+        <div className="mast-left">
+          <p className="eyebrow">Personal catalogue</p>
+          <h1>The Stack</h1>
+        </div>
+        <dl className="tally">
+          <div>
+            <dt>Titles</dt>
+            <dd>{books.length}</dd>
+          </div>
+          <div>
+            <dt>On the shelf</dt>
+            <dd>{physCount}</dd>
+          </div>
+          <div>
+            <dt>Cost to clear</dt>
+            <dd>{money(wantTotal)}</dd>
+          </div>
+        </dl>
+      </header>
+
+      {problem && <p className="problem">{problem}</p>}
+
+      <section className="controls" aria-label="Filters">
+        <input
+          className="search"
+          placeholder="Search titles, authors, notes"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+
+        <div className="segmented" role="group" aria-label="Status">
+          {[{ id: "all", label: "All" }, ...STATUSES].map((s) => (
+            <button
+              key={s.id}
+              className={status === s.id ? "seg on" : "seg"}
+              onClick={() => setStatus(s.id)}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="field">
+          <label htmlFor="fmt">Format</label>
+          <select id="fmt" value={formatFilter} onChange={(e) => setFormatFilter(e.target.value)}>
+            <option value="all">Any</option>
+            <option value="physical">Any physical</option>
+            <option value="digital">Any digital</option>
+            {FORMATS.map((f) => (
+              <option key={f.id} value={f.id}>
+                {f.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="field">
+          <label htmlFor="ret">Where to buy</label>
+          <select
+            id="ret"
+            value={retailerFilter}
+            onChange={(e) => setRetailerFilter(e.target.value)}
+          >
+            <option value="all">Anywhere</option>
+            {RETAILERS.map((r) => (
+              <option key={r}>{r}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="field">
+          <label htmlFor="price">
+            Under <span className="num">{maxPrice >= 60 ? "any price" : money(maxPrice)}</span>
+          </label>
+          <input
+            id="price"
+            type="range"
+            min="0"
+            max="60"
+            step="1"
+            value={maxPrice}
+            onChange={(e) => setMaxPrice(Number(e.target.value))}
+          />
+        </div>
+
+        <div className="field">
+          <label htmlFor="rate">
+            Rated <span className="num">{minRating.toFixed(1)}+</span>
+          </label>
+          <input
+            id="rate"
+            type="range"
+            min="0"
+            max="5"
+            step="0.1"
+            value={minRating}
+            onChange={(e) => setMinRating(Number(e.target.value))}
+          />
+        </div>
+
+        <div className="field">
+          <label htmlFor="sort">Sort</label>
+          <select id="sort" value={sort} onChange={(e) => setSort(e.target.value)}>
+            <option value="added">Recently added</option>
+            <option value="title">Title</option>
+            <option value="author">Author</option>
+            <option value="price">Price, low to high</option>
+            <option value="rating">Rating, high to low</option>
+          </select>
+        </div>
+
+        <div className="control-actions">
+          <button className="ghost" onClick={resetFilters}>
+            Clear filters
+          </button>
+          <button className="solid" onClick={openNew}>
+            Add a book
+          </button>
+        </div>
+      </section>
+
+      <p className="count">
+        {loading ? "Opening the catalogue…" : `${shown.length} of ${books.length} shown`}
+      </p>
+
+      <ul className="shelf">
+        {shown.map((b) => {
+          const f = fmt(b.format);
+          const l = links(b);
+          return (
+            <li key={b.id} className="card" style={{ "--tone": f.tone }}>
+              <div className="spine" aria-hidden="true" />
+              <div className="card-body">
+                <div className="card-head">
+                  <h2>{b.title}</h2>
+                  <button
+                    className={`status s-${b.status}`}
+                    onClick={() => cycleStatus(b)}
+                    title="Click to change status"
+                  >
+                    {STATUSES.find((s) => s.id === b.status)?.label}
+                  </button>
+                </div>
+                <p className="author">{b.author}</p>
+
+                <dl className="meta">
+                  <div>
+                    <dt>Format</dt>
+                    <dd>{f.label}</dd>
+                  </div>
+                  <div>
+                    <dt>Buy at</dt>
+                    <dd>{b.retailer || "—"}</dd>
+                  </div>
+                  <div>
+                    <dt>Price</dt>
+                    <dd>{money(b.price)}</dd>
+                  </div>
+                  <div>
+                    <dt>Rating</dt>
+                    <dd>{b.rating ? `${Number(b.rating).toFixed(1)} / 5` : "—"}</dd>
+                  </div>
+                </dl>
+
+                {b.note && <p className="note">{b.note}</p>}
+
+                <div className="card-actions">
+                  <a href={l.goodreads} target="_blank" rel="noreferrer">
+                    Goodreads
+                  </a>
+                  <a href={l.amazon} target="_blank" rel="noreferrer">
+                    Amazon
+                  </a>
+                  <a href={l.kobo} target="_blank" rel="noreferrer">
+                    Kobo
+                  </a>
+                  <a href={l.bookshop} target="_blank" rel="noreferrer">
+                    Bookshop
+                  </a>
+                  <span className="spacer" />
+                  <button className="ghost sm" onClick={() => openEdit(b)}>
+                    Edit
+                  </button>
+                  <button className="ghost sm danger" onClick={() => remove(b.id)}>
+                    Remove
+                  </button>
+                </div>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+
+      {!loading && shown.length === 0 && (
+        <div className="empty">
+          <p>Nothing matches these filters.</p>
+          <button className="ghost" onClick={resetFilters}>
+            Clear filters
+          </button>
+        </div>
+      )}
+
+      {panelOpen && editing && (
+        <BookForm
+          book={editing}
+          titleRef={titleRef}
+          onChange={setEditing}
+          onSave={upsert}
+          onCancel={() => {
+            setPanelOpen(false);
+            setEditing(null);
+          }}
+        />
+      )}
+
+      <footer className="foot">
+        Prices and ratings are starting estimates — edit any card to set your own.
+      </footer>
+    </div>
+  );
+}
+
+/* ─────────────────────────────── form ─────────────────────────────── */
+
+function BookForm({ book, onChange, onSave, onCancel, titleRef }) {
+  const set = (k, v) => onChange({ ...book, [k]: v });
+  const valid = book.title.trim().length > 0;
+
+  return (
+    <div className="drawer-wrap" role="dialog" aria-label="Book details">
+      <div className="scrim" onClick={onCancel} />
+      <div className="drawer">
+        <h3>{book.title ? "Edit book" : "Add a book"}</h3>
+
+        <label className="lf">
+          Title
+          <input
+            ref={titleRef}
+            value={book.title}
+            onChange={(e) => set("title", e.target.value)}
+            placeholder="The Brothers Karamazov"
+          />
+        </label>
+
+        <label className="lf">
+          Author
+          <input
+            value={book.author}
+            onChange={(e) => set("author", e.target.value)}
+            placeholder="Fyodor Dostoevsky"
+          />
+        </label>
+
+        <div className="lf-row">
+          <label className="lf">
+            Format
+            <select value={book.format} onChange={(e) => set("format", e.target.value)}>
+              {FORMATS.map((f) => (
+                <option key={f.id} value={f.id}>
+                  {f.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="lf">
+            Where to buy
+            <select value={book.retailer} onChange={(e) => set("retailer", e.target.value)}>
+              {RETAILERS.map((r) => (
+                <option key={r}>{r}</option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <div className="lf-row">
+          <label className="lf">
+            Price
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={book.price}
+              onChange={(e) => set("price", e.target.value)}
+              placeholder="14.00"
+            />
+          </label>
+          <label className="lf">
+            Rating out of 5
+            <input
+              type="number"
+              min="0"
+              max="5"
+              step="0.1"
+              value={book.rating}
+              onChange={(e) => set("rating", e.target.value)}
+              placeholder="4.3"
+            />
+          </label>
+          <label className="lf">
+            Status
+            <select value={book.status} onChange={(e) => set("status", e.target.value)}>
+              {STATUSES.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <label className="lf">
+          Note
+          <textarea
+            rows="2"
+            value={book.note}
+            onChange={(e) => set("note", e.target.value)}
+            placeholder="Why it's on the list"
+          />
+        </label>
+
+        <div className="drawer-actions">
+          <button className="ghost" onClick={onCancel}>
+            Cancel
+          </button>
+          <button
+            className="solid"
+            disabled={!valid}
+            onClick={() =>
+              onSave({
+                ...book,
+                title: book.title.trim(),
+                author: book.author.trim(),
+                price: book.price === "" ? "" : Number(book.price),
+                rating: book.rating === "" ? "" : Number(book.rating),
+              })
+            }
+          >
+            Save book
+          </button>
+        </div>
+        {!valid && <p className="hint">A title is required.</p>}
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────── styles ─────────────────────────────── */
+
+const css = `
+@import url('https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,600&family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+.lib {
+  --paper:#EDEEEA;
+  --card:#F7F8F5;
+  --ink:#15181C;
+  --muted:#787D77;
+  --rule:#D3D5CE;
+  --deep:#22333F;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:'Archivo',system-ui,sans-serif;
+  min-height:100%;
+  padding:28px 20px 60px;
+}
+.lib * { box-sizing:border-box; }
+.lib button:focus-visible, .lib input:focus-visible, .lib select:focus-visible,
+.lib textarea:focus-visible, .lib a:focus-visible {
+  outline:2px solid var(--deep); outline-offset:2px;
+}
+
+.masthead {
+  display:flex; flex-wrap:wrap; gap:20px; align-items:flex-end;
+  justify-content:space-between;
+  border-bottom:1px solid var(--ink); padding-bottom:14px; margin-bottom:22px;
+}
+.eyebrow {
+  font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--muted); margin:0 0 4px;
+}
+.masthead h1 {
+  font-family:'Newsreader',Georgia,serif; font-weight:600;
+  font-size:clamp(34px,6vw,54px); line-height:.95; margin:0; letter-spacing:-.02em;
+}
+.tally { display:flex; gap:26px; margin:0; }
+.tally dt {
+  font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--muted);
+}
+.tally dd {
+  font-family:'Newsreader',serif; font-size:26px; margin:2px 0 0; line-height:1;
+}
+
+.problem {
+  font-size:13px; background:#F4E3DD; border-left:3px solid #9A4A33;
+  padding:10px 12px; margin:0 0 16px;
+}
+
+.controls {
+  display:flex; flex-wrap:wrap; gap:14px 22px; align-items:flex-end;
+  padding:16px 0 18px; border-bottom:1px solid var(--rule);
+}
+.search {
+  flex:1 1 240px; min-width:200px; background:transparent; border:0;
+  border-bottom:1px solid var(--ink); padding:6px 2px;
+  font-family:'Newsreader',serif; font-size:19px; color:var(--ink);
+}
+.search::placeholder { color:var(--muted); }
+
+.segmented { display:flex; border:1px solid var(--rule); background:var(--card); }
+.seg {
+  border:0; background:transparent; cursor:pointer; padding:7px 13px;
+  font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--muted);
+}
+.seg.on { background:var(--deep); color:#F7F8F5; }
+
+.field { display:flex; flex-direction:column; gap:5px; }
+.field label {
+  font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--muted);
+}
+.field .num { color:var(--ink); }
+.field select {
+  background:var(--card); border:1px solid var(--rule); padding:6px 8px;
+  font-family:'Archivo',sans-serif; font-size:13px; color:var(--ink);
+}
+.field input[type=range] { width:132px; accent-color:var(--deep); }
+
+.control-actions { display:flex; gap:8px; margin-left:auto; }
+.solid, .ghost {
+  cursor:pointer; font-family:'IBM Plex Mono',monospace; font-size:11px;
+  letter-spacing:.1em; text-transform:uppercase; padding:9px 15px;
+}
+.solid { background:var(--ink); color:var(--paper); border:1px solid var(--ink); }
+.solid:disabled { opacity:.35; cursor:not-allowed; }
+.ghost { background:transparent; color:var(--ink); border:1px solid var(--rule); }
+.ghost:hover { border-color:var(--ink); }
+.ghost.sm { padding:5px 9px; font-size:10px; }
+.ghost.danger:hover { border-color:#9A4A33; color:#9A4A33; }
+
+.count {
+  font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--muted);
+  letter-spacing:.08em; margin:14px 0 12px;
+}
+
+.shelf {
+  list-style:none; padding:0; margin:0;
+  display:grid; gap:14px; grid-template-columns:repeat(auto-fill,minmax(320px,1fr));
+}
+.card {
+  display:flex; background:var(--card); border:1px solid var(--rule);
+  transition:border-color .15s ease, transform .15s ease;
+}
+.card:hover { border-color:var(--ink); transform:translateY(-2px); }
+.spine {
+  width:9px; flex:0 0 9px; background:var(--tone);
+  background-image:repeating-linear-gradient(180deg,rgba(255,255,255,.16) 0 2px,transparent 2px 7px);
+}
+.card-body { padding:14px 16px 12px; flex:1; min-width:0; }
+.card-head { display:flex; gap:10px; align-items:flex-start; justify-content:space-between; }
+.card-head h2 {
+  font-family:'Newsreader',serif; font-weight:600; font-size:21px;
+  line-height:1.15; margin:0; letter-spacing:-.01em;
+}
+.author {
+  font-size:13px; color:var(--muted); margin:3px 0 12px;
+}
+.status {
+  cursor:pointer; border:1px solid var(--rule); background:transparent;
+  font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:.12em;
+  text-transform:uppercase; padding:4px 8px; white-space:nowrap; color:var(--muted);
+}
+.status.s-reading { border-color:var(--deep); color:var(--deep); }
+.status.s-read { background:var(--deep); border-color:var(--deep); color:#F7F8F5; }
+
+.meta { display:flex; flex-wrap:wrap; gap:4px 20px; margin:0; }
+.meta dt {
+  font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--muted);
+}
+.meta dd { font-size:14px; margin:1px 0 0; }
+.note {
+  font-family:'Newsreader',serif; font-size:15px; font-style:italic;
+  color:var(--deep); margin:11px 0 0; padding-left:10px;
+  border-left:2px solid var(--rule);
+}
+.card-actions {
+  display:flex; flex-wrap:wrap; align-items:center; gap:8px;
+  margin-top:13px; padding-top:10px; border-top:1px solid var(--rule);
+}
+.card-actions a {
+  font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.06em;
+  color:var(--deep); text-decoration:none; border-bottom:1px solid var(--rule);
+}
+.card-actions a:hover { border-color:var(--deep); }
+.card-actions .spacer { flex:1; }
+
+.empty { text-align:center; padding:48px 0; color:var(--muted); }
+.empty p { font-family:'Newsreader',serif; font-size:19px; margin:0 0 14px; }
+
+.drawer-wrap { position:fixed; inset:0; z-index:40; display:flex; align-items:flex-end; justify-content:center; }
+.scrim { position:absolute; inset:0; background:rgba(21,24,28,.45); }
+.drawer {
+  position:relative; width:min(620px,100%); background:var(--card);
+  border:1px solid var(--ink); padding:20px; max-height:90vh; overflow:auto;
+}
+.drawer h3 {
+  font-family:'Newsreader',serif; font-weight:600; font-size:24px; margin:0 0 16px;
+}
+.lf { display:flex; flex-direction:column; gap:5px; margin-bottom:13px; flex:1; }
+.lf {
+  font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--muted);
+}
+.lf input, .lf select, .lf textarea {
+  font-family:'Archivo',sans-serif; font-size:14px; letter-spacing:0;
+  text-transform:none; color:var(--ink);
+  background:var(--paper); border:1px solid var(--rule); padding:8px 9px; width:100%;
+}
+.lf-row { display:flex; gap:12px; flex-wrap:wrap; }
+.lf-row .lf { min-width:120px; }
+.drawer-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:6px; }
+.hint { font-size:12px; color:#9A4A33; text-align:right; margin:8px 0 0; }
+
+.foot {
+  font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.08em;
+  color:var(--muted); margin-top:34px; padding-top:12px; border-top:1px solid var(--rule);
+}
+
+@media (max-width:560px) {
+  .control-actions { margin-left:0; width:100%; }
+  .control-actions .solid { flex:1; }
+  .tally { gap:18px; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .lib * { transition:none !important; }
+}
+`;
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<Library />);
+</script>
+</body>
+</html>
