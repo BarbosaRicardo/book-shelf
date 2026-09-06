@@ -28,7 +28,14 @@ That needs a Kaggle API token — `~/.kaggle/kaggle.json`, or `KAGGLE_USERNAME` 
 error in isolation. If the download cannot happen, the pipeline says why and falls back
 to the stand-in described below rather than failing. See `data/README.md`.
 
-Everything lands in `reports/`:
+### Or read the notebook
+
+`credit_risk_analysis.ipynb` walks the same analysis end to end with the narrative
+inline — it imports from `src/`, so the notebook and `run_analysis.py` share one
+implementation instead of drifting apart. It is committed with its outputs executed, so
+it reads without running anything.
+
+Everything `run_analysis.py` produces lands in `reports/`:
 
 | file | covers |
 | --- | --- |
@@ -75,6 +82,7 @@ and relabel themselves as sourced from Kaggle.
 
 ```
 credit-risk/
+├── credit_risk_analysis.ipynb   narrated walk-through, outputs included
 ├── run_analysis.py        orchestrator; writes every report and figure
 ├── download_data.py       explicit kagglehub download step
 ├── src/
