@@ -1,15 +1,21 @@
 """Loading for the Kaggle credit risk dataset, with a calibrated stand-in.
 
-`load_credit_risk` returns the real Kaggle file whenever it is present on disk.
-When it is not, it falls back to `synthesize_credit_risk`, which draws from a
-generative model hand-calibrated to the published marginals and conditional
-default rates of the real file.  The fallback exists so the pipeline is runnable
-in environments with no network access to Kaggle; it is not a substitute for the
-real data, and every report states which source produced it.
+`load_credit_risk` resolves the data in three steps:
+
+1. the real CSV already sitting in `data/`;
+2. failing that, a `kagglehub` download of `laotse/credit-risk-dataset`;
+3. failing that, `synthesize_credit_risk`, which draws from a generative model
+   hand-calibrated to the published marginals and conditional default rates of
+   the real file.
+
+The stand-in exists so the pipeline stays runnable where Kaggle is unreachable.
+It is not a substitute for the real data, and every report states which of the
+three sources produced it.
 """
 
 from __future__ import annotations
 
+import shutil
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -18,6 +24,7 @@ import pandas as pd
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 REAL_CSV = DATA_DIR / "credit_risk_dataset.csv"
+KAGGLE_DATASET = "laotse/credit-risk-dataset"
 
 TARGET = "loan_status"
 
@@ -59,16 +66,55 @@ class Dataset:
         return self.frame[TARGET]
 
 
-def load_credit_risk(path: Path | None = None) -> Dataset:
-    """Read the real CSV if available, otherwise synthesize a stand-in."""
+def download_via_kagglehub(dest_dir: Path | None = None, dataset: str = KAGGLE_DATASET) -> Path:
+    """Fetch the dataset with kagglehub and copy the CSV into `dest_dir`.
+
+    Needs the `kagglehub` package, Kaggle credentials (`~/.kaggle/kaggle.json`,
+    or the KAGGLE_USERNAME / KAGGLE_KEY environment variables) and a network
+    route to kaggle.com.  Raises if any of those is missing — callers decide
+    whether that is fatal.
+    """
+    import kagglehub  # imported lazily so the dependency stays optional
+
+    dest_dir = dest_dir or DATA_DIR
+    dest_dir.mkdir(parents=True, exist_ok=True)
+
+    cache_dir = Path(kagglehub.dataset_download(dataset))
+    candidates = sorted(cache_dir.rglob("*.csv"))
+    if not candidates:
+        raise FileNotFoundError(f"kagglehub downloaded {dataset} to {cache_dir} but it holds no CSV")
+    # The archive ships a single CSV; prefer the expected name if several appear.
+    source = next((c for c in candidates if c.name == REAL_CSV.name), candidates[0])
+
+    destination = dest_dir / REAL_CSV.name
+    shutil.copyfile(source, destination)
+    return destination
+
+
+def load_credit_risk(path: Path | None = None, allow_download: bool = True) -> Dataset:
+    """Resolve the dataset: local CSV, then kagglehub, then the stand-in."""
     path = path or REAL_CSV
     if path.exists():
-        frame = pd.read_csv(path)
-        missing = set(ALL_FEATURES + [TARGET]) - set(frame.columns)
-        if missing:
-            raise ValueError(f"{path} is missing expected columns: {sorted(missing)}")
-        return Dataset(frame=frame, source="kaggle")
+        return Dataset(frame=_read_and_validate(path), source="kaggle")
+
+    if allow_download:
+        try:
+            downloaded = download_via_kagglehub(path.parent)
+        except Exception as exc:  # offline, no credentials, package absent
+            print(f"  kagglehub download unavailable ({type(exc).__name__}: {exc}); using the stand-in")
+        else:
+            print(f"  downloaded {KAGGLE_DATASET} -> {downloaded}")
+            return Dataset(frame=_read_and_validate(downloaded), source="kaggle")
+
     return Dataset(frame=synthesize_credit_risk(), source="synthetic")
+
+
+def _read_and_validate(path: Path) -> pd.DataFrame:
+    frame = pd.read_csv(path)
+    missing = set(ALL_FEATURES + [TARGET]) - set(frame.columns)
+    if missing:
+        raise ValueError(f"{path} is missing expected columns: {sorted(missing)}")
+    return frame
 
 
 # --------------------------------------------------------------------------- #

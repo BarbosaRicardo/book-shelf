@@ -9,11 +9,24 @@ underwriting information.
 
 ```bash
 pip install -r requirements.txt
-# optional but recommended — see data/README.md
-kaggle datasets download -d laotse/credit-risk-dataset -p data --unzip
 python run_analysis.py            # full run, ~20 min on 4 cores
 python run_analysis.py --quick    # smaller search budgets, ~4 min
 ```
+
+The dataset downloads itself. When `data/credit_risk_dataset.csv` is missing,
+`src/data.py` fetches it with `kagglehub`:
+
+```python
+import kagglehub
+
+path = kagglehub.dataset_download("laotse/credit-risk-dataset")
+print("Path to dataset files:", path)
+```
+
+That needs a Kaggle API token — `~/.kaggle/kaggle.json`, or `KAGGLE_USERNAME` and
+`KAGGLE_KEY`. Run `python download_data.py` to do the download on its own and see any
+error in isolation. If the download cannot happen, the pipeline says why and falls back
+to the stand-in described below rather than failing. See `data/README.md`.
 
 Everything lands in `reports/`:
 
@@ -63,6 +76,7 @@ and relabel themselves as sourced from Kaggle.
 ```
 credit-risk/
 ├── run_analysis.py        orchestrator; writes every report and figure
+├── download_data.py       explicit kagglehub download step
 ├── src/
 │   ├── data.py            loading, schema, and the calibrated stand-in generator
 │   ├── preprocess.py      cleaning rules and the leakage-safe pipeline
