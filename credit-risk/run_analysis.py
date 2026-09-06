@@ -5,14 +5,14 @@
     python run_analysis.py --quick    # smaller search budgets, for a smoke test
 
 Writes markdown reports, a machine-readable results.json, and figures under
-`reports/`.  Answers the six assignment questions in order:
+`reports/`, covering:
 
-  Q1  which column is the dependent variable          -> reports/eda.md
-  Q2  relations between the variables                 -> reports/eda.md
-  Q3  three classifiers under cross-validation        -> reports/modelling.md
-  Q4  three hyperparameters each, optimised           -> reports/modelling.md
-  Q5  a tuned gradient-boosting classifier            -> reports/modelling.md
-  Q6  dataset size, tuning, and robustness            -> reports/robustness.md
+  1  choosing the dependent variable                  -> reports/eda.md
+  2  relations between the variables                  -> reports/eda.md
+  3  three classifiers under cross-validation         -> reports/modelling.md
+  4  three hyperparameters each, optimised            -> reports/modelling.md
+  5  a tuned gradient-boosting classifier             -> reports/modelling.md
+  6  sample size, tuning, and robustness              -> reports/robustness.md
 """
 
 from __future__ import annotations
@@ -243,7 +243,7 @@ def write_eda_report(frame: pd.DataFrame, clean_report: dict, source: str) -> di
     eda.write_figures(frame, FIGURES)
 
     grade_gap = float(cats["loan_grade"]["default_rate"].max() - cats["loan_grade"]["default_rate"].min())
-    text = f"""# Q1 & Q2 — Feature exploration
+    text = f"""# 1 & 2 — Feature exploration
 
 {provenance(source)}
 ## The file
@@ -255,7 +255,7 @@ def write_eda_report(frame: pd.DataFrame, clean_report: dict, source: str) -> di
 
 {md(prof)}
 
-## Q1 — Which variable is the dependent variable?
+## 1. Which variable is the dependent variable?
 
 **`loan_status`.** It is the only column that is (a) binary, (b) an *outcome* of the
 loan rather than an input to it, and (c) unknown at the moment of application. Every
@@ -270,14 +270,13 @@ the money came back.
 accuracy is a useless score: predicting "everyone repays" already scores
 {1 - frame[TARGET].mean():.1%}. ROC-AUC and average precision are used instead.
 
-A note on framing: the assignment asks about *"whether a loan application will be
-granted"*, but this file contains only loans that were **already granted** — there are
-no declined applicants in it. What can honestly be learned here is *default risk on
-approved loans*, which is the input to a granting decision, not the decision itself.
-The gap between the two is survivorship bias, and it is discussed in
-`robustness.md`.
+A note on framing: it is tempting to read this as *"will the application be granted?"*,
+but the file contains only loans that were **already granted** — there are no declined
+applicants in it. What can honestly be learned here is *default risk on approved loans*,
+which is an input to a granting decision, not the decision itself. The gap between the
+two is survivorship bias, and it is discussed in `robustness.md`.
 
-## Q2 — How the variables relate
+## 2. How the variables relate
 
 ### Strength of each feature's relationship with the target
 
@@ -369,7 +368,7 @@ def write_modelling_report(results, baseline, baseline_app, tuned, gb_tuned, spe
         for s in specs + [gb_spec]
     )
 
-    text = f"""# Q3, Q4 & Q5 — Classifiers, tuning, and gradient boosting
+    text = f"""# 3, 4 & 5 — Classifiers, tuning, and gradient boosting
 
 {provenance(source)}
 ## Protocol
@@ -386,7 +385,7 @@ def write_modelling_report(results, baseline, baseline_app, tuned, gb_tuned, spe
   imbalance); average precision, F1, balanced accuracy and the Brier score are reported
   alongside because they answer different questions.
 
-## Q3 — Three classifiers, default settings
+## 3. Three classifiers, default settings
 
 Chosen to span three different inductive biases: a linear model, a local
 non-parametric method, and a non-linear ensemble.
@@ -401,7 +400,7 @@ applicant actually tells you:
 The drop from the first table to the second is the share of the apparent performance
 that comes from the underwriter's verdict rather than from the applicant's profile.
 
-## Q4 — Hyperparameter optimisation
+## 4. Hyperparameter optimisation
 
 Three hyperparameters per classifier, each spanning a genuine range rather than a
 neighbourhood of the default:
@@ -421,7 +420,7 @@ Change against the untuned baseline:
      "delta": round(lift[m]["roc_auc_mean"] - baseline.set_index("model").loc[m, "roc_auc_mean"], 4)}
     for m in lift]))}
 
-## Q5 — Gradient boosting
+## 5. Gradient boosting
 
 `HistGradientBoostingClassifier` — scikit-learn's histogram-based booster, the same
 family as LightGBM. It suits this dataset: mixed numeric and categorical features, a
@@ -471,7 +470,7 @@ def write_robustness_report(results, curve, seeds, nested, boot, subgroups, sour
     slope = float(last_two["cv_mean"].iloc[-1] - last_two["cv_mean"].iloc[0])
     subgroup_auc = subgroups["roc_auc"].dropna()
 
-    text = f"""# Q6 — Dataset size, tuning, and robustness
+    text = f"""# 6 — Sample size, tuning, and robustness
 
 {provenance(source)}
 ## Is 32k rows a lot or a little?

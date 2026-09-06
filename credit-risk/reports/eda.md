@@ -1,4 +1,4 @@
-# Q1 & Q2 — Feature exploration
+# 1 & 2 — Feature exploration
 
 > **Numbers below come from the calibrated stand-in, not the real Kaggle file.**
 > Kaggle was unreachable from the environment this ran in, so `src/data.py` generated a
@@ -27,7 +27,7 @@
 | cb_person_default_on_file  | str     |          2 |         0 |          0    | N         |
 | cb_person_cred_hist_length | int64   |         28 |         0 |          0    | 5         |
 
-## Q1 — Which variable is the dependent variable?
+## 1. Which variable is the dependent variable?
 
 **`loan_status`.** It is the only column that is (a) binary, (b) an *outcome* of the
 loan rather than an input to it, and (c) unknown at the moment of application. Every
@@ -55,14 +55,13 @@ the money came back.
 accuracy is a useless score: predicting "everyone repays" already scores
 77.9%. ROC-AUC and average precision are used instead.
 
-A note on framing: the assignment asks about *"whether a loan application will be
-granted"*, but this file contains only loans that were **already granted** — there are
-no declined applicants in it. What can honestly be learned here is *default risk on
-approved loans*, which is the input to a granting decision, not the decision itself.
-The gap between the two is survivorship bias, and it is discussed in
-`robustness.md`.
+A note on framing: it is tempting to read this as *"will the application be granted?"*,
+but the file contains only loans that were **already granted** — there are no declined
+applicants in it. What can honestly be learned here is *default risk on approved loans*,
+which is an input to a granting decision, not the decision itself. The gap between the
+two is survivorship bias, and it is discussed in `robustness.md`.
 
-## Q2 — How the variables relate
+## 2. How the variables relate
 
 ### Strength of each feature's relationship with the target
 

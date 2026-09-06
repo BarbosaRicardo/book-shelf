@@ -31,17 +31,30 @@ to the stand-in described below rather than failing. See `data/README.md`.
 ### Or read the notebook
 
 `credit_risk_analysis.ipynb` walks the same analysis end to end with the narrative
-inline — it imports from `src/`, so the notebook and `run_analysis.py` share one
-implementation instead of drifting apart. It is committed with its outputs executed, so
-it reads without running anything.
+inline, in eight numbered sections:
+
+| § | Section |
+| --- | --- |
+| 1 | Setup |
+| 2 | Choosing the dependent variable |
+| 3 | How the variables relate |
+| 4 | Three classifiers, cross-validated |
+| 5 | Hyperparameter optimisation |
+| 6 | Gradient boosting |
+| 7 | Robustness and what tuning does not buy |
+| 8 | Summary |
+
+It imports from `src/`, so the notebook and `run_analysis.py` share one implementation
+instead of drifting apart, and it is committed with its outputs executed — it reads
+without running anything.
 
 Everything `run_analysis.py` produces lands in `reports/`:
 
 | file | covers |
 | --- | --- |
-| `reports/eda.md` | Q1 — picking the dependent variable; Q2 — how the variables relate |
-| `reports/modelling.md` | Q3 — three classifiers cross-validated; Q4 — tuning three hyperparameters each; Q5 — tuned gradient boosting |
-| `reports/robustness.md` | Q6 — dataset size, whether tuning guarantees generalisation, how to measure robustness |
+| `reports/eda.md` | §1 picking the dependent variable; §2 how the variables relate |
+| `reports/modelling.md` | §3 three classifiers cross-validated; §4 tuning three hyperparameters each; §5 tuned gradient boosting |
+| `reports/robustness.md` | §6 sample size, whether tuning guarantees generalisation, how to measure robustness |
 | `reports/results.json` | every number above, machine-readable |
 | `reports/figures/` | seven figures |
 
@@ -88,14 +101,14 @@ credit-risk/
 ├── src/
 │   ├── data.py            loading, schema, and the calibrated stand-in generator
 │   ├── preprocess.py      cleaning rules and the leakage-safe pipeline
-│   ├── eda.py             Q1/Q2 — profiling, associations, figures
-│   ├── experiments.py     Q3/Q4/Q5 — baselines, hyperparameter search, boosting
-│   └── robustness.py      Q6 — nested CV, learning curve, bootstrap, slices
+│   ├── eda.py             profiling, associations, figures
+│   ├── experiments.py     baselines, hyperparameter search, boosting
+│   └── robustness.py      nested CV, learning curve, bootstrap, slices
 ├── data/                  put credit_risk_dataset.csv here (gitignored)
 └── reports/               generated output
 ```
 
-## The short version of the answers
+## The short version
 
 1. **Dependent variable: `loan_status`** — the only binary *outcome* column; everything
    else is known before repayment is. Base rate 21.8%, so accuracy is not a usable

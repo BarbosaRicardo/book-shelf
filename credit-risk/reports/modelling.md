@@ -1,4 +1,4 @@
-# Q3, Q4 & Q5 — Classifiers, tuning, and gradient boosting
+# 3, 4 & 5 — Classifiers, tuning, and gradient boosting
 
 > **Numbers below come from the calibrated stand-in, not the real Kaggle file.**
 > Kaggle was unreachable from the environment this ran in, so `src/data.py` generated a
@@ -19,7 +19,7 @@
   imbalance); average precision, F1, balanced accuracy and the Brier score are reported
   alongside because they answer different questions.
 
-## Q3 — Three classifiers, default settings
+## 3. Three classifiers, default settings
 
 Chosen to span three different inductive biases: a linear model, a local
 non-parametric method, and a non-linear ensemble.
@@ -42,7 +42,7 @@ applicant actually tells you:
 The drop from the first table to the second is the share of the apparent performance
 that comes from the underwriter's verdict rather than from the applicant's profile.
 
-## Q4 — Hyperparameter optimisation
+## 4. Hyperparameter optimisation
 
 Three hyperparameters per classifier, each spanning a genuine range rather than a
 neighbourhood of the default:
@@ -88,7 +88,7 @@ Change against the untuned baseline:
 | LogisticRegression |             0.8079 |          0.8081 |  0.0002 |
 | KNeighbors         |             0.7339 |          0.8006 |  0.0667 |
 
-## Q5 — Gradient boosting
+## 5. Gradient boosting
 
 `HistGradientBoostingClassifier` — scikit-learn's histogram-based booster, the same
 family as LightGBM. It suits this dataset: mixed numeric and categorical features, a

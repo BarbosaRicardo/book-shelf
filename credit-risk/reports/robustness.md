@@ -1,4 +1,4 @@
-# Q6 — Dataset size, tuning, and robustness
+# 6 — Sample size, tuning, and robustness
 
 > **Numbers below come from the calibrated stand-in, not the real Kaggle file.**
 > Kaggle was unreachable from the environment this ran in, so `src/data.py` generated a
