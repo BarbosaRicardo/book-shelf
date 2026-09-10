@@ -1,0 +1,426 @@
+<!-- 01 COVER -->
+<section class="slide" data-short="Cover">
+  <div class="inner cover">
+    <span class="day">Day 1 · Monday 8 September 2026 · 07:05–09:10</span>
+    <h1>Getting the Point Online</h1>
+    <p class="sub">Two hours on the SEL RTAC: how to get in, how not to lose the project, and the handful of numbers that decide whether a device comes online or sits dark with perfectly healthy TCP traffic.</p>
+    <div class="trend" id="timeline"></div>
+    <div class="meta">
+      <div><dt>Session length</dt><dd>2h 04m</dd></div>
+      <div><dt>Protocols covered</dt><dd>DNP3 · Modbus · C37.118</dd></div>
+      <div><dt>Interactive tools</dt><dd>5</dd></div>
+      <div><dt>Source</dt><dd>Session transcript</dd></div>
+    </div>
+    <p class="standfirst" style="margin:0;font-size:15px">Use <span class="m">←</span> <span class="m">→</span> to move, <span class="m">G</span> for all slides, <span class="m">N</span> for notes. Progress is remembered on this device.</p>
+  </div>
+</section>
+
+<!-- 02 THE ARC -->
+<section class="slide" data-short="Where this sits">
+  <div class="inner">
+    <div class="eyebrow"><span>The three mornings</span></div>
+    <h2 class="title">Three days, one path from wire to setpoint</h2>
+    <p class="standfirst">Each morning picks up exactly where the last one stopped. Day 1 makes data move. Day 2 makes a project out of it. Day 3 makes the plant follow a number.</p>
+    <div class="tool">
+      <div class="tool-h"><span class="lbl">Pick a day · <b>you are on Day 1</b></span></div>
+      <div class="tool-b">
+        <div class="flow" data-flow="arc">
+          <button class="node" type="button" data-k="d1" aria-pressed="true"><span class="i">DAY 1 · 8 SEP</span><span class="n">Comms &amp; the RTAC</span></button>
+          <span class="arrow">→</span>
+          <button class="node" type="button" data-k="d2"><span class="i">DAY 2 · 9 SEP</span><span class="n">Project &amp; inverters</span></button>
+          <span class="arrow">→</span>
+          <button class="node" type="button" data-k="d3"><span class="i">DAY 3 · 10 SEP</span><span class="n">Control &amp; recording</span></button>
+        </div>
+        <div class="detail" data-flow-out="arc"></div>
+      </div>
+    </div>
+    <div class="notes"><span class="tag">Speaker note</span>The three sessions were consecutive weekday mornings and each closed by naming the next one's scope. Day 1 ended with "device setup, project bindings, GridConnect mapping, error resolution" — which is exactly what Day 2 opened with. Day 2 ended promising "Grid Connect variables, the main program, how data enters and leaves the MPC" — which is Day 3.</div>
+  </div>
+</section>
+
+<!-- 03 ACCESS -->
+<section class="slide" data-clock="07:05" data-short="Getting in">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">07:05</span><span>WebPatrol · licensing · network</span></div>
+    <h2 class="title">Getting in, and proving the path exists</h2>
+    <p class="standfirst">Before any protocol argument is worth having, confirm you can reach the box and that the port you need is actually open.</p>
+    <div class="grid g23">
+      <div>
+        <ul class="pts">
+          <li>Reach the SCL <b>WebPatrol</b> interface at <code>https://</code> + the RTAC IP. First login sets a password; after that it is username and password.</li>
+          <li><b>Device Management</b> is where license files go — uploaded through the firmware upload workflow even though a licence is not firmware. It appears under <b>License Features</b> after roughly <span class="num">3 minutes</span>.</li>
+          <li>Check IP settings, and configure <b>IP bonding</b> where the site needs it.</li>
+          <li>Security tools will ping a device and check its ports. <b>A port that does not show as open is usually a firewall</b>, not a device fault — that is a network-team ticket.</li>
+          <li>For packet capture, use <b>Connected IEDs</b> to isolate one device. The Utilities capture pulls traffic from everywhere and buries the thing you are looking for.</li>
+        </ul>
+      </div>
+      <div class="tool">
+        <div class="tool-h"><span class="lbl">Pre-flight</span><button class="reset" type="button" data-chk-reset>Clear</button></div>
+        <div class="tool-b">
+          <div class="chk" data-chk="access">
+            <label class="chk-item"><input type="checkbox"><span class="t"><b>WebPatrol reachable</b><em>https:// + RTAC IP resolves and logs in</em></span></label>
+            <label class="chk-item"><input type="checkbox"><span class="t"><b>Licence shows under License Features</b><em>allow ~3 min after upload</em></span></label>
+            <label class="chk-item"><input type="checkbox"><span class="t"><b>Ping succeeds to the target IED</b><em>from the RTAC, not from your laptop</em></span></label>
+            <label class="chk-item"><input type="checkbox"><span class="t"><b>Port shows open</b><em>if not: firewall, escalate to network</em></span></label>
+            <label class="chk-item"><input type="checkbox"><span class="t"><b>Capture scoped to one IED</b><em>Connected IEDs, not Utilities</em></span></label>
+          </div>
+          <div class="chk-bar"><span class="n">0 of 5</span><span class="track"><span class="fill"></span></span></div>
+        </div>
+      </div>
+    </div>
+    <div class="notes"><span class="tag">Speaker note</span>The order matters: people lose an hour arguing about DNP3 addresses on a link the firewall was never going to pass. Ping, then port, then protocol.</div>
+  </div>
+</section>
+
+<!-- 04 PROJECT SAFETY -->
+<section class="slide" data-clock="07:12" data-short="Don't lose the project">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">07:12</span><span>backup · cross-check · send</span></div>
+    <h2 class="title">The firmware update that erases your plant</h2>
+    <div class="grid g2">
+      <div class="grid" style="gap:16px">
+        <div class="call trap"><span class="tag">The one that bites</span><b>A firmware update can wipe the active project</b> and leave the RTAC looking like a brand-new device with nothing on it. Download the project locally first, then upload it through <b>Project Management</b> and <b>activate</b> it after the update.</div>
+        <ul class="pts">
+          <li><b>Cross-check before you send.</b> A clean save is not a clean project — errors surface at the bottom of the interface only once cross-check runs.</li>
+          <li><b>Send</b> downloads to the RTAC after you supply the port and credentials.</li>
+          <li>Reinitialising retained variables writes zeroes and rewrites the retained values.</li>
+          <li>Advanced send settings let you exclude selected areas — Ethernet settings, reader settings — from the download.</li>
+        </ul>
+        <div class="call trap"><span class="tag">Symptom → cause</span>Repeated <b>"reconnecting"</b> messages followed by the project failing, while cross-check reports zero errors and zero warnings, points at a <b>watchdog or a reference problem</b> — not at the network.</div>
+      </div>
+      <div class="tool">
+        <div class="tool-h"><span class="lbl">Which send do I use?</span><button class="reset" type="button" data-reset="send">Restart</button></div>
+        <div class="tool-b" data-tool="send">
+          <p class="verdict" data-q>Will you need to <b>force a value</b> once this is running?</p>
+          <div class="opts two" data-a>
+            <button class="opt" type="button" data-v="yes"><span class="k">Yes</span><span class="v">I need to force</span><span class="d">Testing, commissioning, proving a point</span></button>
+            <button class="opt" type="button" data-v="no"><span class="k">No</span><span class="v">Logic change only</span><span class="d">Ordinary IEC 61131-3 edit</span></button>
+          </div>
+          <div class="readout" data-out hidden></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 05 LIBRARIES -->
+<section class="slide" data-clock="07:42" data-short="Libraries & extensions">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">07:42</span><span>Manage Library · extensions · devices</span></div>
+    <h2 class="title">Compiled library, or project item?</h2>
+    <p class="standfirst">The distinction decides where the thing lands, how you version it, and whether it can be edited at all.</p>
+    <div class="grid g32">
+      <div class="tool">
+        <div class="tool-h"><span class="lbl">Sort each one</span><span class="lbl" data-sort-out></span></div>
+        <div class="tool-b" data-sort="libs">
+          <div class="grid" style="gap:12px">
+            <div data-ans="lib">
+              <p style="font-size:15px;margin-bottom:8px">A compiled <b>SCL library</b> arrives as a packaged version — <code>0.17</code>, say.</p>
+              <div class="opts two"><button class="opt" type="button" data-pick="lib"><span class="v">Manage Library</span></button><button class="opt" type="button" data-pick="item"><span class="v">Import as project item</span></button></div>
+              <p class="why">Installed through <b>Manage Library</b>. When a reference will not resolve, hover it — the tooltip names the version you actually need.</p>
+            </div>
+            <div data-ans="item">
+              <p style="font-size:15px;margin-bottom:8px">Uncompiled source content someone handed you.</p>
+              <div class="opts two"><button class="opt" type="button" data-pick="lib"><span class="v">Manage Library</span></button><button class="opt" type="button" data-pick="item"><span class="v">Import as project item</span></button></div>
+              <p class="why">Uncompiled content comes in as a <b>project item</b>, not an installed library.</p>
+            </div>
+            <div data-ans="both">
+              <p style="font-size:15px;margin-bottom:8px"><b>DDR</b> — the Dynamic Disturbance Record you will use on Day 3.</p>
+              <div class="opts two"><button class="opt" type="button" data-pick="lib"><span class="v">Library alone is enough</span></button><button class="opt" type="button" data-pick="both"><span class="v">Library <em style="font-style:normal">and</em> extension</span></button></div>
+              <p class="why">DDR needs <b>both its library and its extension</b>. Half of it installed is the usual reason it is not there when you go looking.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="grid" style="gap:16px;align-content:start">
+        <ul class="pts">
+          <li><b>GridConnect</b> normally ships inside the SCL project. To take a newer SCL-provided version — <code>3.5.9.2</code> replacing <code>3.5.9.0</code> — remove the existing project reference first, then insert the new one.</li>
+          <li>Extra SEL devices, DNP3 devices, IEC 61850 devices and OPC UA components are inserted through the project tree. For the less familiar protocols the device manual is still the authority.</li>
+          <li><b>Custom libraries must use RTAC-supported data types.</b> An SCL type such as a measured value may need the corresponding RTAC library type instead.</li>
+        </ul>
+        <div class="call"><span class="tag">Carried into Day 2</span>Data types are the hinge. Day 2 spends most of its time on what breaks when you change one — and Day 3 shows why the structure exists at all.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 06 DNP3 -->
+<section class="slide" data-clock="07:53" data-short="DNP3: four numbers">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">07:53</span><span>DNP3 client &amp; server</span></div>
+    <h2 class="title">Four numbers have to agree</h2>
+    <p class="standfirst">IP address, port, DNP server address, DNP client&#8202;/&#8202;master address. Get one wrong and the traffic looks fine while the device stays offline.</p>
+    <div class="grid g23">
+      <div class="tool">
+        <div class="tool-h"><span class="lbl">Why is my DNP3 device offline?</span><button class="reset" type="button" data-reset="dnp">Start over</button></div>
+        <div class="tool-b" data-tool="dnp">
+          <p class="verdict" data-q></p>
+          <div class="opts" data-a></div>
+          <div class="readout" data-out hidden></div>
+        </div>
+      </div>
+      <ul class="pts">
+        <li>For a client, the <b>server IP and server port must match the remote server</b>. The client address is commonly zero unless the system demands otherwise.</li>
+        <li><b>Reverse the client and server DNP addresses</b> and you get the worst failure mode there is: IP traffic acknowledged, application layer dead, device offline.</li>
+        <li>The client IP port identifies the local source of the connection. Multiple DNP3 clients get different ports — RTAC Architect can increment them for you. Use <code>netstat -an</code> or a capture to see what is already taken.</li>
+        <li>A server can allow anonymous connections, but the DNP addresses still have to line up. Wireshark's application-layer view will show you the addresses actually on the wire.</li>
+        <li>DST and UTC offset can be handled globally; with the global setting off, configure them per device.</li>
+        <li>Integrity polling, class 1&#8202;/&#8202;2&#8202;/&#8202;3 polling, poll timeout and poll period follow bandwidth and device response time. <b>Custom requests</b> give you faster polling on just the points that need it.</li>
+        <li>A larger event buffer preserves events across a connection loss — rarely changed from the default.</li>
+      </ul>
+    </div>
+    <div class="notes"><span class="tag">Speaker note</span>The reversed-address case is worth dwelling on. Everyone's instinct on "device offline" is to blame the network, and the network is provably fine — that is what makes it expensive.</div>
+  </div>
+</section>
+
+<!-- 07 VARIATIONS -->
+<section class="slide" data-clock="08:10" data-short="Objects & variations">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">08:10</span><span>DNP3 data types</span></div>
+    <h2 class="title">Right object, wrong variation</h2>
+    <p class="standfirst">The device comes online and the values are still wrong: integers where you wanted floats, no timestamps, no flags, or events that never arrive.</p>
+    <div class="grid g23">
+      <div class="tool">
+        <div class="tool-h"><span class="lbl">Variation picker</span></div>
+        <div class="tool-b" data-tool="var">
+          <div class="ctl"><label for="v-kind">What are you carrying?</label>
+            <div class="opts two" data-k>
+              <button class="opt" type="button" data-v="float"><span class="k">Analog</span><span class="v">Floating point</span><span class="d">MW, MVAR, volts</span></button>
+              <button class="opt" type="button" data-v="int"><span class="k">Analog</span><span class="v">Integer</span><span class="d">Counts, enumerations</span></button>
+              <button class="opt" type="button" data-v="bin"><span class="k">Status</span><span class="v">Binary input</span><span class="d">On / off</span></button>
+              <button class="opt" type="button" data-v="cnt"><span class="k">Counter</span><span class="v">Accumulator</span><span class="d">Energy, pulses</span></button>
+            </div>
+          </div>
+          <div class="ctl"><label for="v-ts">Do you need time and quality flags?</label>
+            <div class="opts two" data-t>
+              <button class="opt" type="button" data-v="1"><span class="v">Yes — with flag / time</span></button>
+              <button class="opt" type="button" data-v="0"><span class="v">No — value only</span></button>
+            </div>
+          </div>
+          <div class="readout" data-out hidden></div>
+        </div>
+      </div>
+      <div class="grid" style="gap:14px;align-content:start">
+        <div class="call trap"><span class="tag">Dead band</span>Dead band decides when instantaneous magnitude gets copied to magnitude. A <b>zero dead band of <span class="num">0</span> disables the zero threshold</b>; set it to <span class="num">2</span> and anything below 2 reads as zero. <b>Set the dead band too wide and magnitude simply stops updating.</b></div>
+        <ul class="pts">
+          <li>In existing PVC projects the <b>instantaneous magnitude</b> is often preferred, precisely so a badly configured dead band cannot hide the value.</li>
+          <li>Use measured-value types for floating point and integer types for integers — mixing them is how you get an integer where a float belonged.</li>
+          <li><b>Double-bit inputs</b> carry four states: no value, on, off, invalid. IEC 104 interprets these differently — do not assume they are the same thing.</li>
+          <li><b>SPC controls</b> cover pulse, latch-on, latch-off and related attributes. A latch command can appear as a pulse on the server side.</li>
+          <li>Feedback status can let command status stand in for a separate binary input.</li>
+          <li>Counters use object <span class="num">20</span>; frozen counters use <span class="num">21</span>.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 08 SERVER MAP -->
+<section class="slide" data-clock="08:29" data-short="Server mapping">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">08:29</span><span>serving data out</span></div>
+    <h2 class="title">Serving it back out</h2>
+    <div class="grid g2">
+      <div class="grid" style="gap:16px">
+        <ul class="pts">
+          <li>Server setup needs the server IP, DNP addresses that match the far side, and a configured <b>DNP server map</b>.</li>
+          <li><b>Point numbers must match between client and server.</b> Static and event-driven data use different object types and variations, and the event class and variation settings decide how a value is actually transmitted.</li>
+          <li>Client or server is not a label — it determines whether the device writes to register and point data or serves it.</li>
+          <li>The instruction manual shipped inside the software documents the standard data types, protocols and configuration concepts. It is the first place to look, not the last.</li>
+        </ul>
+        <div class="call"><span class="tag">Worked example from the session</span>Analog output object type <b><span class="num">42</span></b> — variation <span class="num">1</span> is a 32-bit integer, variation <span class="num">2</span> is a 16-bit integer, variation <span class="num">3</span> is single-precision floating point.</div>
+      </div>
+      <div class="grid" style="gap:14px">
+        <div class="tw">
+          <table>
+            <caption class="sr-only"></caption>
+            <thead><tr><th>Group</th><th>What it carries</th><th>Note</th></tr></thead>
+            <tbody>
+              <tr><td class="n">1 / 2</td><td>Binary input — static / event</td><td>Double-bit variants carry four states</td></tr>
+              <tr><td class="n">12</td><td>Binary output control (CROB)</td><td>Pulse, latch-on, latch-off</td></tr>
+              <tr><td class="n">20 / 21</td><td>Counter / frozen counter</td><td>Freeze is a separate object</td></tr>
+              <tr><td class="n">30 / 32</td><td>Analog input — static / event</td><td>Variation picks int vs float, flag, time</td></tr>
+              <tr><td class="n">40 / 41 / 42</td><td>Analog output status / command / event</td><td>42 var 1·2·3 = int32 · int16 · float32</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="outside"><span class="tag">Outside the room</span>The group numbering above is the standard DNP3 object library, unchanged across vendors — which is why a point list from an inverter vendor and one from a meter vendor can be read the same way. Group 42 is the analog output <b>event</b> object; its 1&#8202;/&#8202;2&#8202;/&#8202;3 variation split matches what was demonstrated in the session.<cite>DNP3 object library — cross-vendor device profile documents</cite></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 09 MODBUS -->
+<section class="slide" data-clock="08:39" data-short="Modbus registers">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">08:39</span><span>Modbus register mapping</span></div>
+    <h2 class="title">Two registers, one number</h2>
+    <p class="standfirst">Modbus drops the DNP addresses but adds its own arithmetic: a 32-bit value eats two 16-bit registers, and both sides have to agree on which half comes first.</p>
+    <div class="tool">
+      <div class="tool-h"><span class="lbl">Register layout · <b data-count>0 points</b></span><button class="reset" type="button" data-reset="mb">Clear map</button></div>
+      <div class="tool-b" data-tool="mb">
+        <div class="opts three" style="margin-bottom:14px">
+          <button class="opt" type="button" data-add="16"><span class="k">+ add</span><span class="v">16-bit integer</span><span class="d">One register</span></button>
+          <button class="opt" type="button" data-add="32"><span class="k">+ add</span><span class="v">32-bit float</span><span class="d">Two registers</span></button>
+          <button class="opt" type="button" data-add="bits"><span class="k">+ add</span><span class="v">MBBC bit field</span><span class="d">Bits 0–15 of one register</span></button>
+        </div>
+        <div class="regs" data-map></div>
+        <div class="readout">
+          <div class="ctl" style="margin:0"><label for="mb-order">Word order on the far side <output for="mb-order" id="mb-order-o">MSB first (big-endian)</output></label>
+            <div class="opts two"><button class="opt" type="button" data-order="msb" aria-pressed="true"><span class="v">MSB first</span></button><button class="opt" type="button" data-order="lsb"><span class="v">LSB first</span></button></div>
+          </div>
+          <p class="verdict" data-decode></p>
+        </div>
+      </div>
+    </div>
+    <div class="grid g2" style="margin-top:20px">
+      <ul class="pts">
+        <li>Port <span class="num">502</span> is the default. <b>Two anonymous Modbus servers cannot share a port</b> — give them explicit IP addresses or separate ports.</li>
+        <li>Maps cover coils, discrete inputs, holding registers and input registers; coils and holding registers do most of the work.</li>
+        <li>A shared mapping address can be reused across several RTU server devices.</li>
+      </ul>
+      <ul class="pts">
+        <li>Match signed against unsigned, integer against float, 16-bit against 32-bit, and MSB&#8202;/&#8202;LSB ordering — <b>on both sides</b>.</li>
+        <li><b>MBBC</b> exposes the individual bits of a register directly, so you never hand-roll a bit mask: one register gives you bit references <span class="num">0</span> through <span class="num">15</span>.</li>
+        <li>Client maps are built per client; server maps are built through the server mapping interface.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 10 C37.118 -->
+<section class="slide" data-clock="08:52" data-short="C37.118 & tags">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">08:52</span><span>C37.118 · Tag Processor · live data</span></div>
+    <h2 class="title">When 500 milliseconds is too slow</h2>
+    <div class="grid g23">
+      <div class="tool">
+        <div class="tool-h"><span class="lbl">Sample rate vs cycle time</span></div>
+        <div class="tool-b" data-tool="c37">
+          <div class="ctl"><label for="c-sps">Reporting rate <output for="c-sps" id="c-sps-o">60 samples/s</output></label>
+            <input type="range" id="c-sps" min="10" max="120" step="10" value="60"></div>
+          <div class="ctl"><label for="c-cyc">RTAC cycle time <output for="c-cyc" id="c-cyc-o">16 ms</output></label>
+            <input type="range" id="c-cyc" min="4" max="120" step="1" value="16"></div>
+          <div class="readout">
+            <div class="stats">
+              <div class="stat"><dt>Frame interval</dt><dd data-f>16.7 <small>ms</small></dd></div>
+              <div class="stat"><dt>Cycle needed</dt><dd data-need>≤ 16 <small>ms</small></dd></div>
+              <div class="stat" data-verdict-stat><dt>Verdict</dt><dd data-v>OK</dd></div>
+            </div>
+            <p class="verdict" data-msg></p>
+          </div>
+        </div>
+      </div>
+      <div class="grid" style="gap:14px;align-content:start">
+        <ul class="pts">
+          <li>C37.118 is used for metering and delivers data faster than the alternatives. PDC ID, station name, PMU ID, port, data rate and cycle time must be configured consistently on both ends.</li>
+          <li>At <span class="num">60</span> samples per second the RTAC cycle time has to be around <b><span class="num">15–16 ms</span></b>. A <span class="num">100 ms</span> cycle cannot support that rate — the box simply cannot keep up.</li>
+          <li><b>CMV</b> — complex measured values — give magnitude and angle. Angles support calculations such as power factor, after converting degrees to radians.</li>
+          <li>An RTAC can sit in the middle as a <b>C37.118 gateway</b>: take one client session, alias the tags, serve several devices downstream.</li>
+          <li><b>Tag Processor</b> maps source tags to destination tags of matching type; quality and timestamps come across automatically from MV or INS data.</li>
+          <li>Live data can be made viewable or forceable in the web portal — you stop having to go online to the RTAC just to look at a value.</li>
+        </ul>
+        <div class="outside"><span class="tag">Outside the room · why this matters on Day 3</span>An SEL-735 meter serves data at about <b>500 ms</b> over DNP3 or SEL protocol, but around <b>16.67 ms</b> over C37.118 — roughly a 5&#215; improvement in how fast a plant controller sees the point of interconnection. IEEE 2800 asks for a controller reaction time as low as <b>200 ms</b>, which a 500 ms meter update cannot meet no matter how the PID is tuned.<cite>Nor-Cal Controls, "IEEE Std 2800: Ensuring Grid Resilience with Inverter-Based Resources", Sep 2024</cite></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 11 OFFLINE -->
+<section class="slide" data-clock="09:03" data-short="Offline practice">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">09:03</span><span>practice · next session</span></div>
+    <h2 class="title">You do not need the hardware to practise</h2>
+    <div class="grid g2">
+      <div class="grid" style="gap:16px">
+        <div class="call rule"><span class="tag">Rule</span>Project configuration, cross-checking and error investigation all work <b>offline in the software</b>. Hardware is only needed to download the project or run it.</div>
+        <ul class="pts">
+          <li>Sample maps and project files are enough for offline practice — build the muscle memory before the RTAC is in front of you.</li>
+          <li>The proposed exercise: <b>a project from scratch</b> with a GridConnect meter and one or two points, plus an inverter with one or two points — then move onto an existing project.</li>
+          <li>A second exercise imports a <b>different inverter type</b> into an existing project and maps it for testing. That is Day 2, more or less exactly.</li>
+        </ul>
+      </div>
+      <div class="grid" style="gap:10px">
+        <h3>Action items from Day 1</h3>
+        <div class="actions">
+          <div class="act"><span class="who">Presenter</span><span class="what">Send sample maps and project files for offline practice</span></div>
+          <div class="act"><span class="who">Presenter</span><span class="what">Find the documentation and the right IT&#8202;/&#8202;OT contact for reaching the RTACs through the VPN and EDH</span></div>
+          <div class="act"><span class="who">Presenter</span><span class="what">Prepare the next session: device setup, project bindings, GridConnect mapping, error resolution, and a from-scratch example project</span></div>
+          <div class="act"><span class="who">Everyone</span><span class="what">Practise project configuration, library handling, mapping and cross-checking offline before downloading to hardware</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 12 QUIZ -->
+<section class="slide" data-short="Knowledge check">
+  <div class="inner">
+    <div class="eyebrow"><span>Knowledge check</span><span>six questions</span></div>
+    <h2 class="title">Six that cost time in the field</h2>
+    <div class="quiz" data-quiz>
+      <div class="q"><div class="qh"><span class="qn">01</span><span class="qt">TCP traffic is acknowledged, the link looks healthy, but the DNP3 device stays offline. First suspect?</span></div>
+        <div class="as">
+          <button class="a" type="button">A firewall between the two devices</button>
+          <button class="a" type="button" data-ok="1">Client and server DNP addresses are reversed or mismatched</button>
+          <button class="a" type="button">Poll period set too slow</button>
+        </div>
+        <p class="why">IP is being acknowledged, so the path exists — the failure is at the application layer. A firewall would stop the traffic outright.</p>
+      </div>
+      <div class="q"><div class="qh"><span class="qn">02</span><span class="qt">You are about to update firmware on a live RTAC. What has to happen first?</span></div>
+        <div class="as">
+          <button class="a" type="button">Reinitialise the retained variables</button>
+          <button class="a" type="button" data-ok="1">Download the project locally so it can be uploaded and activated afterwards</button>
+          <button class="a" type="button">Send only the IEC 61131-3 logic</button>
+        </div>
+        <p class="why">The update can erase the active project and leave the RTAC looking like a new device.</p>
+      </div>
+      <div class="q"><div class="qh"><span class="qn">03</span><span class="qt">An analog value has stopped updating even though the device is online. Most likely configuration cause?</span></div>
+        <div class="as">
+          <button class="a" type="button" data-ok="1">The dead band is set too wide, so magnitude never gets refreshed</button>
+          <button class="a" type="button">The point number is wrong</button>
+          <button class="a" type="button">The event buffer is too small</button>
+        </div>
+        <p class="why">Dead band controls when instantaneous magnitude is copied to magnitude. Too wide and the value freezes — which is why instantaneous magnitude is often preferred in existing PVC projects.</p>
+      </div>
+      <div class="q"><div class="qh"><span class="qn">04</span><span class="qt">A 32-bit float lives in Modbus holding registers 0 and 1. Where does the next value start?</span></div>
+        <div class="as">
+          <button class="a" type="button">Register 1</button>
+          <button class="a" type="button" data-ok="1">Register 2</button>
+          <button class="a" type="button">Register 3</button>
+        </div>
+        <p class="why">A 32-bit value occupies two 16-bit registers. After 0 and 1, the next value starts at 2 — the off-by-one here is a classic source of garbage readings.</p>
+      </div>
+      <div class="q"><div class="qh"><span class="qn">05</span><span class="qt">The meter reports at 60 samples per second over C37.118. What cycle time does the RTAC need?</span></div>
+        <div class="as">
+          <button class="a" type="button">100 ms</button>
+          <button class="a" type="button" data-ok="1">About 15–16 ms</button>
+          <button class="a" type="button">60 ms</button>
+        </div>
+        <p class="why">60 samples per second is a frame every 16.7 ms. A 100 ms cycle cannot support the rate.</p>
+      </div>
+      <div class="q"><div class="qh"><span class="qn">06</span><span class="qt">You need to force a value during commissioning. Which download?</span></div>
+        <div class="as">
+          <button class="a" type="button">Logic only — it avoids the reboot</button>
+          <button class="a" type="button" data-ok="1">The full project</button>
+          <button class="a" type="button">Either; forcing is independent of the download</button>
+        </div>
+        <p class="why">Sending only the IEC 61131-3 logic keeps the RTAC running without rebooting the whole project, but it takes forcing off the table.</p>
+      </div>
+    </div>
+    <div class="score"><span>Knowledge check</span><span data-score><b>0</b> / 6</span></div>
+  </div>
+</section>
+
+<!-- 13 CLOSE -->
+<section class="slide" data-short="Carry forward">
+  <div class="inner">
+    <div class="eyebrow"><span>End of Day 1</span></div>
+    <h2 class="title">What Day 1 buys you</h2>
+    <p class="standfirst">Everything above is about getting a number from a device into the RTAC and back out again, correctly and fast enough. Day 2 assumes all of it works and asks a different question: how do you build the project around it without breaking a plant that already runs?</p>
+    <div class="grid g2">
+      <div class="call rule"><span class="tag">You can now</span>Reach an RTAC, protect a project through a firmware update, install a library and its extension, argue about DNP3 addresses with evidence, lay out a Modbus map that decodes correctly, and pick a protocol that is fast enough for the control loop it feeds.</div>
+      <div class="call"><span class="tag">Next: Day 2 · 9 September</span><b>Template to Plant</b> — picking the right project to clone, swapping an inverter model without leaving broken cross-references behind, and the error-driven repair loop that gets you from 47 errors to zero.</div>
+    </div>
+  </div>
+</section>

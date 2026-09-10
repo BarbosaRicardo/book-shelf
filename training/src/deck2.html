@@ -1,0 +1,469 @@
+<!-- 01 COVER -->
+<section class="slide" data-short="Cover">
+  <div class="inner cover">
+    <span class="day">Day 2 · Tuesday 9 September 2026 · 07:00–08:36</span>
+    <h1>Template to Plant</h1>
+    <p class="sub">Nobody builds a plant project from an empty page. You find the closest one that already works, save it under a new name, and then spend the morning chasing every cross-reference the inverter swap just broke.</p>
+    <div class="trend" id="timeline"></div>
+    <div class="meta">
+      <div><dt>Session length</dt><dd>1h 36m</dd></div>
+      <div><dt>Worked example</dt><dd>SunGrow 4400 → 3150U</dd></div>
+      <div><dt>Interactive tools</dt><dd>5</dd></div>
+      <div><dt>Source</dt><dd>Session transcript</dd></div>
+    </div>
+    <p class="standfirst" style="margin:0;font-size:15px">Use <span class="m">←</span> <span class="m">→</span> to move, <span class="m">G</span> for all slides, <span class="m">N</span> for notes. Progress is remembered on this device.</p>
+  </div>
+</section>
+
+<!-- 02 ARC -->
+<section class="slide" data-short="Where this sits">
+  <div class="inner">
+    <div class="eyebrow"><span>The three mornings</span></div>
+    <h2 class="title">Between the wire and the setpoint</h2>
+    <p class="standfirst">Day 1 got values moving across DNP3, Modbus and C37.118. Day 3 will make the plant follow a number. Today is the project in between — the part that decides how much of either you have to rebuild for the next site.</p>
+    <div class="tool">
+      <div class="tool-h"><span class="lbl">Pick a day · <b>you are on Day 2</b></span></div>
+      <div class="tool-b">
+        <div class="flow" data-flow="arc">
+          <button class="node" type="button" data-k="d1"><span class="i">DAY 1 · 8 SEP</span><span class="n">Comms &amp; the RTAC</span></button>
+          <span class="arrow">→</span>
+          <button class="node" type="button" data-k="d2" aria-pressed="true"><span class="i">DAY 2 · 9 SEP</span><span class="n">Project &amp; inverters</span></button>
+          <span class="arrow">→</span>
+          <button class="node" type="button" data-k="d3"><span class="i">DAY 3 · 10 SEP</span><span class="n">Control &amp; recording</span></button>
+        </div>
+        <div class="detail" data-flow-out="arc"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 03 RULE ZERO -->
+<section class="slide" data-clock="07:00" data-short="Rule zero: Save As">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">07:00</span><span>locks · cross-check · Save As</span></div>
+    <h2 class="title">Rule zero: rename it before you touch it</h2>
+    <div class="grid g2">
+      <div class="grid" style="gap:16px">
+        <div class="call rule"><span class="tag">Do this first, every time</span><b>Save As, rename, then modify.</b> Every device change, data type change and mapping change after this point is destructive — and the project you started from is very likely running a plant right now.</div>
+        <ul class="pts">
+          <li>A project that was not closed properly stays locked. <b>Right-click to unlock</b> — but only the user or credential that created the lock can release it.</li>
+          <li><b>Admin credentials cannot unlock a project locked under another engineering credential.</b> Find the person, not a workaround.</li>
+          <li>Cross-check and clear the existing errors <b>before</b> you change anything. Otherwise you cannot tell your new breakage from the breakage you inherited.</li>
+        </ul>
+      </div>
+      <div class="tool">
+        <div class="tool-h"><span class="lbl">Opening sequence</span><button class="reset" type="button" data-chk-reset>Clear</button></div>
+        <div class="tool-b">
+          <div class="chk" data-chk="open">
+            <label class="chk-item"><input type="checkbox"><span class="t"><b>Project unlocked</b><em>right-click; only the locking credential can release it</em></span></label>
+            <label class="chk-item"><input type="checkbox"><span class="t"><b>Cross-check run on the untouched project</b><em>establishes your baseline error count</em></span></label>
+            <label class="chk-item"><input type="checkbox"><span class="t"><b>Inherited errors cleared</b><em>so new errors are unambiguously yours</em></span></label>
+            <label class="chk-item"><input type="checkbox"><span class="t"><b>Save As, renamed</b><em>before a single device or data type changes</em></span></label>
+          </div>
+          <div class="chk-bar"><span class="n">0 of 4</span><span class="track"><span class="fill"></span></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 04 ARCHITECTURE -->
+<section class="slide" data-clock="07:03" data-short="What a project holds">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">07:03</span><span>project architecture</span></div>
+    <h2 class="title">What is actually in one of these projects</h2>
+    <p class="standfirst">Click any block to see what it does and what varies from site to site — the varying parts are your conversion work.</p>
+    <div class="tool">
+      <div class="tool-h"><span class="lbl">Plant project · click a block</span></div>
+      <div class="tool-b">
+        <div class="flow" data-flow="arch">
+          <button class="node" type="button" data-k="ign" aria-pressed="true"><span class="i">SCADA</span><span class="n">Ignition server</span></button>
+          <button class="node" type="button" data-k="rtu"><span class="i">CONTROLLER</span><span class="n">RTU redundancy</span></button>
+          <button class="node" type="button" data-k="inv"><span class="i">FIELD</span><span class="n">Inverters</span></button>
+          <button class="node" type="button" data-k="mtr"><span class="i">FIELD</span><span class="n">Primary &amp; backup meters</span></button>
+          <button class="node" type="button" data-k="sub"><span class="i">FIELD</span><span class="n">Substation</span></button>
+          <button class="node" type="button" data-k="util"><span class="i">LOGIC</span><span class="n">Utility connection</span></button>
+        </div>
+        <div class="detail" data-flow-out="arch"></div>
+      </div>
+    </div>
+    <div class="notes"><span class="tag">Speaker note</span>Sites either bring everything through a concentrator or need separate connections per device — substation, QSC/QTD, met station, Ignition. Which one you are looking at changes the device tree substantially, so it belongs in the template inventory on the next slide.</div>
+  </div>
+</section>
+
+<!-- 05 TEMPLATE PICK -->
+<section class="slide" data-clock="07:08" data-short="Picking the template">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">07:08</span><span>the inventory</span></div>
+    <h2 class="title">The right template is the one you change least</h2>
+    <p class="standfirst">Score four candidates against a new project. The point is not the arithmetic — it is that this decision is made once, on evidence, instead of by whoever remembers a project name.</p>
+    <div class="grid g32">
+      <div class="grid" style="gap:16px;align-content:start">
+        <div class="call"><span class="tag">Build this once</span>A shared <b>Excel inventory</b>: project name, inverter brand and type, met station, FPS, substation connection, and any other device worth reusing. Filter it to find the closest template instead of guessing.</div>
+        <ul class="pts">
+          <li>A project with the <b>same inverter type</b> beats one with a completely different inverter, even if other things match.</li>
+          <li>A <b>hybrid project is the better base for another hybrid project</b> — battery and storage configuration is expensive to add and cheap to inherit.</li>
+          <li>Reuse the project with the largest matching device set. Meter-only changes are easy; control-architecture changes are not.</li>
+        </ul>
+      </div>
+      <div class="tool">
+        <div class="tool-h"><span class="lbl">Template match · <b data-best>—</b></span><button class="reset" type="button" data-reset="tmpl">Reset weights</button></div>
+        <div class="tool-b" data-tool="tmpl">
+          <p class="verdict" style="margin-bottom:14px">New project: <b>15 SunGrow inverters, hybrid with storage, met station, substation via concentrator.</b> Toggle what matters to you:</p>
+          <div class="opts two" data-w style="margin-bottom:16px">
+            <button class="opt" type="button" data-f="inv" aria-pressed="true"><span class="v">Inverter type</span><span class="d">Same brand and model</span></button>
+            <button class="opt" type="button" data-f="hyb" aria-pressed="true"><span class="v">Hybrid / storage</span><span class="d">Battery configuration</span></button>
+            <button class="opt" type="button" data-f="met" aria-pressed="true"><span class="v">Met station</span><span class="d">Weather data present</span></button>
+            <button class="opt" type="button" data-f="sub" aria-pressed="true"><span class="v">Substation link</span><span class="d">Concentrator vs direct</span></button>
+          </div>
+          <div data-rank></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 06 SWAP -->
+<section class="slide" data-clock="07:12" data-short="Swapping the inverter">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">07:12</span><span>globals · data types</span></div>
+    <h2 class="title">One data type, a hundred broken references</h2>
+    <div class="grid g2">
+      <div class="grid" style="gap:16px">
+        <ul class="pts">
+          <li>Update the <b>inverter and feeder counts</b> in global variables first. The worked example ran <span class="num">15</span> inverters across <span class="num">3</span> feeders.</li>
+          <li>Change the inverter-specific data type and its naming <b>consistently</b> — the example moved from <b>SunGrow 4400</b> to <b>SunGrow 3150U</b>.</li>
+          <li>Strings such as <code>PT01</code> and <code>PT02</code> are not themselves mapped, but keeping the naming consistent is what makes the project traceable six months later.</li>
+        </ul>
+        <div class="call trap"><span class="tag">Why it cascades</span>Changing a data type or a reference <b>breaks the mappings between programs, substations and data points</b>. Every one of those surfaces as a cross-reference error — which is the good news, because it means the tool will hand you the list.</div>
+      </div>
+      <div class="tool">
+        <div class="tool-h"><span class="lbl">What breaks when you change the type</span></div>
+        <div class="tool-b">
+          <div class="flow" data-flow="brk">
+            <button class="node" type="button" data-k="gv" aria-pressed="true"><span class="i">1</span><span class="n">Global variables</span></button>
+            <span class="arrow">→</span>
+            <button class="node" type="button" data-k="rw"><span class="i">2</span><span class="n">Read / write blocks</span></button>
+            <span class="arrow">→</span>
+            <button class="node" type="button" data-k="pg"><span class="i">3</span><span class="n">Programs &amp; FBs</span></button>
+            <span class="arrow">→</span>
+            <button class="node" type="button" data-k="sv"><span class="i">4</span><span class="n">Server points</span></button>
+          </div>
+          <div class="detail" data-flow-out="brk"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 07 LOOP -->
+<section class="slide" data-clock="07:18" data-short="The repair loop">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">07:18</span><span>error-driven repair</span></div>
+    <h2 class="title">The loop that gets you to zero</h2>
+    <p class="standfirst">Change one thing. Save. Cross-check. Follow the error to the page it names. Fix it. Repeat. It is slow and it is the only method that converges.</p>
+    <div class="grid g23">
+      <div class="tool">
+        <div class="tool-h"><span class="lbl">Run the loop · <b data-pass>pass 0</b></span><button class="reset" type="button" data-reset="loop">Restart</button></div>
+        <div class="tool-b" data-tool="loop">
+          <div class="flow" data-loop-steps>
+            <button class="node" type="button" data-s="0"><span class="i">STEP 1</span><span class="n">Change one reference</span></button>
+            <span class="arrow">→</span>
+            <button class="node" type="button" data-s="1"><span class="i">STEP 2</span><span class="n">Save</span></button>
+            <span class="arrow">→</span>
+            <button class="node" type="button" data-s="2"><span class="i">STEP 3</span><span class="n">Cross-check</span></button>
+            <span class="arrow">→</span>
+            <button class="node" type="button" data-s="3"><span class="i">STEP 4</span><span class="n">Follow the error</span></button>
+          </div>
+          <div class="readout">
+            <div class="stats">
+              <div class="stat"><dt>Cross-reference errors</dt><dd data-errs>47</dd></div>
+              <div class="stat"><dt>Pass</dt><dd data-passn>0 <small>of 5</small></dd></div>
+            </div>
+            <p class="verdict" data-loop-msg>Press <b>Advance</b> to walk one pass of the loop.</p>
+            <button class="rbtn" type="button" data-advance style="justify-self:start">Advance →</button>
+          </div>
+        </div>
+      </div>
+      <div class="grid" style="gap:14px;align-content:start">
+        <ul class="pts">
+          <li><b>Change one inverter or reference at a time.</b> Batch the changes and you lose the ability to tell which one caused what.</li>
+          <li><code>Ctrl+H</code> finds and replaces references — <b>SG 4400</b> to <b>SGT 3150</b>. Use <b>Replace All only when you understand the scope</b>; otherwise you have traded a known list of errors for an unknown one.</li>
+          <li>Delete references to things that <b>do not exist on the target inverter</b>, then run the cycle again.</li>
+          <li><code>Ctrl+Z</code> and the undo arrow will revert — but <b>save first</b>, because undo can reach into other program changes you meant to keep.</li>
+        </ul>
+        <div class="call trap"><span class="tag">Small change, real error</span>A changed register or name creates errors in places you did not edit — a prior reference to <span class="num">10</span> that now has to be <span class="num">09</span>. The cross-check finds it; guesswork does not.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 08 REGISTERS -->
+<section class="slide" data-clock="07:25" data-short="Registers & point lists">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">07:25</span><span>point lists</span></div>
+    <h2 class="title">The vendor point list is the contract</h2>
+    <div class="grid g2">
+      <ul class="pts">
+        <li>Match <b>register numbers and data-point names</b> to the target inverter's point list. That document, not the old project, is the authority.</li>
+        <li>Register numbers may not be mapped directly — but the naming convention normally mirrors the register number, which is what makes a mismatch visible.</li>
+        <li><b>Copy and paste accelerates repeated mappings.</b> On a first conversion, do it manually and one at a time anyway; you are still learning where this particular vendor differs.</li>
+      </ul>
+      <div class="grid" style="gap:14px">
+        <div class="call"><span class="tag">Carried from Day 1</span>Everything about signed vs unsigned, 16-bit vs 32-bit, and word order applies here unchanged. A point list that reads correctly in the vendor document still decodes to nonsense if the map disagrees about the byte order.</div>
+        <div class="outside"><span class="tag">Outside the room</span>Inverter Modbus is typically <b>cyclical — read, write, read</b> — averaging <b>200–250 ms</b> per cycle depending on model. That number sets a floor under how fast the plant controller can act on anything you map here, and it is why Day 3 spends so long on timing.<cite>Nor-Cal Controls, on IEEE 2800 response times, Sep 2024</cite></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 09 ADD INVERTER -->
+<section class="slide" data-clock="07:38" data-short="Adding an inverter">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">07:38</span><span>read · write · server points</span></div>
+    <h2 class="title">Adding inverter 16</h2>
+    <p class="standfirst">Six artifacts have to exist before a new inverter is real. Miss one and the plant runs — just without that inverter, quietly.</p>
+    <div class="grid g23">
+      <div class="tool">
+        <div class="tool-h"><span class="lbl">Six artifacts</span><button class="reset" type="button" data-chk-reset>Clear</button></div>
+        <div class="tool-b">
+          <div class="chk" data-chk="addinv">
+            <label class="chk-item"><input type="checkbox"><span class="t"><b>Global variable entry</b><em>and the inverter count raised — 15 → 16</em></span></label>
+            <label class="chk-item"><input type="checkbox"><span class="t"><b>Inverter read block</b><em>copy an existing structure, rename, remap registers to the point list</em></span></label>
+            <label class="chk-item"><input type="checkbox"><span class="t"><b>Inverter write block</b><em>setpoints and commands out</em></span></label>
+            <label class="chk-item"><input type="checkbox"><span class="t"><b>Ignition server points</b><em>control and feedback, mapped to the read/write structures</em></span></label>
+            <label class="chk-item"><input type="checkbox"><span class="t"><b>Read/write registers allocated</b><em>including control feedback such as local/remote status</em></span></label>
+            <label class="chk-item"><input type="checkbox"><span class="t"><b>Program, status and control logic updated</b><em>follow the cross-reference errors to find them all</em></span></label>
+          </div>
+          <div class="chk-bar"><span class="n">0 of 6</span><span class="track"><span class="fill"></span></span></div>
+        </div>
+      </div>
+      <div class="grid" style="gap:14px;align-content:start">
+        <div class="call"><span class="tag">Register allocation, from the session</span>The new inverter took register <b><span class="num">116</span></b> — not because 116 was next, but because <b>there was a gap in the existing layout</b>. Read the map before you assume the end of it.</div>
+        <div class="tool">
+          <div class="tool-h"><span class="lbl">Array bounds check</span></div>
+          <div class="tool-b" data-tool="bounds">
+            <div class="ctl" style="margin-bottom:12px"><label for="b-idx">Array index you are referencing <output for="b-idx" id="b-idx-o">46</output></label>
+              <input type="range" id="b-idx" min="1" max="60" step="1" value="46"></div>
+            <p class="verdict" data-bmsg></p>
+          </div>
+        </div>
+        <div class="call trap"><span class="tag">The failure from the session</span>Referencing register <span class="num">46</span> failed because the available array range was <span class="num">1–49</span> — <b>an in-range-looking number outside the array the code actually declared.</b> Validate bounds, not plausibility.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 10 CHANGES / DOESN'T -->
+<section class="slide" data-clock="07:57" data-short="Changes vs stays">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">07:57</span><span>programs · status · control</span></div>
+    <h2 class="title">What you touch, and what you leave alone</h2>
+    <p class="standfirst">Most of a plant project does not change between sites. Knowing which half is which is the difference between a two-day conversion and a two-week one.</p>
+    <div class="tool">
+      <div class="tool-h"><span class="lbl">Sort each one</span><span class="lbl" data-sort-out></span></div>
+      <div class="tool-b" data-sort="chg">
+        <div class="grid g2" style="gap:14px">
+          <div data-ans="chg"><p style="font-size:15px;margin-bottom:8px">Fault, comms-loss, remote-enable, clamp, PPC-control and inverter-status signals</p>
+            <div class="opts two"><button class="opt" type="button" data-pick="chg"><span class="v">Changes</span></button><button class="opt" type="button" data-pick="same"><span class="v">Stays</span></button></div>
+            <p class="why">Every one of these has to be mapped <b>per inverter</b>. Adding an inverter means adding all of them.</p></div>
+          <div data-ans="same"><p style="font-size:15px;margin-bottom:8px">Generic group control and NOC calculations</p>
+            <div class="opts two"><button class="opt" type="button" data-pick="chg"><span class="v">Changes</span></button><button class="opt" type="button" data-pick="same"><span class="v">Stays</span></button></div>
+            <p class="why">Fixed program logic. Leave it alone.</p></div>
+          <div data-ans="same"><p style="font-size:15px;margin-bottom:8px">Met station calculations and PF / performance calculations</p>
+            <div class="opts two"><button class="opt" type="button" data-pick="chg"><span class="v">Changes</span></button><button class="opt" type="button" data-pick="same"><span class="v">Stays</span></button></div>
+            <p class="why">Unchanged between projects — the inputs change, the arithmetic does not.</p></div>
+          <div data-ans="same"><p style="font-size:15px;margin-bottom:8px">Redundancy logic that blocks commands when the RTU is not primary</p>
+            <div class="opts two"><button class="opt" type="button" data-pick="chg"><span class="v">Changes</span></button><button class="opt" type="button" data-pick="same"><span class="v">Stays</span></button></div>
+            <p class="why">Generally unchanged — <b>except that the new inverter's references have to be added to it</b>. The logic stays; its coverage grows.</p></div>
+          <div data-ans="chg"><p style="font-size:15px;margin-bottom:8px">Module counts and model-specific control logic</p>
+            <div class="opts two"><button class="opt" type="button" data-pick="chg"><span class="v">Changes</span></button><button class="opt" type="button" data-pick="same"><span class="v">Stays</span></button></div>
+            <p class="why">Inverter-specific by definition. And if the control type is <b>fundamentally different</b>, expect to write a new control implementation rather than adapt this one.</p></div>
+          <div data-ans="chg"><p style="font-size:15px;margin-bottom:8px">Ignition mappings for the added inverter</p>
+            <div class="opts two"><button class="opt" type="button" data-pick="chg"><span class="v">Changes</span></button><button class="opt" type="button" data-pick="same"><span class="v">Stays</span></button></div>
+            <p class="why">Control and feedback points both. Follow the cross-reference errors into the programs and function blocks to find every place they are needed.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 11 PLANT SETTINGS -->
+<section class="slide" data-clock="08:07" data-short="Plant settings & meters">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">08:07</span><span>LGI · tuning · metering</span></div>
+    <h2 class="title">The settings that are project-specific</h2>
+    <div class="grid g23">
+      <div class="grid" style="gap:16px">
+        <ul class="pts">
+          <li><b>LGI and tuning settings</b> vary per project: plant rating, Q rating, evolution period, Q high and low limits, jetband changes, P-limit delay.</li>
+          <li><b>Declare them at project level and pass them to Grid Connect automatically</b> — settings scattered across blocks are the ones that get missed on the next conversion.</li>
+          <li>Manual tuning is still needed when the modelled behaviour and the real plant disagree. The model is a starting point, not an answer.</li>
+          <li>Add the required <b>POI meter points and map them on both the read side and the project side</b>. Add met station data when the site has one.</li>
+          <li>Update <b>QSC data points or indexes</b> when names, data types or indexes differ — then follow the resulting errors to the affected address or name.</li>
+        </ul>
+      </div>
+      <div class="tool">
+        <div class="tool-h"><span class="lbl">Evolution period</span></div>
+        <div class="tool-b" data-tool="evo">
+          <div class="ctl"><label for="e-per">Evolution period <output for="e-per" id="e-per-o">100 ms</output></label>
+            <input type="range" id="e-per" min="50" max="1000" step="50" value="100"></div>
+          <div class="readout">
+            <div class="stats">
+              <div class="stat"><dt>PID reruns</dt><dd data-rate>10.0 <small>× per second</small></dd></div>
+              <div class="stat"><dt>Meter must deliver</dt><dd data-meter>≤ 100 <small>ms</small></dd></div>
+            </div>
+            <p class="verdict" data-emsg></p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="notes"><span class="tag">Speaker note</span>This slide is the hand-off. Day 3 opens on exactly these parameters — where they are declared, how they reach the MPC block, and what happens when the evolution period is faster than the meter behind it.</div>
+  </div>
+</section>
+
+<!-- 12 NO TEMPLATE -->
+<section class="slide" data-clock="08:17" data-short="No matching template">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">08:17</span><span>brand-new inverter models</span></div>
+    <h2 class="title">When nothing in the inventory matches</h2>
+    <div class="grid g2">
+      <div class="grid" style="gap:16px">
+        <h3>What a brand-new inverter needs</h3>
+        <ul class="pts">
+          <li>Its <b>Modbus connection</b> and its <b>point list</b></li>
+          <li>An <b>inverter structure</b> — the data type that holds its variables</li>
+          <li><b>Read and write blocks</b></li>
+          <li><b>Grid Connect mappings</b> and the required status and control points</li>
+        </ul>
+      </div>
+      <div class="grid" style="gap:16px">
+        <div class="call rule"><span class="tag">The shape never changes</span>However exotic the inverter, <b>the same two-block interface holds</b>: inverter data flows into the MPC / Grid Connect block, and Grid Connect setpoints and commands flow back out to the inverter. Everything else is translation.</div>
+        <ul class="pts">
+          <li>Model-specific signals — <b>fault status, module count, naming</b> — get converted into the common Grid Connect representation. That conversion is the work.</li>
+          <li>Experience with existing SunGrow, SMA or other implementations is how you spot the equivalent point across models when the vendor names them differently.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 13 DATA TYPES -->
+<section class="slide" data-clock="08:24" data-short="Data types & scope">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">08:24</span><span>custom types · global vs local</span></div>
+    <h2 class="title">Why the custom data type exists</h2>
+    <p class="standfirst">A data type is not bookkeeping. It is the thing that lets four vendors' inverters present one face to the control logic.</p>
+    <div class="grid g23">
+      <div class="tool">
+        <div class="tool-h"><span class="lbl">Normalising a fault</span><span class="lbl">Toggle any vendor bit</span></div>
+        <div class="tool-b" data-tool="norm">
+          <div class="opts two" data-bits style="margin-bottom:16px">
+            <button class="opt" type="button" data-b="0"><span class="k">Vendor bit</span><span class="v">DC overvoltage</span></button>
+            <button class="opt" type="button" data-b="1"><span class="k">Vendor bit</span><span class="v">IGBT over-temp</span></button>
+            <button class="opt" type="button" data-b="2"><span class="k">Vendor bit</span><span class="v">Grid relay fail</span></button>
+            <button class="opt" type="button" data-b="3"><span class="k">Vendor bit</span><span class="v">Insulation low</span></button>
+          </div>
+          <div class="readout" style="margin:0;border-top:0;padding-top:0">
+            <div class="stats">
+              <div class="stat" data-fstat><dt>Grid Connect sees</dt><dd data-fault>Fault = FALSE</dd></div>
+            </div>
+            <p class="verdict">Grid Connect wants <b>one true/false fault input</b>. The data type is where four model-specific bits become that one bit — so the control logic never learns which vendor it is talking to.</p>
+          </div>
+        </div>
+      </div>
+      <div class="grid" style="gap:14px;align-content:start">
+        <ul class="pts">
+          <li>Custom data types define <b>reusable structures</b> holding inverter variables — on/off status, control mode, faults, setpoints.</li>
+          <li>They let you <b>pass an entire structure into a function block</b> instead of declaring every variable by hand, which is where the object-oriented value is.</li>
+          <li><b>Global variables</b> read and write across programs and function blocks; <b>local variables</b> stay in their defining scope unless exposed as inputs or outputs.</li>
+          <li>The project uses global structures to connect the inverter side to the Grid Connect side.</li>
+          <li><b>Global retained variables carry memory-related risk</b> — understand it before extending the pattern.</li>
+          <li>The compiled repository exposes structures, function blocks, data types and programs for inspection and reuse. Read it before you write something that already exists.</li>
+        </ul>
+        <div class="call"><span class="tag">Day 3 qualifies this</span>Mixed vendors on one site — SunGrow and SMA together — need parameters assigned <b>at the variable level</b> rather than embedded uniformly in a shared data type. Same idea, one level of indirection more.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 14 QUIZ -->
+<section class="slide" data-short="Knowledge check">
+  <div class="inner">
+    <div class="eyebrow"><span>Knowledge check</span><span>six questions</span></div>
+    <h2 class="title">Six that decide the conversion</h2>
+    <div class="quiz" data-quiz>
+      <div class="q"><div class="qh"><span class="qn">01</span><span class="qt">A project is locked under another engineer's credential and they are on leave. As admin, you can…</span></div>
+        <div class="as">
+          <button class="a" type="button">Unlock it — admin overrides the lock</button>
+          <button class="a" type="button" data-ok="1">Not unlock it; only the locking user or credential can</button>
+          <button class="a" type="button">Unlock it after a cross-check</button>
+        </div>
+        <p class="why">Admin credentials cannot unlock a project locked under another engineering credential.</p>
+      </div>
+      <div class="q"><div class="qh"><span class="qn">02</span><span class="qt">You have two candidate templates: same inverter but no battery, or different inverter but hybrid like your new site. Which base?</span></div>
+        <div class="as">
+          <button class="a" type="button">Same inverter, no battery</button>
+          <button class="a" type="button" data-ok="1">Hybrid, different inverter</button>
+          <button class="a" type="button">Either; the effort is comparable</button>
+        </div>
+        <p class="why">A hybrid project is the better base for another hybrid project even when the inverter model differs — the storage configuration is the expensive thing to add.</p>
+      </div>
+      <div class="q"><div class="qh"><span class="qn">03</span><span class="qt">Fastest safe way to rename SG 4400 references to SGT 3150 across a project?</span></div>
+        <div class="as">
+          <button class="a" type="button">Ctrl+H, Replace All, then cross-check</button>
+          <button class="a" type="button" data-ok="1">Change one at a time, saving and cross-checking as you go — Replace All only when the scope is understood</button>
+          <button class="a" type="button">Delete the data type and rebuild it</button>
+        </div>
+        <p class="why">Replace All is a fine tool once you know the scope. On a first conversion you do not, and you have traded a known error list for an unknown one.</p>
+      </div>
+      <div class="q"><div class="qh"><span class="qn">04</span><span class="qt">Referencing array index 46 throws an error. The array range is 1–49. What went wrong?</span></div>
+        <div class="as">
+          <button class="a" type="button">46 is out of range</button>
+          <button class="a" type="button" data-ok="1">46 is inside the declared range, so the fault is elsewhere in the reference — bounds have to be validated, not assumed from a plausible-looking number</button>
+          <button class="a" type="button">Arrays are always zero-indexed</button>
+        </div>
+        <p class="why">This is the trap: a number that looks reasonable is not the same as a number the declared array actually accepts. Validate the bounds the code declares.</p>
+      </div>
+      <div class="q"><div class="qh"><span class="qn">05</span><span class="qt">Which of these normally changes when you convert a template to a new site?</span></div>
+        <div class="as">
+          <button class="a" type="button">Met station calculations</button>
+          <button class="a" type="button">Generic group control</button>
+          <button class="a" type="button" data-ok="1">Inverter-specific references, point mappings, module counts and model-specific control logic</button>
+        </div>
+        <p class="why">The generic calculations stay. The inverter-specific layer is the conversion.</p>
+      </div>
+      <div class="q"><div class="qh"><span class="qn">06</span><span class="qt">Grid Connect expects a single true/false fault input, but the inverter reports four separate fault bits. Where does that get resolved?</span></div>
+        <div class="as">
+          <button class="a" type="button">In the Ignition server mapping</button>
+          <button class="a" type="button" data-ok="1">In the custom data type, which normalises model-specific signals into the common representation</button>
+          <button class="a" type="button">In the PID block</button>
+        </div>
+        <p class="why">That normalisation is exactly what the custom data type is for — it is why the control logic never has to know the vendor.</p>
+      </div>
+    </div>
+    <div class="score"><span>Knowledge check</span><span data-score><b>0</b> / 6</span></div>
+  </div>
+</section>
+
+<!-- 15 CLOSE -->
+<section class="slide" data-short="Carry forward">
+  <div class="inner">
+    <div class="eyebrow"><span>End of Day 2</span></div>
+    <h2 class="title">What Day 2 buys you</h2>
+    <p class="standfirst">You can now take a working plant project and turn it into a different working plant project without breaking either. What you have not touched is the logic in the middle — the part that decides what number each inverter is told to produce.</p>
+    <div class="grid g2">
+      <div class="call rule"><span class="tag">You can now</span>Choose a template on evidence, unlock and clone it safely, swap an inverter model and drive the cross-reference errors to zero, add an inverter with all six of its artifacts, and tell project-specific settings apart from the fixed logic around them.</div>
+      <div class="call"><span class="tag">Next: Day 3 · 10 September</span><b>From Setpoint to Inverter</b> — the control chain end to end, the timing budget that ties back to Day 1's protocol choice, PID and clamping behaviour, and DDR for proving the plant actually responded.</div>
+    </div>
+    <div class="grid" style="gap:10px;margin-top:22px">
+      <h3>Action items from Day 2</h3>
+      <div class="actions">
+        <div class="act"><span class="who">Team</span><span class="what">Create and maintain a shared Excel inventory of projects, inverter brands and types, met stations, FPS, substation connections and other reusable characteristics</span></div>
+        <div class="act"><span class="who">Everyone</span><span class="what">Before modifying a template, Save As and rename the copy</span></div>
+        <div class="act"><span class="who">Everyone</span><span class="what">For each inverter conversion, update one mapping at a time, run cross-checks, and repair every resulting cross-reference error</span></div>
+        <div class="act"><span class="who">Presenter</span><span class="what">Continue into Grid Connect / MPC logic, variables, and IEEE 2800 performance recording in the next session</span></div>
+      </div>
+    </div>
+  </div>
+</section>

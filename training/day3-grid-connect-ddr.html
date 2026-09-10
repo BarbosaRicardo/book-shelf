@@ -1,0 +1,1511 @@
+<title>From Setpoint to Inverter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap">
+<style>
+/* ============ TOKENS ============ */
+:root{
+  --paper:#F2F5F7; --surface:#FFFFFF; --sunk:#EAEFF3;
+  --ink:#111A21; --ink-2:#33424E; --muted:#5C6B77; --faint:#8496A3;
+  --rule:#DCE3E8; --rule-strong:#C3CFD8;
+  --pen-1:#B87A12; --pen-2:#0A76B0; --pen-3:#AE2E6E;
+  --pen-1-text:#8F5D0A; --pen-2-text:#075C8B; --pen-3-text:#8C2456;
+  --pen-1-wash:#B87A121A; --pen-2-wash:#0A76B01A; --pen-3-wash:#AE2E6E1A;
+  --good:#1C7A4F; --good-wash:#1C7A4F14;
+  --crit:#A82420; --crit-wash:#A8242012;
+  --shadow:0 1px 2px #101a2110, 0 8px 24px -12px #101a2124;
+  --stage-max:1120px;
+  --f-display:"Source Serif 4",Georgia,"Times New Roman",serif;
+  --f-body:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#0D1418; --surface:#161F26; --sunk:#111A20;
+    --ink:#E4EDF3; --ink-2:#C2D0DA; --muted:#8FA1AD; --faint:#6C7E8B;
+    --rule:#26333C; --rule-strong:#374753;
+    --pen-1:#BC8018; --pen-2:#1F92D2; --pen-3:#CB5C95;
+    --pen-1-text:#E0AA4E; --pen-2-text:#6DBBEA; --pen-3-text:#E68CBA;
+    --pen-1-wash:#BC801826; --pen-2-wash:#1F92D226; --pen-3-wash:#CB5C9526;
+    --good:#43B37D; --good-wash:#43B37D1F;
+    --crit:#E8756D; --crit-wash:#E8756D1A;
+    --shadow:0 1px 2px #0007, 0 10px 28px -14px #000a;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0D1418; --surface:#161F26; --sunk:#111A20;
+  --ink:#E4EDF3; --ink-2:#C2D0DA; --muted:#8FA1AD; --faint:#6C7E8B;
+  --rule:#26333C; --rule-strong:#374753;
+  --pen-1:#BC8018; --pen-2:#1F92D2; --pen-3:#CB5C95;
+  --pen-1-text:#E0AA4E; --pen-2-text:#6DBBEA; --pen-3-text:#E68CBA;
+  --pen-1-wash:#BC801826; --pen-2-wash:#1F92D226; --pen-3-wash:#CB5C9526;
+  --good:#43B37D; --good-wash:#43B37D1F;
+  --crit:#E8756D; --crit-wash:#E8756D1A;
+  --shadow:0 1px 2px #0007, 0 10px 28px -14px #000a;
+}
+/* per-deck accent alias */
+body[data-pen="1"]{--pen:var(--pen-1);--pen-text:var(--pen-1-text);--pen-wash:var(--pen-1-wash);}
+body[data-pen="2"]{--pen:var(--pen-2);--pen-text:var(--pen-2-text);--pen-wash:var(--pen-2-wash);}
+body[data-pen="3"]{--pen:var(--pen-3);--pen-text:var(--pen-3-text);--pen-wash:var(--pen-3-wash);}
+
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--f-body);font-size:16px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,h4{margin:0;text-wrap:balance;font-family:var(--f-display);font-weight:600;letter-spacing:-.012em;line-height:1.12}
+p{margin:0}
+a{color:var(--pen-text)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--pen);outline-offset:2px;border-radius:2px}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;transition-duration:.001ms!important}}
+
+/* ============ RAILS ============ */
+.rail{position:fixed;left:0;right:0;z-index:40;background:color-mix(in srgb,var(--paper) 88%,transparent);
+  backdrop-filter:blur(10px);display:flex;align-items:center;gap:14px;
+  padding:0 clamp(16px,4vw,40px);font-family:var(--f-mono);font-size:11.5px;letter-spacing:.04em}
+.rail--top{top:0;height:46px;border-bottom:1px solid var(--rule)}
+.rail--bot{bottom:0;height:52px;border-top:1px solid var(--rule)}
+.rail-id{display:flex;align-items:baseline;gap:9px;min-width:0}
+.rail-id b{font-family:var(--f-display);font-size:14px;font-weight:600;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rail-id span{color:var(--faint);text-transform:uppercase;white-space:nowrap}
+.spacer{flex:1}
+.pens{display:flex;gap:5px;align-items:center}
+.pen-dot{width:26px;height:26px;border-radius:50%;border:1px solid var(--rule-strong);background:var(--surface);
+  display:grid;place-items:center;text-decoration:none;color:var(--faint);font-family:var(--f-mono);font-size:10.5px;
+  cursor:pointer;transition:transform .12s ease,border-color .12s}
+.pen-dot:hover{transform:translateY(-1px);border-color:var(--rule-strong)}
+.pen-dot[data-p="1"]{--d:var(--pen-1)} .pen-dot[data-p="2"]{--d:var(--pen-2)} .pen-dot[data-p="3"]{--d:var(--pen-3)}
+.pen-dot[aria-current="page"]{background:var(--d);border-color:var(--d);color:#fff;font-weight:600}
+.pen-dot:not([href]){opacity:.5;cursor:default}
+.count{color:var(--muted);font-variant-numeric:tabular-nums}
+.count b{color:var(--ink);font-weight:500}
+.progress{position:fixed;top:45px;left:0;height:2px;background:var(--pen);z-index:41;transition:width .25s ease;width:0}
+
+.rbtn{background:var(--surface);border:1px solid var(--rule-strong);border-radius:6px;padding:6px 12px;
+  font-family:var(--f-mono);font-size:11.5px;letter-spacing:.03em;cursor:pointer;color:var(--ink-2);
+  display:inline-flex;align-items:center;gap:6px;transition:border-color .12s,color .12s}
+.rbtn:hover{border-color:var(--pen);color:var(--pen-text)}
+.rbtn[disabled]{opacity:.35;cursor:default}
+.rbtn kbd{font:inherit;color:var(--faint)}
+.hint{color:var(--faint);display:none}
+@media (min-width:820px){.hint{display:inline}}
+
+/* ============ STAGE ============ */
+main{padding:46px 0 52px}
+.slide{display:none;padding:clamp(24px,4.5vw,52px) clamp(16px,4vw,40px) 104px}
+.slide.on{display:block;animation:rise .3s ease}
+@keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.inner{max-width:var(--stage-max);margin:0 auto}
+.eyebrow{font-family:var(--f-mono);font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--muted);display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:14px}
+.eyebrow .clock{color:var(--pen-text);font-weight:500}
+.eyebrow .clock::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;
+  background:var(--pen);margin-right:7px;vertical-align:1px}
+h2.title{font-size:clamp(28px,4.4vw,44px);margin-bottom:10px}
+.standfirst{font-size:clamp(16px,1.7vw,19px);color:var(--ink-2);max-width:64ch;margin-bottom:26px;line-height:1.5}
+.slide h3{font-size:15px;font-family:var(--f-body);font-weight:600;letter-spacing:.01em;margin-bottom:10px}
+.grid{display:grid;gap:18px}
+@media(min-width:760px){.g2{grid-template-columns:1fr 1fr}.g23{grid-template-columns:1.15fr .85fr}.g32{grid-template-columns:.85fr 1.15fr}}
+
+/* ============ CONTENT BLOCKS ============ */
+ul.pts{list-style:none;margin:0;padding:0;display:grid;gap:11px}
+ul.pts li{padding-left:20px;position:relative;color:var(--ink-2);font-size:15.5px;line-height:1.5}
+ul.pts li::before{content:"";position:absolute;left:2px;top:.62em;width:7px;height:1.5px;background:var(--rule-strong)}
+ul.pts li b,ul.pts li strong{color:var(--ink);font-weight:600}
+.panel{background:var(--surface);border:1px solid var(--rule);border-radius:10px;padding:20px}
+.panel-h{font-family:var(--f-mono);font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);
+  margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+code,.m{font-family:var(--f-mono);font-size:.9em;background:var(--sunk);padding:1.5px 5px;border-radius:4px;color:var(--ink)}
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+
+/* callouts */
+.call{border-left:3px solid var(--pen);background:var(--pen-wash);padding:14px 16px;border-radius:0 8px 8px 0;font-size:15px;color:var(--ink-2)}
+.call b{color:var(--ink)}
+.call.trap{border-color:var(--crit);background:var(--crit-wash)}
+.call.rule{border-color:var(--good);background:var(--good-wash)}
+.call .tag{display:block;font-family:var(--f-mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:5px}
+.call.trap .tag{color:var(--crit)} .call.rule .tag{color:var(--good)}
+.unconfirmed{display:inline-flex;align-items:center;gap:5px;font-family:var(--f-mono);font-size:10.5px;
+  letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border:1px dashed var(--rule-strong);
+  border-radius:999px;padding:2px 9px;vertical-align:1px}
+.outside{border:1px solid var(--rule);border-radius:10px;padding:16px 18px;background:
+  repeating-linear-gradient(135deg,transparent,transparent 7px,var(--sunk) 7px,var(--sunk) 8px);font-size:14.5px;color:var(--ink-2)}
+.outside .tag{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--muted);display:block;margin-bottom:6px}
+.outside cite{display:block;margin-top:9px;font-style:normal;font-family:var(--f-mono);font-size:11px;color:var(--faint)}
+.outside b{color:var(--ink)}
+
+/* tables */
+.tw{overflow-x:auto;border:1px solid var(--rule);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:440px}
+th,td{text-align:left;padding:9px 14px;border-bottom:1px solid var(--rule)}
+th{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:400;
+  background:var(--sunk)}
+tr:last-child td{border-bottom:0}
+td.n{font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* ============ COVER ============ */
+.cover{display:grid;gap:26px;padding-block:clamp(10px,3vw,34px)}
+.cover .day{font-family:var(--f-mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--pen-text)}
+.cover h1{font-size:clamp(38px,7.4vw,76px);line-height:1.02;letter-spacing:-.026em;max-width:15ch}
+.cover .sub{font-size:clamp(17px,2vw,21px);color:var(--ink-2);max-width:56ch;line-height:1.45}
+.meta{display:flex;flex-wrap:wrap;gap:10px 28px;font-family:var(--f-mono);font-size:12px;color:var(--muted);
+  border-top:1px solid var(--rule);padding-top:18px}
+.meta div{display:grid;gap:2px}
+.meta dt{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+.meta dd{margin:0;color:var(--ink);font-variant-numeric:tabular-nums}
+
+/* trend strip on cover */
+.trend{border:1px solid var(--rule);border-radius:10px;background:var(--surface);padding:14px 16px}
+.trend svg{display:block;width:100%;height:auto;max-width:100%}
+.trend-legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:10px;font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+.trend-legend span{display:inline-flex;align-items:center;gap:6px}
+.trend-legend i{width:14px;height:2px;border-radius:1px;display:inline-block}
+
+/* ============ INTERACTIVE ============ */
+.tool{background:var(--surface);border:1px solid var(--rule-strong);border-radius:12px;overflow:hidden;box-shadow:var(--shadow)}
+.tool-h{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 16px;
+  border-bottom:1px solid var(--rule);background:var(--sunk)}
+.tool-h .lbl{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.tool-h .lbl b{color:var(--pen-text);font-weight:500}
+.tool-b{padding:18px}
+.reset{background:none;border:0;font-family:var(--f-mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--faint);cursor:pointer;padding:2px 4px}
+.reset:hover{color:var(--pen-text)}
+
+.opts{display:grid;gap:9px}
+@media(min-width:620px){.opts.two{grid-template-columns:1fr 1fr}.opts.three{grid-template-columns:repeat(3,1fr)}}
+.opt{text-align:left;background:var(--surface);border:1px solid var(--rule-strong);border-radius:9px;padding:12px 14px;
+  cursor:pointer;transition:border-color .12s,background .12s;display:grid;gap:3px;line-height:1.35}
+.opt:hover{border-color:var(--pen)}
+.opt .k{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--faint)}
+.opt .v{font-size:15px;font-weight:500;color:var(--ink)}
+.opt .d{font-size:13px;color:var(--muted)}
+.opt[aria-pressed="true"]{border-color:var(--pen);background:var(--pen-wash)}
+.opt[aria-pressed="true"] .k{color:var(--pen-text)}
+.opt.ok{border-color:var(--good);background:var(--good-wash)}
+.opt.no{border-color:var(--crit);background:var(--crit-wash)}
+
+.readout{margin-top:16px;border-top:1px solid var(--rule);padding-top:16px;display:grid;gap:12px}
+.stats{display:grid;gap:10px}
+@media(min-width:560px){.stats{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}}
+.stat{border:1px solid var(--rule);border-radius:9px;padding:11px 13px;display:grid;gap:3px;background:var(--sunk)}
+.stat dt{font-family:var(--f-mono);font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.stat dd{margin:0;font-family:var(--f-mono);font-size:19px;font-variant-numeric:tabular-nums;color:var(--ink);letter-spacing:-.02em}
+.stat dd small{font-size:11px;color:var(--muted);letter-spacing:0}
+.stat[data-s="ok"]{border-color:var(--good);background:var(--good-wash)}
+.stat[data-s="ok"] dd{color:var(--good)}
+.stat[data-s="bad"]{border-color:var(--crit);background:var(--crit-wash)}
+.stat[data-s="bad"] dd{color:var(--crit)}
+.verdict{font-size:15px;color:var(--ink-2);line-height:1.5}
+.verdict b{color:var(--ink)}
+
+.ctl{display:grid;gap:7px;margin-bottom:16px}
+.ctl label{font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
+  display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.ctl label output{font-size:14px;color:var(--pen-text);font-variant-numeric:tabular-nums;letter-spacing:0;text-transform:none}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:22px;background:transparent;cursor:pointer;margin:0}
+input[type=range]::-webkit-slider-runnable-track{height:4px;background:var(--rule-strong);border-radius:2px}
+input[type=range]::-moz-range-track{height:4px;background:var(--rule-strong);border-radius:2px}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--pen);
+  border:2px solid var(--surface);margin-top:-6px;box-shadow:0 0 0 1px var(--rule-strong)}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--pen);border:2px solid var(--surface);
+  box-shadow:0 0 0 1px var(--rule-strong)}
+input[type=text],input[type=number],select{width:100%;padding:9px 11px;border:1px solid var(--rule-strong);border-radius:8px;
+  background:var(--surface);color:var(--ink);font-family:var(--f-mono);font-size:14px}
+
+/* checklist */
+.chk{display:grid;gap:2px}
+.chk-item{display:flex;gap:11px;align-items:flex-start;padding:10px 12px;border-radius:8px;cursor:pointer;
+  border:1px solid transparent;transition:background .12s}
+.chk-item:hover{background:var(--sunk)}
+.chk-item input{margin:3px 0 0;width:16px;height:16px;accent-color:var(--pen);flex:none;cursor:pointer}
+.chk-item .t{font-size:15px;color:var(--ink-2);line-height:1.4}
+.chk-item .t b{color:var(--ink);font-weight:600}
+.chk-item .t em{font-style:normal;display:block;font-size:13px;color:var(--muted);margin-top:2px}
+.chk-item input:checked + .t{color:var(--faint)}
+.chk-item input:checked + .t b{color:var(--muted)}
+.chk-bar{display:flex;align-items:center;gap:10px;margin-top:12px;font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+.chk-bar .track{flex:1;height:4px;background:var(--rule);border-radius:2px;overflow:hidden}
+.chk-bar .fill{height:100%;background:var(--good);width:0;transition:width .2s ease}
+
+/* flow diagram */
+.flow{display:flex;flex-wrap:wrap;gap:6px;align-items:stretch}
+.node{flex:1 1 118px;min-width:0;text-align:left;background:var(--surface);border:1px solid var(--rule-strong);
+  border-radius:9px;padding:10px 11px;cursor:pointer;display:grid;gap:3px;transition:border-color .12s,background .12s}
+.node:hover{border-color:var(--pen)}
+.node .i{font-family:var(--f-mono);font-size:10px;color:var(--faint);letter-spacing:.08em}
+.node .n{font-size:13.5px;font-weight:600;color:var(--ink);line-height:1.25}
+.node[aria-pressed="true"]{border-color:var(--pen);background:var(--pen-wash)}
+.node[aria-pressed="true"] .i{color:var(--pen-text)}
+.arrow{align-self:center;color:var(--rule-strong);font-family:var(--f-mono);font-size:13px;flex:none}
+.detail{margin-top:16px;border-top:1px solid var(--rule);padding-top:16px;font-size:15px;color:var(--ink-2);line-height:1.5;min-height:88px}
+.detail h4{font-family:var(--f-body);font-size:15px;font-weight:600;color:var(--ink);margin-bottom:7px}
+.detail ul{margin:8px 0 0;padding-left:18px;display:grid;gap:5px}
+
+/* charts */
+.chart{width:100%;height:auto;display:block;max-width:100%;overflow:visible}
+.chart text{font-family:var(--f-mono);font-size:10px;fill:var(--muted)}
+.chart .axis{stroke:var(--rule);stroke-width:1}
+.chart .grid{stroke:var(--rule);stroke-width:1;stroke-dasharray:2 4;opacity:.7}
+.legend{display:flex;flex-wrap:wrap;gap:16px;margin-top:10px;font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.legend i{width:16px;height:2px;border-radius:1px;flex:none}
+.legend i.dash{background:repeating-linear-gradient(90deg,var(--ink-2) 0 4px,transparent 4px 7px);height:2px}
+.legend i.band{height:9px;border-radius:2px;border:1px solid var(--crit);background:var(--crit-wash)}
+
+/* register map */
+.regs{display:grid;grid-template-columns:repeat(auto-fill,minmax(74px,1fr));gap:4px}
+.reg{border:1px solid var(--rule);border-radius:6px;padding:7px 6px;text-align:center;background:var(--sunk);
+  font-family:var(--f-mono);font-size:10.5px;color:var(--muted);display:grid;gap:2px;transition:background .15s}
+.reg .a{color:var(--faint);font-size:9.5px}
+.reg .l{color:var(--ink);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.reg[data-part="hi"]{background:var(--pen-wash);border-color:var(--pen)}
+.reg[data-part="lo"]{background:var(--pen-wash);border-color:var(--pen);border-top-style:dashed}
+.reg[data-part="one"]{background:var(--pen-wash);border-color:var(--pen)}
+
+/* quiz */
+.quiz{display:grid;gap:16px}
+.q{border:1px solid var(--rule);border-radius:11px;padding:16px 18px;background:var(--surface)}
+.q .qh{display:flex;gap:10px;align-items:baseline;margin-bottom:12px}
+.q .qn{font-family:var(--f-mono);font-size:11px;color:var(--faint);flex:none}
+.q .qt{font-size:16px;font-weight:500;color:var(--ink);line-height:1.4}
+.q .as{display:grid;gap:7px}
+.a{text-align:left;background:var(--surface);border:1px solid var(--rule-strong);border-radius:8px;padding:10px 13px;
+  cursor:pointer;font-size:14.5px;color:var(--ink-2);transition:border-color .12s,background .12s;line-height:1.4}
+.a:hover:not([disabled]){border-color:var(--pen)}
+.a[data-r="ok"]{border-color:var(--good);background:var(--good-wash);color:var(--ink)}
+.a[data-r="no"]{border-color:var(--crit);background:var(--crit-wash);color:var(--ink)}
+.a[disabled]{cursor:default}
+.why{margin-top:11px;font-size:14px;color:var(--muted);border-left:2px solid var(--rule-strong);padding-left:12px;line-height:1.5;display:none}
+.why.on{display:block}
+.score{position:sticky;bottom:60px;background:var(--surface);border:1px solid var(--rule-strong);border-radius:11px;
+  padding:13px 18px;display:flex;align-items:center;justify-content:space-between;gap:14px;box-shadow:var(--shadow);
+  font-family:var(--f-mono);font-size:13px}
+.score b{font-size:19px;color:var(--pen-text);font-variant-numeric:tabular-nums}
+
+/* overview */
+.ov{position:fixed;inset:0;z-index:60;background:color-mix(in srgb,var(--paper) 94%,transparent);
+  backdrop-filter:blur(6px);overflow:auto;padding:clamp(20px,5vw,52px)}
+.ov[hidden]{display:none}
+.ov-h{max-width:1080px;margin:0 auto 22px;display:flex;align-items:baseline;justify-content:space-between;gap:16px}
+.ov-h h3{font-family:var(--f-display);font-size:22px}
+.ov-grid{max-width:1080px;margin:0 auto;display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(215px,1fr))}
+.ov-card{text-align:left;background:var(--surface);border:1px solid var(--rule);border-radius:9px;padding:12px 14px;
+  cursor:pointer;display:grid;gap:5px;transition:border-color .12s,transform .12s}
+.ov-card:hover{border-color:var(--pen);transform:translateY(-1px)}
+.ov-card .oi{font-family:var(--f-mono);font-size:10.5px;color:var(--faint);display:flex;justify-content:space-between;gap:8px}
+.ov-card .ot{font-size:14.5px;font-weight:500;color:var(--ink);line-height:1.3}
+.ov-card[aria-current="true"]{border-color:var(--pen);background:var(--pen-wash)}
+.ov-card .bar{height:2px;background:var(--pen);border-radius:1px;width:0;opacity:.5}
+.ov-card[data-seen="1"] .bar{width:100%}
+
+/* notes */
+.notes{border-top:1px dashed var(--rule-strong);margin-top:26px;padding-top:16px;font-size:14.5px;color:var(--muted);
+  line-height:1.55;max-width:70ch}
+.notes .tag{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--faint);
+  display:block;margin-bottom:6px}
+body:not([data-notes="1"]) .notes{display:none}
+
+/* end card */
+.actions{display:grid;gap:9px}
+.act{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--rule);border-radius:9px;padding:12px 14px;background:var(--surface)}
+.act .who{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--pen-text);
+  flex:none;width:88px;padding-top:2px}
+.act .what{font-size:14.5px;color:var(--ink-2);line-height:1.45}
+@media(max-width:520px){.act{flex-direction:column;gap:4px}.act .who{width:auto}}
+
+</style>
+<script>
+document.body.setAttribute("data-deck","3");
+document.body.setAttribute("data-pen","3");
+window.DECK_URLS={"1": "https://claude.ai/code/artifact/65d204b8-174d-4bad-990c-3ea81fd14555", "2": "https://claude.ai/code/artifact/b460dbde-c6da-402a-bc43-12db1d1b3a5b", "3": "https://claude.ai/code/artifact/ffc7b1ac-d8dd-4d61-805f-dd31c73dcf38"};
+</script>
+
+<header class="rail rail--top">
+  <span class="rail-id"><b>From Setpoint to Inverter</b><span>Day 3 · 10 Sep 2026</span></span>
+  <span class="spacer"></span>
+  <nav class="pens" aria-label="Other decks in this series">
+    <a class="pen-dot" data-p="1" href="https://claude.ai/code/artifact/65d204b8-174d-4bad-990c-3ea81fd14555" target="_blank" rel="noopener"  title="Day 1 — RTAC Configuration &amp; Protocols">1</a>
+    <a class="pen-dot" data-p="2" href="https://claude.ai/code/artifact/b460dbde-c6da-402a-bc43-12db1d1b3a5b" target="_blank" rel="noopener"  title="Day 2 — Template Conversion &amp; Inverter Integration">2</a>
+    <a class="pen-dot" data-p="3"  aria-current="page" title="Day 3 — Grid Connect Control Logic &amp; DDR">3</a>
+  </nav>
+  <span class="count" id="count">01 / 17</span>
+</header>
+<div class="progress" id="prog"></div>
+
+<main>
+<!-- 01 COVER -->
+<section class="slide" data-short="Cover">
+  <div class="inner cover">
+    <span class="day">Day 3 · Wednesday 10 September 2026 · 07:04–08:36</span>
+    <h1>From Setpoint to Inverter</h1>
+    <p class="sub">A number arrives from SCADA. Ninety minutes later it is a megawatt at the point of interconnection — through bumpless transfer, PFR compensation, plant limits, a ramp, a PID, and fifteen inverters that each have an opinion. This is that chain, and how to prove it responded.</p>
+    <div class="trend" id="timeline"></div>
+    <div class="meta">
+      <div><dt>Session length</dt><dd>1h 32m</dd></div>
+      <div><dt>Tuning example</dt><dd>KP 0.4 · KI 0.01</dd></div>
+      <div><dt>Interactive tools</dt><dd>6</dd></div>
+      <div><dt>Source</dt><dd>Session transcript</dd></div>
+    </div>
+    <p class="standfirst" style="margin:0;font-size:15px">Use <span class="m">←</span> <span class="m">→</span> to move, <span class="m">G</span> for all slides, <span class="m">N</span> for notes. Progress is remembered on this device.</p>
+  </div>
+</section>
+
+<!-- 02 ARC -->
+<section class="slide" data-short="Where this sits">
+  <div class="inner">
+    <div class="eyebrow"><span>The three mornings</span></div>
+    <h2 class="title">Everything the first two days were for</h2>
+    <p class="standfirst">Day 1 decided how fast the point of interconnection can be seen. Day 2 built the structures the control blocks read and write. Today spends both — and the tuning advice on slide 12 only makes sense if you remember what the meter behind it can actually deliver.</p>
+    <div class="tool">
+      <div class="tool-h"><span class="lbl">Pick a day · <b>you are on Day 3</b></span></div>
+      <div class="tool-b">
+        <div class="flow" data-flow="arc">
+          <button class="node" type="button" data-k="d1"><span class="i">DAY 1 · 8 SEP</span><span class="n">Comms &amp; the RTAC</span></button>
+          <span class="arrow">→</span>
+          <button class="node" type="button" data-k="d2"><span class="i">DAY 2 · 9 SEP</span><span class="n">Project &amp; inverters</span></button>
+          <span class="arrow">→</span>
+          <button class="node" type="button" data-k="d3" aria-pressed="true"><span class="i">DAY 3 · 10 SEP</span><span class="n">Control &amp; recording</span></button>
+        </div>
+        <div class="detail" data-flow-out="arc"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 03 THE CHAIN -->
+<section class="slide" data-clock="07:04" data-short="The control chain">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">07:04</span><span>program structure · setpoint flow</span></div>
+    <h2 class="title">The chain, end to end</h2>
+    <p class="standfirst">Click any stage. Everything else this morning hangs off one of these nine boxes.</p>
+    <div class="tool">
+      <div class="tool-h"><span class="lbl">Setpoint path · click a stage</span></div>
+      <div class="tool-b">
+        <div class="flow" data-flow="chain">
+          <button class="node" type="button" data-k="src" aria-pressed="true"><span class="i">01</span><span class="n">Source select</span></button>
+          <button class="node" type="button" data-k="bt"><span class="i">02</span><span class="n">Bumpless transfer</span></button>
+          <button class="node" type="button" data-k="pfr"><span class="i">03</span><span class="n">Arithmetic + PFR</span></button>
+          <button class="node" type="button" data-k="int"><span class="i">04</span><span class="n">Intermediate setpoint</span></button>
+          <button class="node" type="button" data-k="lgi"><span class="i">05</span><span class="n">LGI limits</span></button>
+          <button class="node" type="button" data-k="fin"><span class="i">06</span><span class="n">Final plant setpoint</span></button>
+          <button class="node" type="button" data-k="ramp"><span class="i">07</span><span class="n">Ramp</span></button>
+          <button class="node" type="button" data-k="pid"><span class="i">08</span><span class="n">PID</span></button>
+          <button class="node" type="button" data-k="disp"><span class="i">09</span><span class="n">Inverter dispatch</span></button>
+        </div>
+        <div class="detail" data-flow-out="chain"></div>
+      </div>
+    </div>
+    <div class="grid g2" style="margin-top:20px">
+      <ul class="pts">
+        <li><b>Global variables have project-wide scope</b> and are usable across function blocks, functions and programs — which is how the inverter side and the Grid Connect side meet.</li>
+        <li>The main program initialises the function blocks, assigns project parameters, and routes feedback and setpoints through the chain above.</li>
+      </ul>
+      <div class="call"><span class="tag">Where the libraries stand today</span>Frequency, reactance, P/Q and voltage calculations currently run through the <b>MPC library</b>. Future tech talks are expected to cover the equivalent <b>Grid Connect library</b> features. <span class="unconfirmed">stated as planned</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 04 REDUNDANCY -->
+<section class="slide" data-clock="07:10" data-short="Redundancy & POI">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">07:10</span><span>RTAC redundancy · metering</span></div>
+    <h2 class="title">Only one RTAC gets to command</h2>
+    <div class="grid g2">
+      <div class="grid" style="gap:16px">
+        <ul class="pts">
+          <li>A <b>heartbeat</b> identifies the primary RTAC. A non-primary RTAC asserts disable control, so <b>no inverter commands leave the secondary</b>.</li>
+          <li><b>Keep both RTAC connections initialised.</b> Breaking the secondary's connection makes the transition worse, not safer.</li>
+          <li>POI meter points must be assigned and mapped in the POI area. Line-to-line and phase-line voltage may need conversion — check which one the meter is actually serving.</li>
+          <li><b>Mirroring blocks</b> handle primary/secondary selection, scaling, and ceiling/floor limiting for the redundant signals.</li>
+        </ul>
+      </div>
+      <div class="grid" style="gap:16px">
+        <div class="call"><span class="tag">Carried from Day 2</span>The redundancy logic that blocks commands when an RTU is not primary is the same block you inherited from the template — generally unchanged between projects, <b>except that every new inverter's references have to be added to it</b>.</div>
+        <div class="call trap"><span class="tag">Consequence</span>Status feedback is taken from the <b>primary</b> RTAC, not the secondary. A status page fed from the wrong one is a page that quietly disagrees with the plant.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 05 PARAMS -->
+<section class="slide" data-clock="07:13" data-short="Parameters & retained">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">07:13</span><span>project parameters · retained variables</span></div>
+    <h2 class="title">The parameters that vary by project</h2>
+    <div class="grid g23">
+      <div>
+        <ul class="pts">
+          <li>Full-scan initialisation, project-level parameters, retained variables, SCADA inputs and substation/QSC points all have to be assigned consistently across the project.</li>
+          <li><b>Setpoint feedback is reused by bumpless transfer</b> for P, Q and V whenever the active source changes — that reuse is what makes a source change a smooth move instead of a step.</li>
+          <li>Inverter ratings, ramp limits, minimum PV setpoints, P/Q errors and scaling values vary by project. These are the numbers Day 2 said to declare at project level and pass to Grid Connect.</li>
+        </ul>
+      </div>
+      <div class="tool">
+        <div class="tool-h"><span class="lbl">P/Q error compensation</span></div>
+        <div class="tool-b" data-tool="pqe">
+          <div class="ctl"><label for="pq-cmd">Commanded <output for="pq-cmd" id="pq-cmd-o">2.00 MW</output></label>
+            <input type="range" id="pq-cmd" min="0.5" max="5" step="0.1" value="2"></div>
+          <div class="ctl"><label for="pq-meas">Measured at POI <output for="pq-meas" id="pq-meas-o">1.80 MW</output></label>
+            <input type="range" id="pq-meas" min="0.5" max="5" step="0.05" value="1.8"></div>
+          <div class="readout">
+            <div class="stats">
+              <div class="stat"><dt>Shortfall</dt><dd data-gap>0.20 <small>MW</small></dd></div>
+              <div class="stat"><dt>Correction</dt><dd data-pct>+11.1 <small>%</small></dd></div>
+            </div>
+            <p class="verdict" data-pqmsg></p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="notes"><span class="tag">Speaker note</span>The 2 MW / 1.8 MW example came straight from the session. The point is that this is a <em>systematic</em> difference — losses, metering position, inverter behaviour — and it is corrected as a percentage, not chased by the PID.</div>
+  </div>
+</section>
+
+<!-- 06 INVERTER BLOCKS -->
+<section class="slide" data-clock="07:18" data-short="Inverter blocks">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">07:18</span><span>inverter parameters · visibility</span></div>
+    <h2 class="title">You cannot see what each inverter was told</h2>
+    <div class="grid g2">
+      <div class="grid" style="gap:16px">
+        <div class="call trap"><span class="tag">The visibility gap</span><b>The MPC block assigns setpoints directly to each inverter, and that assignment is not visible in the main program.</b> To see what a given inverter was actually commanded, expose it — through <b>DDR</b>, or through dedicated global variables.</div>
+        <ul class="pts">
+          <li>Inverter parameters cover P and Q ratings, error corrections, minimum PV setpoints, feedbacks, status and on/off conditions.</li>
+          <li><b>IBR read logic can be a program rather than a function block</b> when it only initialises or reads data and has no meaningful inputs and outputs. A function block with nothing to pass is ceremony.</li>
+        </ul>
+      </div>
+      <div class="grid" style="gap:16px">
+        <div class="call"><span class="tag">Qualifies Day 2</span>Day 2 made the case for putting inverter variables in a shared custom data type. Here is the limit of that: <b>mixed vendors on one site — SunGrow and SMA together — need parameters assigned at the variable level</b>, not embedded uniformly in one shared type.</div>
+        <p class="standfirst" style="margin:0;font-size:15px">Both things are true. The data type still normalises the <em>signals</em>; what cannot be shared is the per-model <em>parameter</em> values behind them.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 07 QUALITY -->
+<section class="slide" data-clock="07:23" data-short="Quality & source">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">07:23</span><span>quality · source selection · plant setpoint</span></div>
+    <h2 class="title">What happens when the meter goes bad</h2>
+    <div class="grid g23">
+      <div>
+        <ul class="pts">
+          <li><b>POI meter quality is checked from primary to secondary.</b> Bad quality can trigger a ramp-down, or continued operation at the last valid setpoint — <b>whichever the control-network definition specifies for that site</b>. This is a project decision, not a default.</li>
+          <li>Active sources may be SCADA, QSC or another project input. <b>Only the active source supplies the standard setpoint</b> — the others are ignored until they become active, and then bumpless transfer smooths the handover.</li>
+          <li>The <b>intermediate setpoint</b> takes the standard setpoint plus arithmetic and PFR compensation, and becomes the final MPC plant setpoint.</li>
+          <li>Final P setpoints are constrained by <b>LGI limits</b> — a 50 MW limit means no output above 50 MW, whatever the source asked for.</li>
+          <li>The final plant setpoint is the target that ramp logic, PID control and the individual inverters all chase.</li>
+        </ul>
+      </div>
+      <div class="grid" style="gap:14px;align-content:start">
+        <div class="call rule"><span class="tag">Sequence</span>source → bumpless transfer → <b>+ arithmetic, + PFR</b> → intermediate setpoint → <b>LGI clamp</b> → final plant setpoint → ramp → PID → inverters</div>
+        <div class="call trap"><span class="tag">Ask on every project</span>What does this site do on bad POI quality — ramp down, or hold the last valid value? If nobody can answer from the control-network definition, that is the finding.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 08 TIMING -->
+<section class="slide" data-clock="07:28" data-short="The timing budget">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">07:28</span><span>timing · the number that decides everything</span></div>
+    <h2 class="title">The timing budget</h2>
+    <p class="standfirst">Two ratios from the session, and they cascade all the way back to which protocol you chose on Day 1.</p>
+    <div class="grid g23">
+      <div class="tool">
+        <div class="tool-h"><span class="lbl">Ramp → required rates</span></div>
+        <div class="tool-b" data-tool="tb">
+          <div class="ctl"><label for="tb-ramp">Ramp time <output for="tb-ramp" id="tb-ramp-o">1.0 s</output></label>
+            <input type="range" id="tb-ramp" min="0.2" max="10" step="0.1" value="1"></div>
+          <div class="readout" style="border-top:0;padding-top:0;margin-top:4px">
+            <div class="stats">
+              <div class="stat"><dt>POI meter — at least 10&#215; faster</dt><dd data-tb-meter>100 <small>ms</small></dd></div>
+              <div class="stat"><dt>PID — at least 3–4&#215;, 5&#215; preferred</dt><dd data-tb-pid>200 <small>ms</small></dd></div>
+            </div>
+            <p class="verdict" data-tb-msg></p>
+            <h3 style="margin-top:6px">Can your protocol feed it?</h3>
+            <div data-tb-proto class="grid" style="gap:6px"></div>
+          </div>
+        </div>
+      </div>
+      <div class="grid" style="gap:14px;align-content:start">
+        <ul class="pts">
+          <li><b>POI meter data should be at least 10&#215; faster than the ramp.</b> For a 1-second ramp, that means meter data arriving at roughly <span class="num">100 ms</span>.</li>
+          <li><b>PID execution should be at least 3–4&#215; faster than the ramp</b>, with 5&#215; described as preferable.</li>
+          <li>Later in the session, the same rule stated from the other end: <b>the plant regulation execution period must match the POI meter response.</b> A 100 ms execution period needs 100 ms data behind it.</li>
+        </ul>
+        <div class="outside"><span class="tag">Outside the room · the standard behind the numbers</span>IEEE 2800-2022 sets performance targets that these ratios exist to meet. For <b>primary frequency response</b>: reaction time minimum 200 ms, default 500 ms, maximum 1 s; rise time 2 s minimum, 4 s default; settling time 10 s default; damping ratio 0.3 default; settling band 2.5% of change by default. For <b>automatic voltage regulation</b>: reaction under 200 ms, step response between 1 and 30 s as defined by the transmission operator, damping ratio above 0.3.<cite>Nor-Cal Controls, summarising IEEE Std 2800-2022, Sep 2024</cite></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 09 PFR -->
+<section class="slide" data-clock="07:30" data-short="PFR & reactive limits">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">07:30</span><span>frequency response · reactive limits</span></div>
+    <h2 class="title">Frequency in, megawatts out</h2>
+    <div class="grid g23">
+      <div class="tool">
+        <div class="tool-h"><span class="lbl">PFR compensation</span></div>
+        <div class="tool-b" data-tool="pfr">
+          <div class="ctl"><label for="pfr-f">POI frequency <output for="pfr-f" id="pfr-f-o">60.000 Hz</output></label>
+            <input type="range" id="pfr-f" min="59.5" max="60.5" step="0.005" value="60"></div>
+          <div class="ctl"><label for="pfr-db">Dead band <output for="pfr-db" id="pfr-db-o">36 mHz</output></label>
+            <input type="range" id="pfr-db" min="0" max="100" step="1" value="36"></div>
+          <div class="ctl"><label for="pfr-dr">Droop <output for="pfr-dr" id="pfr-dr-o">5 %</output></label>
+            <input type="range" id="pfr-dr" min="1" max="10" step="0.5" value="5"></div>
+          <div class="readout">
+            <div class="stats">
+              <div class="stat"><dt>Deviation</dt><dd data-pfr-dev>0 <small>mHz</small></dd></div>
+              <div class="stat"><dt>&Delta;P applied to MPC setpoint</dt><dd data-pfr-dp>0.0 <small>MW</small></dd></div>
+            </div>
+            <p class="verdict" data-pfr-msg></p>
+          </div>
+        </div>
+      </div>
+      <div class="grid" style="gap:14px;align-content:start">
+        <ul class="pts">
+          <li><b>PFR calculates a real-power compensation from the POI frequency deviation</b> and applies the resulting delta to the MPC P setpoint. It does not replace the setpoint; it adjusts it.</li>
+          <li>Reactive-power control applies <b>voltage compensation and power-factor limits</b> — the example range given was <span class="num">0.95</span> to <span class="num">1.05</span>.</li>
+          <li>Q output is either constrained by those power-factor limits, or provided directly within the configured maximum and minimum Q limits. Which one applies is a configuration choice, and worth knowing before you tune anything.</li>
+        </ul>
+        <div class="call"><span class="tag">Note on the tool</span>Dead band and droop are shown at conventional values so the arithmetic is visible; <b>the session gave the mechanism, not these specific settings.</b> Use your project's own numbers.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 10 INCLUSION -->
+<section class="slide" data-clock="07:33" data-short="Inclusion & the '2' trap">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">07:33</span><span>inverter inclusion · feeder control</span></div>
+    <h2 class="title">Taking an inverter out of the maths</h2>
+    <div class="grid g2">
+      <div class="grid" style="gap:16px">
+        <ul class="pts">
+          <li>HMI and SCADA commands can add or remove <b>individual inverters or whole feeder groups</b> from the MPC calculations — for lockout, maintenance, or any other operating condition.</li>
+          <li><b>Feeder-level and individual-inverter include controls are separate.</b> Cross-references will trace the source logic behind each signal.</li>
+          <li>A <b>remote-enable signal going false</b> excludes that inverter from the MPC calculations.</li>
+          <li>Reusable loop logic must <b>reset its calculation inputs to zero</b> where required — otherwise repeated inverter calculations accumulate values nobody intended.</li>
+        </ul>
+      </div>
+      <div class="grid" style="gap:16px">
+        <div class="call trap"><span class="tag">The whole plant, disabled by a 2</span><b>A value of 2 arriving from an RTAC during initialisation — or after retained variables are wiped — can disable remote enable for every inverter.</b> The fix is not a restart: trace the HMI or RTAC command and restore it. This is a plant-wide outage caused by a single unexpected enumeration.</div>
+        <div class="call"><span class="tag">Connects to Day 1</span>Reinitialising retained variables writes zeroes and rewrites the retained values — the Day 1 send option that sounds harmless. This is what it can look like from the plant side.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 11 CLAMPING -->
+<section class="slide" data-clock="07:39" data-short="Status & clamping">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">07:39</span><span>inverter status · clamping</span></div>
+    <h2 class="title">Clamping, and the overshoot it hides</h2>
+    <p class="standfirst">Drag the delay. Everything to the right of the recovery is the cost of waiting too long to notice an inverter stopped following.</p>
+    <div class="tool">
+      <div class="tool-h"><span class="lbl">Clamp behaviour</span><span class="lbl">Session configuration: <b>10% threshold · 15 s delay</b></span></div>
+      <div class="tool-b" data-tool="clamp">
+        <div class="grid g2" style="gap:18px;margin-bottom:14px">
+          <div class="ctl" style="margin:0"><label for="cl-delay">Clamp delay <output for="cl-delay" id="cl-delay-o">15 s</output></label>
+            <input type="range" id="cl-delay" min="2" max="60" step="1" value="15"></div>
+          <div class="ctl" style="margin:0"><label for="cl-thr">Clamping threshold <output for="cl-thr" id="cl-thr-o">10 %</output></label>
+            <input type="range" id="cl-thr" min="2" max="25" step="1" value="10"></div>
+        </div>
+        <div data-clamp-chart></div>
+        <div class="legend">
+          <span><i style="background:var(--pen)"></i>Plant setpoint</span>
+          <span><i class="dash"></i>Inverter output</span>
+          <span><i class="band"></i>Setpoint / output gap at recovery</span>
+        </div>
+        <div class="readout">
+          <div class="stats">
+            <div class="stat"><dt>Gap at recovery</dt><dd data-cl-gap>—</dd></div>
+            <div class="stat" data-cl-stat><dt>Recovery behaviour</dt><dd data-cl-v>—</dd></div>
+          </div>
+          <p class="verdict" data-cl-msg></p>
+        </div>
+      </div>
+    </div>
+    <div class="grid g2" style="margin-top:20px">
+      <ul class="pts">
+        <li>Inverter feedback covers P and Q values, limits, communication status, remote enable, fault status, offline state and <b>clamping state</b>.</li>
+        <li><b>Status updates are taken from the primary RTAC</b>, not the secondary.</li>
+      </ul>
+      <ul class="pts">
+        <li>Clamping begins when output drops to the configured percentage of setpoint <b>and stays there for the configured delay</b>.</li>
+        <li><b>A clamped setpoint keeps ramping upward — it is not frozen.</b> That is precisely why a long delay is expensive.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 12 PID -->
+<section class="slide" data-clock="07:46" data-short="PID, deadband, DVDQ">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">07:46</span><span>tuning</span></div>
+    <h2 class="title">KP is a booster. KI is the compensation.</h2>
+    <div class="grid g23">
+      <div class="tool">
+        <div class="tool-h"><span class="lbl">Step response · <b data-pid-tag>KP 0.40 · KI 0.010</b></span><button class="reset" type="button" data-reset="pid">Session values</button></div>
+        <div class="tool-b" data-tool="pid">
+          <div class="ctl"><label for="pid-kp">KP <output for="pid-kp" id="pid-kp-o">0.40</output></label>
+            <input type="range" id="pid-kp" min="0.05" max="1.5" step="0.05" value="0.4"></div>
+          <div class="ctl"><label>KI</label>
+            <div class="opts two" data-ki>
+              <button class="opt" type="button" data-v="0.01" aria-pressed="true"><span class="v">KI = 0.01</span><span class="d">the tested configuration</span></button>
+              <button class="opt" type="button" data-v="0"><span class="v">KI = 0</span><span class="d">no integral term at all</span></button>
+            </div>
+          </div>
+          <div data-pid-chart></div>
+          <div class="legend">
+            <span><i style="background:var(--pen)"></i>Grid Connect PI</span>
+            <span><i class="dash"></i>SCLutils.PID</span>
+            <span><i style="background:var(--rule-strong)"></i>Setpoint</span>
+          </div>
+          <div class="readout">
+            <div class="stats">
+              <div class="stat"><dt>Grid Connect — overshoot</dt><dd data-pid-os>—</dd></div>
+              <div class="stat"><dt>SCLutils.PID — reaches</dt><dd data-pid-ss>—</dd></div>
+            </div>
+            <p class="verdict" data-pid-msg></p>
+          </div>
+        </div>
+      </div>
+      <div class="grid" style="gap:14px;align-content:start">
+        <div class="call"><span class="tag">Why the library matters</span><b>Grid Connect's PI accumulates the previous P-term with the new error &#215; KP term</b>, so the output can reach 100% even when KI is zero. <b>The <code>SCLutils.PID</code> library used in the existing trim-mapping logic cannot do that</b> — with KI at zero it never gets there. Same tuning numbers, different outcome, depending on which block you are in.</div>
+        <ul class="pts">
+          <li>Start <b>KP around 0.3–0.4</b>. KP is the booster; KI provides the compensation and the smoother response.</li>
+          <li>The test configuration was <b>KP 0.4, KI 0.01</b> — and <b>excessive KP was identified as the more significant problem</b>, not KI.</li>
+        </ul>
+        <div class="tool">
+          <div class="tool-h"><span class="lbl">Deadband, accounting for clamping</span></div>
+          <div class="tool-b" data-tool="db">
+            <div class="grid g2" style="gap:14px">
+              <div class="ctl" style="margin:0"><label for="db-mw">Operating point <output for="db-mw" id="db-mw-o">56 MW</output></label>
+                <input type="range" id="db-mw" min="5" max="200" step="1" value="56"></div>
+              <div class="ctl" style="margin:0"><label for="db-cl">Clamping <output for="db-cl" id="db-cl-o">5 %</output></label>
+                <input type="range" id="db-cl" min="1" max="20" step="1" value="5"></div>
+            </div>
+            <p class="verdict" data-db-msg style="margin-top:12px"></p>
+          </div>
+        </div>
+        <div class="call trap"><span class="tag">DVDQ</span><b>DVDQ is the relationship between a voltage change and the Q response.</b> Set it too aggressively and a small voltage deviation commands maximum Q. Voltage control ramps toward a voltage setpoint normally — but <b>bypasses the ramp during a Volt-VAR event</b> to deliver direct Q compensation.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 13 OPERATING -->
+<section class="slide" data-clock="08:02" data-short="Operating & monitoring">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">08:02</span><span>operating parameters · online values</span></div>
+    <h2 class="title">Looking at it while it runs</h2>
+    <div class="grid g2">
+      <div class="grid" style="gap:16px">
+        <ul class="pts">
+          <li><b>The plant regulation execution period must match the POI meter response.</b> A 100 ms execution period requires meter data at that rate — the same budget as slide 8, stated from the controller's side.</li>
+          <li><b>PI reset</b> clears accumulated controller parameters after a setpoint-source change or an event such as DFR or PFR. Without it, the integrator carries history that no longer applies.</li>
+          <li>IEEE 2800-related behaviour has a <b>separate bit</b> where the project requires it.</li>
+        </ul>
+      </div>
+      <div class="grid" style="gap:16px">
+        <ul class="pts">
+          <li><b>Online Grid Connect parameters are exposed through the plus button beside the MPC block.</b> Values can be overridden or forced for testing, and revert on reboot unless retained.</li>
+          <li>Night-time Q response may be supported through a plant-loop condition and a separate operating mode. <span class="unconfirmed">implementation not confirmed</span></li>
+          <li>Battery-related logic exists in the library but was outside the scope of this project.</li>
+        </ul>
+        <div class="call"><span class="tag">Connects to Day 1</span>Forcing a value requires the full project download, not a logic-only send. If you plan to override online parameters during commissioning, that decision was made back on Day 1's send screen.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 14 DDR -->
+<section class="slide" data-clock="08:11" data-short="DDR & testing">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">08:11</span><span>Dynamic Disturbance Record</span></div>
+    <h2 class="title">Proving the plant actually responded</h2>
+    <p class="standfirst">DDR records high-speed signals to CSV — the evidence behind a P-COD test, and the only practical way to see what each inverter was really commanded.</p>
+    <div class="grid g23">
+      <div class="tool">
+        <div class="tool-h"><span class="lbl">DDR configuration · <b data-ddr-n>0 channels</b></span><button class="reset" type="button" data-reset="ddr">Clear</button></div>
+        <div class="tool-b" data-tool="ddr">
+          <div class="opts two" data-ddr-sigs style="margin-bottom:14px">
+            <button class="opt" type="button" data-sig="P at POI"><span class="k">Channel</span><span class="v">P at POI</span><span class="d">MW</span></button>
+            <button class="opt" type="button" data-sig="Q at POI"><span class="k">Channel</span><span class="v">Q at POI</span><span class="d">MVAr</span></button>
+            <button class="opt" type="button" data-sig="Plant setpoint"><span class="k">Channel</span><span class="v">Plant setpoint</span><span class="d">MW</span></button>
+            <button class="opt" type="button" data-sig="POI frequency"><span class="k">Channel</span><span class="v">POI frequency</span><span class="d">Hz</span></button>
+            <button class="opt" type="button" data-sig="Inverter 03 setpoint"><span class="k">Channel</span><span class="v">Inverter 03 setpoint</span><span class="d">kW — otherwise invisible</span></button>
+            <button class="opt" type="button" data-sig="Clamping state"><span class="k">Channel</span><span class="v">Clamping state</span><span class="d">bool</span></button>
+          </div>
+          <div class="grid g2" style="gap:14px">
+            <div class="ctl" style="margin:0"><label for="ddr-mode">Trigger</label>
+              <div class="opts two"><button class="opt" type="button" data-mode="event" aria-pressed="true"><span class="v">Event-driven</span></button><button class="opt" type="button" data-mode="periodic"><span class="v">Periodic</span></button></div></div>
+            <div class="ctl" style="margin:0"><label for="ddr-per">Sampling period <output for="ddr-per" id="ddr-per-o">20 ms</output></label>
+              <input type="range" id="ddr-per" min="10" max="500" step="10" value="20"></div>
+          </div>
+          <div class="readout"><pre style="margin:0;overflow-x:auto"><code data-ddr-out style="display:block;padding:12px;line-height:1.6;background:var(--sunk)"></code></pre></div>
+        </div>
+      </div>
+      <div class="grid" style="gap:14px;align-content:start">
+        <ul class="pts">
+          <li>DDR compares P/Q behaviour, PFR response and setpoint transitions during <b>P-COD testing</b>. It can validate a requirement such as <b>reaching 100% response within 5 minutes of a 0-to-100 setpoint change</b>.</li>
+          <li>Recording is <b>event-driven or periodic</b>, with configurable sampling period, UTC or local time, output path, file name, folder size and file size.</li>
+          <li><b>The path creates a project-side directory</b> — it does not point at a folder on your laptop. This surprises people once each.</li>
+          <li>Data points need <b>fully qualified references</b> — <code>program.PRG.main.counter</code> — plus a channel assignment and units where they apply.</li>
+          <li>The CSV opens straight into plotting and analysis. <b>DDR is for testing across projects</b>, not only Grid Connect ones.</li>
+        </ul>
+        <div class="call"><span class="tag">Carried from Day 1</span>DDR needs <b>both its library and its extension</b> installed. Half of it is the usual reason it is not there when you go looking.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 15 EXTENSION -->
+<section class="slide" data-clock="08:22" data-short="Extension & maps">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">08:22</span><span>Grid Connect extension · reusable maps</span></div>
+    <h2 class="title">The version of this that is less work</h2>
+    <div class="grid g2">
+      <div class="grid" style="gap:16px">
+        <ul class="pts">
+          <li>The <b>Grid Connect extension assigns parameters directly</b>, with less programming than the current function-block approach.</li>
+          <li><b>Reusable maps</b> support multiple clients and inverter vendors — a map for SMA, a map for SunGrow. Holding registers and other Modbus points are defined once in a map and reused across devices.</li>
+          <li>Adding another client or inverter becomes <b>selecting the right existing map</b> instead of updating mappings in several program locations. That is the whole of Day 2's conversion work, collapsed.</li>
+          <li>Projects and extension configurations can be exported and imported into other projects.</li>
+          <li>Compatibility with newer Grid Connect versions was considered likely. <span class="unconfirmed">not confirmed</span></li>
+        </ul>
+      </div>
+      <div class="grid" style="gap:16px">
+        <div class="call rule"><span class="tag">Where the three days point</span>Day 2 taught the manual conversion because that is what these projects are today. This slide is the argument for not needing it — the same mapping, declared once and selected per device.</div>
+        <div class="call"><span class="tag">Next session</span>A future working session is expected to use an <b>Arch Tech / Grid Connect project</b> to trace references, inspect the logic, and demonstrate the extension. Bring a project and specific questions.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 16 QUIZ -->
+<section class="slide" data-short="Knowledge check">
+  <div class="inner">
+    <div class="eyebrow"><span>Knowledge check</span><span>seven questions</span></div>
+    <h2 class="title">Seven from the control chain</h2>
+    <div class="quiz" data-quiz>
+      <div class="q"><div class="qh"><span class="qn">01</span><span class="qt">The plant ramp is 1 second. How fast must POI meter data arrive?</span></div>
+        <div class="as">
+          <button class="a" type="button">Around 500 ms</button>
+          <button class="a" type="button" data-ok="1">Around 100 ms — at least 10× faster than the ramp</button>
+          <button class="a" type="button">Same as the ramp, 1 s</button>
+        </div>
+        <p class="why">And the PID needs at least 3–4× the ramp rate, 5× preferred. Both ratios come off the ramp time.</p>
+      </div>
+      <div class="q"><div class="qh"><span class="qn">02</span><span class="qt">KI is set to zero. Which block can still drive the output to 100%?</span></div>
+        <div class="as">
+          <button class="a" type="button">Both, if KP is high enough</button>
+          <button class="a" type="button" data-ok="1">Grid Connect's PI — it accumulates the previous P-term with the new error × KP term</button>
+          <button class="a" type="button">SCLutils.PID</button>
+        </div>
+        <p class="why">SCLutils.PID, used in the existing trim-mapping logic, cannot reach 100% response with KI at zero. Grid Connect's accumulation behaviour can.</p>
+      </div>
+      <div class="q"><div class="qh"><span class="qn">03</span><span class="qt">Operating at 56 MW with 5% clamping. Roughly what deadband?</span></div>
+        <div class="as">
+          <button class="a" type="button">About 56 kW</button>
+          <button class="a" type="button" data-ok="1">About 300 kW — the calculation gives ~280 kW</button>
+          <button class="a" type="button">About 2.8 MW</button>
+        </div>
+        <p class="why">Deadband has to account for clamping. 56 MW × 5% = 2.8 MW of clamping band; the derived deadband was around 280 kW, so ~300 kW was suggested.</p>
+      </div>
+      <div class="q"><div class="qh"><span class="qn">04</span><span class="qt">Every inverter has lost remote enable after a restart. Most likely cause?</span></div>
+        <div class="as">
+          <button class="a" type="button">The heartbeat failed and the secondary RTAC took over</button>
+          <button class="a" type="button" data-ok="1">A value of 2 arrived from an RTAC during initialisation, or after retained variables were wiped</button>
+          <button class="a" type="button">POI meter quality went bad</button>
+        </div>
+        <p class="why">Trace and restore the HMI or RTAC command. A restart on its own does not fix it — it is what caused it.</p>
+      </div>
+      <div class="q"><div class="qh"><span class="qn">05</span><span class="qt">Why is a 30-second clamp delay worse than 15?</span></div>
+        <div class="as">
+          <button class="a" type="button">The setpoint freezes for 30 seconds instead of 15</button>
+          <button class="a" type="button" data-ok="1">The setpoint keeps ramping while the output does not, so the gap grows — and the inverter overshoots or steps when it recovers</button>
+          <button class="a" type="button">It has no effect on the response, only on alarming</button>
+        </div>
+        <p class="why">A clamped setpoint continues ramping upward. The longer you wait to recognise the clamp, the larger the setpoint/output gap that has to be closed at once.</p>
+      </div>
+      <div class="q"><div class="qh"><span class="qn">06</span><span class="qt">You need to see what setpoint inverter 3 was actually sent. Where do you look?</span></div>
+        <div class="as">
+          <button class="a" type="button">The main program — the MPC assignment is visible there</button>
+          <button class="a" type="button" data-ok="1">Nowhere by default; expose it through DDR or a dedicated global variable</button>
+          <button class="a" type="button">The Ignition server points</button>
+        </div>
+        <p class="why">The MPC block assigns setpoints directly to each inverter and the assignment is not visible in the main program. You have to expose it deliberately.</p>
+      </div>
+      <div class="q"><div class="qh"><span class="qn">07</span><span class="qt">You set the DDR output path to a folder on your laptop. What happens?</span></div>
+        <div class="as">
+          <button class="a" type="button">The CSV files appear in that folder</button>
+          <button class="a" type="button" data-ok="1">A project-side directory is created instead — the path is not your machine</button>
+          <button class="a" type="button">DDR refuses the configuration</button>
+        </div>
+        <p class="why">The path creates a directory on the project side. Retrieve the CSV from there.</p>
+      </div>
+    </div>
+    <div class="score"><span>Knowledge check</span><span data-score><b>0</b> / 7</span></div>
+  </div>
+</section>
+
+<!-- 17 CLOSE -->
+<section class="slide" data-short="Three mornings, one system">
+  <div class="inner">
+    <div class="eyebrow"><span>End of Day 3</span><span>and of the series</span></div>
+    <h2 class="title">Three mornings, one system</h2>
+    <p class="standfirst">The through-line: <b>every choice on Day 1 shows up as a limit on Day 3.</b> The protocol you picked sets the meter rate, the meter rate sets the ramp you can support, the ramp sets the PID, and the PID is what a compliance test measures.</p>
+    <div class="grid g2" style="margin-bottom:22px">
+      <div class="call rule"><span class="tag">The chain, in one line</span>C37.118 at ~16 ms instead of DNP3 at ~500 ms → a POI meter fast enough for a 100 ms execution period → a 1-second ramp with a PID running 5× faster → a response that can meet a 200 ms reaction target.</div>
+      <div class="call"><span class="tag">And in the other direction</span>Day 3's extension and reusable maps are the answer to Day 2's conversion work — the same Modbus point list from Day 1, declared once as a map and selected per device instead of re-mapped by hand.</div>
+    </div>
+    <div class="grid" style="gap:10px">
+      <h3>Action items from Day 3</h3>
+      <div class="actions">
+        <div class="act"><span class="who">Presenter</span><span class="what">Prepare a sample project demonstrating the Grid Connect extension, reusable maps and multi-vendor inverter configuration for a future tech talk</span></div>
+        <div class="act"><span class="who">Babu</span><span class="what">Share a relevant Grid Connect project with the group for the working session</span></div>
+        <div class="act"><span class="who">Presenter</span><span class="what">Provide the DDR / deadband manual screenshot, and cover extension usage in a subsequent session</span></div>
+        <div class="act"><span class="who">Everyone</span><span class="what">Bring an Arch Tech or Grid Connect project — and specific questions — to the next working session</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="rail rail--bot">
+  <button class="rbtn" id="ovBtn" type="button">All slides <kbd>G</kbd></button>
+  <button class="rbtn" id="notesBtn" type="button" aria-pressed="false">Notes <kbd>N</kbd></button>
+  <span class="spacer"></span>
+  <span class="hint">← → to move</span>
+  <button class="rbtn" id="prev" type="button">←</button>
+  <button class="rbtn" id="next" type="button">→</button>
+</footer>
+
+<div class="ov" id="ov" hidden>
+  <div class="ov-h">
+    <h3>From Setpoint to Inverter</h3>
+    <button class="rbtn" id="ovClose" type="button">Close <kbd>Esc</kbd></button>
+  </div>
+  <div class="ov-grid" id="ovGrid"></div>
+</div>
+
+<script>
+/* ===== deck core ===== */
+(function(){
+"use strict";
+var KEY = "deck:" + (document.body.dataset.deck || "x");
+var slides = [].slice.call(document.querySelectorAll(".slide"));
+var N = slides.length, cur = 0, seen = {};
+
+function store(k, v){ try{ localStorage.setItem(KEY + ":" + k, JSON.stringify(v)); }catch(e){} }
+function load(k, d){ try{ var v = localStorage.getItem(KEY + ":" + k); return v === null ? d : JSON.parse(v); }catch(e){ return d; } }
+
+seen = load("seen", {});
+
+/* ---- navigation ---- */
+var elCount = document.getElementById("count"),
+    elProg  = document.getElementById("prog"),
+    elPrev  = document.getElementById("prev"),
+    elNext  = document.getElementById("next");
+
+function go(i, push){
+  i = Math.max(0, Math.min(N - 1, i));
+  slides[cur].classList.remove("on");
+  cur = i;
+  slides[cur].classList.add("on");
+  seen[i] = 1; store("seen", seen); store("at", i);
+  if (elCount) elCount.innerHTML = "<b>" + String(i + 1).padStart(2, "0") + "</b> / " + String(N).padStart(2, "0");
+  if (elProg) elProg.style.width = ((i) / (N - 1) * 100) + "%";
+  if (elPrev) elPrev.disabled = i === 0;
+  if (elNext) elNext.disabled = i === N - 1;
+  if (push !== false && ("#" + (i + 1)) !== location.hash) history.replaceState(null, "", "#" + (i + 1));
+  window.scrollTo({ top: 0, behavior: "instant" in document.body.style ? "instant" : "auto" });
+  paintOverview();
+}
+if (elPrev) elPrev.onclick = function(){ go(cur - 1); };
+if (elNext) elNext.onclick = function(){ go(cur + 1); };
+
+document.addEventListener("keydown", function(e){
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+  var k = e.key;
+  if (k === "ArrowRight" || k === "PageDown" || k === " ") { e.preventDefault(); go(cur + 1); }
+  else if (k === "ArrowLeft" || k === "PageUp") { e.preventDefault(); go(cur - 1); }
+  else if (k === "Home") { e.preventDefault(); go(0); }
+  else if (k === "End") { e.preventDefault(); go(N - 1); }
+  else if (k === "g" || k === "G") { toggleOv(); }
+  else if (k === "n" || k === "N") { toggleNotes(); }
+  else if (k === "Escape") { closeOv(); }
+});
+
+/* touch */
+var tx = 0, ty = 0;
+document.addEventListener("touchstart", function(e){ tx = e.changedTouches[0].clientX; ty = e.changedTouches[0].clientY; }, {passive:true});
+document.addEventListener("touchend", function(e){
+  var dx = e.changedTouches[0].clientX - tx, dy = e.changedTouches[0].clientY - ty;
+  if (Math.abs(dx) > 64 && Math.abs(dx) > Math.abs(dy) * 1.8) go(cur + (dx < 0 ? 1 : -1));
+}, {passive:true});
+
+/* ---- overview ---- */
+var ov = document.getElementById("ov"), ovGrid = document.getElementById("ovGrid");
+function buildOverview(){
+  if (!ovGrid) return;
+  ovGrid.innerHTML = "";
+  slides.forEach(function(s, i){
+    var b = document.createElement("button");
+    b.className = "ov-card"; b.type = "button";
+    var clock = s.dataset.clock || "";
+    var t = s.dataset.short || (s.querySelector(".title, h1") || {}).textContent || ("Slide " + (i + 1));
+    b.innerHTML = '<span class="oi"><span>' + String(i + 1).padStart(2, "0") + '</span><span>' + clock + '</span></span>' +
+                  '<span class="ot"></span><span class="bar"></span>';
+    b.querySelector(".ot").textContent = t.trim();
+    b.onclick = function(){ closeOv(); go(i); };
+    ovGrid.appendChild(b);
+  });
+  paintOverview();
+}
+function paintOverview(){
+  if (!ovGrid) return;
+  [].forEach.call(ovGrid.children, function(c, i){
+    c.setAttribute("aria-current", i === cur ? "true" : "false");
+    c.dataset.seen = seen[i] ? "1" : "0";
+  });
+}
+function toggleOv(){ if (!ov) return; ov.hidden ? (ov.hidden = false) : closeOv(); }
+function closeOv(){ if (ov) ov.hidden = true; }
+var ovBtn = document.getElementById("ovBtn"), ovClose = document.getElementById("ovClose");
+if (ovBtn) ovBtn.onclick = toggleOv;
+if (ovClose) ovClose.onclick = closeOv;
+if (ov) ov.addEventListener("click", function(e){ if (e.target === ov) closeOv(); });
+
+/* ---- notes ---- */
+function toggleNotes(){
+  var on = document.body.dataset.notes === "1";
+  document.body.dataset.notes = on ? "0" : "1";
+  store("notes", !on);
+  var b = document.getElementById("notesBtn");
+  if (b) b.setAttribute("aria-pressed", String(!on));
+}
+var nb = document.getElementById("notesBtn");
+if (nb) nb.onclick = toggleNotes;
+document.body.dataset.notes = load("notes", false) ? "1" : "0";
+if (nb) nb.setAttribute("aria-pressed", document.body.dataset.notes);
+
+/* ---- checklists ---- */
+[].forEach.call(document.querySelectorAll("[data-chk]"), function(list){
+  var id = list.dataset.chk, saved = load("chk:" + id, {});
+  var boxes = [].slice.call(list.querySelectorAll("input[type=checkbox]"));
+  var bar = list.parentNode.querySelector(".chk-bar .fill");
+  var cnt = list.parentNode.querySelector(".chk-bar .n");
+  function paint(){
+    var done = boxes.filter(function(b){ return b.checked; }).length;
+    if (bar) bar.style.width = (done / boxes.length * 100) + "%";
+    if (cnt) cnt.textContent = done + " of " + boxes.length;
+  }
+  boxes.forEach(function(b, i){
+    b.checked = !!saved[i];
+    b.onchange = function(){ saved[i] = b.checked; store("chk:" + id, saved); paint(); };
+  });
+  paint();
+  var r = list.parentNode.querySelector("[data-chk-reset]");
+  if (r) r.onclick = function(){ boxes.forEach(function(b, i){ b.checked = false; saved[i] = false; }); store("chk:" + id, saved); paint(); };
+});
+
+/* ---- classify / sorter ---- */
+[].forEach.call(document.querySelectorAll("[data-sort]"), function(w){
+  var items = [].slice.call(w.querySelectorAll("[data-ans]"));
+  var out = w.querySelector("[data-sort-out]");
+  var done = 0, right = 0;
+  items.forEach(function(it){
+    [].forEach.call(it.querySelectorAll("button[data-pick]"), function(b){
+      b.onclick = function(){
+        if (it.dataset.done) return;
+        it.dataset.done = "1"; done++;
+        var ok = b.dataset.pick === it.dataset.ans;
+        if (ok) right++;
+        b.classList.add(ok ? "ok" : "no");
+        [].forEach.call(it.querySelectorAll("button[data-pick]"), function(x){
+          x.disabled = true;
+          if (!ok && x.dataset.pick === it.dataset.ans) x.classList.add("ok");
+        });
+        var why = it.querySelector(".why"); if (why) why.classList.add("on");
+        if (out) out.textContent = right + " of " + done + " right" + (done === items.length ? " — all sorted." : "");
+      };
+    });
+  });
+});
+
+/* ---- quiz ---- */
+[].forEach.call(document.querySelectorAll("[data-quiz]"), function(q){
+  var qs = [].slice.call(q.querySelectorAll(".q"));
+  var scoreEl = q.querySelector("[data-score]");
+  var right = 0, answered = 0;
+  qs.forEach(function(item){
+    var btns = [].slice.call(item.querySelectorAll(".a"));
+    btns.forEach(function(b){
+      b.onclick = function(){
+        if (item.dataset.done) return;
+        item.dataset.done = "1"; answered++;
+        var ok = b.dataset.ok === "1";
+        if (ok) right++;
+        b.dataset.r = ok ? "ok" : "no";
+        btns.forEach(function(x){ x.disabled = true; if (!ok && x.dataset.ok === "1") x.dataset.r = "ok"; });
+        var why = item.querySelector(".why"); if (why) why.classList.add("on");
+        if (scoreEl) scoreEl.innerHTML = "<b>" + right + "</b> / " + qs.length +
+          (answered === qs.length ? " &nbsp;·&nbsp; " + (right === qs.length ? "clean sweep" : right >= qs.length - 1 ? "solid" : "worth a re-read") : "");
+      };
+    });
+  });
+});
+
+/* ---- chart helper ---- */
+window.mkChart = function(opts){
+  var W = opts.w || 720, H = opts.h || 250;
+  var m = opts.m || { l: 52, r: 20, t: 26, b: 32 };
+  var xd = opts.x, yd = opts.y;
+  var iw = W - m.l - m.r, ih = H - m.t - m.b;
+  function X(v){ return m.l + (v - xd[0]) / (xd[1] - xd[0]) * iw; }
+  function Y(v){ return m.t + ih - (v - yd[0]) / (yd[1] - yd[0]) * ih; }
+  var s = '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + (opts.alt || "chart") + '">';
+  (opts.rects || []).forEach(function(r){
+    s += '<rect x="' + X(r.x0) + '" y="' + Y(r.y1) + '" width="' + Math.max(2, X(r.x1) - X(r.x0)) +
+         '" height="' + Math.max(2, Y(r.y0) - Y(r.y1)) + '" fill="' + r.fill + '" stroke="' + (r.stroke || "none") + '" stroke-width="1"></rect>';
+  });
+  (opts.bands || []).forEach(function(b){
+    s += '<rect x="' + X(xd[0]) + '" y="' + Y(b.to) + '" width="' + iw + '" height="' + Math.max(1, Y(b.from) - Y(b.to)) +
+         '" fill="' + b.fill + '"></rect>';
+    if (b.label) s += '<text x="' + (X(xd[1]) - 4) + '" y="' + (Y(b.to) - 4) + '" text-anchor="end">' + b.label + '</text>';
+  });
+  (opts.yTicks || []).forEach(function(t){
+    s += '<line class="grid" x1="' + m.l + '" y1="' + Y(t) + '" x2="' + (W - m.r) + '" y2="' + Y(t) + '"></line>' +
+         '<text x="' + (m.l - 8) + '" y="' + (Y(t) + 3.5) + '" text-anchor="end">' + (opts.yFmt ? opts.yFmt(t) : t) + '</text>';
+  });
+  (opts.xTicks || []).forEach(function(t){
+    s += '<text x="' + X(t) + '" y="' + (H - m.b + 15) + '" text-anchor="middle">' + (opts.xFmt ? opts.xFmt(t) : t) + '</text>';
+  });
+  s += '<line class="axis" x1="' + m.l + '" y1="' + (m.t + ih) + '" x2="' + (W - m.r) + '" y2="' + (m.t + ih) + '"></line>';
+  (opts.vlines || []).forEach(function(v){
+    s += '<line x1="' + X(v.at) + '" y1="' + m.t + '" x2="' + X(v.at) + '" y2="' + (m.t + ih) +
+         '" stroke="' + v.color + '" stroke-width="1.5" stroke-dasharray="3 3"></line>';
+    if (v.label) s += '<text x="' + (X(v.at) + 5) + '" y="' + (m.t + 11) + '" fill="' + v.color + '">' + v.label + '</text>';
+  });
+  (opts.series || []).forEach(function(se){
+    var d = se.pts.map(function(p, i){ return (i ? "L" : "M") + X(p[0]).toFixed(2) + " " + Y(p[1]).toFixed(2); }).join(" ");
+    if (se.fill) s += '<path d="' + d + ' L' + X(se.pts[se.pts.length - 1][0]).toFixed(2) + ' ' + Y(yd[0]) + ' L' + X(se.pts[0][0]).toFixed(2) + ' ' + Y(yd[0]) + ' Z" fill="' + se.fill + '"></path>';
+    s += '<path d="' + d + '" fill="none" stroke="' + se.color + '" stroke-width="' + (se.w || 2) +
+         '" stroke-linejoin="round" stroke-linecap="round"' + (se.dash ? ' stroke-dasharray="5 4"' : "") + '></path>';
+    if (se.end) {
+      var lp = se.pts[se.pts.length - 1];
+      s += '<circle cx="' + X(lp[0]).toFixed(2) + '" cy="' + Y(lp[1]).toFixed(2) + '" r="3.5" fill="' + se.color +
+           '" stroke="var(--surface)" stroke-width="2"></circle>';
+    }
+    if (se.label) {
+      var p0 = se.labelAt || se.pts[Math.floor(se.pts.length * 0.62)];
+      s += '<text x="' + (X(p0[0]) + 6) + '" y="' + (Y(p0[1]) - 7) + '" fill="' + se.color + '" style="font-weight:500">' + se.label + '</text>';
+    }
+  });
+  if (opts.yLabel) s += '<text x="' + (m.l - 8) + '" y="' + (m.t - 12) + '" text-anchor="end">' + opts.yLabel + '</text>';
+  if (opts.xLabel) s += '<text x="' + (W - m.r) + '" y="' + (H - 2) + '" text-anchor="end">' + opts.xLabel + '</text>';
+  return s + "</svg>";
+};
+window.penColor = function(){ return getComputedStyle(document.body).getPropertyValue("--pen").trim(); };
+window.tok = function(n){ return getComputedStyle(document.body).getPropertyValue(n).trim(); };
+
+/* ---- boot ---- */
+buildOverview();
+var start = 0;
+var h = parseInt((location.hash || "").slice(1), 10);
+if (h >= 1 && h <= N) start = h - 1; else start = Math.min(load("at", 0), N - 1);
+slides.forEach(function(s){ s.classList.remove("on"); });
+go(start, false);
+window.addEventListener("hashchange", function(){
+  var i = parseInt((location.hash || "").slice(1), 10);
+  if (i >= 1 && i <= N && i - 1 !== cur) go(i - 1, false);
+});
+if (window.claude && window.claude.hot) {
+  window.claude.hot.snapshot(function(){ return { at: cur }; });
+}
+window.deckGo = go;
+})();
+
+/* ===== shared cover timeline: three mornings on one time axis ===== */
+(function(){
+"use strict";
+var host = document.getElementById("timeline");
+if (!host) return;
+var DAYS = [
+  { d: 1, label: "Mon 8 Sep", t: "RTAC Configuration & Protocols",   s: 15.77, e: 140.05, dur: "2h 04m" },
+  { d: 2, label: "Tue 9 Sep", t: "Template Conversion & Inverters",  s: 10.50, e: 106.65, dur: "1h 36m" },
+  { d: 3, label: "Wed 10 Sep", t: "Grid Connect Control Logic & DDR", s: 14.60, e: 106.82, dur: "1h 32m" }
+];
+var me = parseInt(document.body.dataset.pen, 10);
+var W = 720, H = 132, L = 74, R = 16, T = 20, rowH = 26;
+var T0 = 0, T1 = 150; /* 06:50 -> 09:20 */
+function X(m){ return L + (m - T0) / (T1 - T0) * (W - L - R); }
+function hhmm(m){ var t = 410 + m; return String(Math.floor(t / 60)).padStart(2, "0") + ":" + String(Math.round(t % 60)).padStart(2, "0"); }
+
+/* clock ticks for THIS deck, read from the slides themselves */
+var ticks = [].slice.call(document.querySelectorAll(".slide[data-clock]")).map(function(s, i){
+  var p = (s.dataset.clock || "").split(":");
+  if (p.length !== 2) return null;
+  return { m: (+p[0]) * 60 + (+p[1]) - 410, i: [].indexOf.call(document.querySelectorAll(".slide"), s), label: s.dataset.short || "" };
+}).filter(Boolean);
+
+var s = '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="The three morning sessions on one time axis">';
+[0, 30, 60, 90, 120, 150].forEach(function(m){
+  s += '<line class="grid" x1="' + X(m) + '" y1="' + (T - 6) + '" x2="' + X(m) + '" y2="' + (T + rowH * 3 - 8) + '"></line>' +
+       '<text x="' + X(m) + '" y="' + (T + rowH * 3 + 8) + '" text-anchor="middle">' + hhmm(m) + '</text>';
+});
+DAYS.forEach(function(day, r){
+  var y = T + r * rowH, on = day.d === me;
+  var c = "var(--pen-" + day.d + ")";
+  s += '<text x="' + (L - 10) + '" y="' + (y + 4) + '" text-anchor="end" fill="' + (on ? c : "var(--faint)") + '"' +
+       (on ? ' style="font-weight:500"' : "") + '>' + day.label + '</text>';
+  s += '<rect x="' + X(day.s) + '" y="' + (y - 5) + '" width="' + (X(day.e) - X(day.s)) + '" height="10" rx="5" fill="' + c + '"' +
+       (on ? "" : ' opacity="0.28"') + '></rect>';
+  s += '<text x="' + (X(day.e) + 7) + '" y="' + (y + 4) + '" fill="var(--faint)">' + day.dur + '</text>';
+  if (on) ticks.forEach(function(tk){
+    if (tk.m < day.s - 1 || tk.m > day.e + 1) return;
+    s += '<line class="tk" data-i="' + tk.i + '" x1="' + X(tk.m) + '" y1="' + (y - 9) + '" x2="' + X(tk.m) + '" y2="' + (y + 9) +
+         '" stroke="var(--surface)" stroke-width="1.5"></line>';
+  });
+});
+s += "</svg>";
+host.innerHTML = s +
+  '<div class="trend-legend">' +
+    DAYS.map(function(d){ return '<span><i style="background:var(--pen-' + d.d + ');' + (d.d === me ? "" : "opacity:.35") + '"></i>' +
+      "Day " + d.d + " · " + d.t + "</span>"; }).join("") +
+  "</div>";
+})();
+
+/* ===== generic click-through flow / node detail ===== */
+window.wireFlow = function(name, content, initial){
+  var wrap = document.querySelector('[data-flow="' + name + '"]');
+  var out = document.querySelector('[data-flow-out="' + name + '"]');
+  if (!wrap || !out) return;
+  var nodes = [].slice.call(wrap.querySelectorAll(".node"));
+  function pick(k){
+    nodes.forEach(function(n){ n.setAttribute("aria-pressed", String(n.dataset.k === k)); });
+    out.innerHTML = content[k] || "";
+    if (name === "arc" && window.DECK_URLS) {
+      var d = +(k || "").replace("d", "");
+      if (d && d !== +document.body.dataset.deck && window.DECK_URLS[d]) {
+        out.insertAdjacentHTML("beforeend",
+          '<p style="margin-top:12px"><a href="' + window.DECK_URLS[d] + '" target="_blank" rel="noopener" style="font-family:var(--f-mono);font-size:12px;letter-spacing:.04em">Open the Day ' + d + ' deck &rarr;</a></p>');
+      }
+    }
+  }
+  nodes.forEach(function(n){ n.onclick = function(){ pick(n.dataset.k); }; });
+  pick(initial || nodes[0].dataset.k);
+};
+
+</script>
+<script>
+/* ---- arc ---- */
+wireFlow("arc", {
+  d1: '<h4>Day 1 — Comms and the RTAC</h4><p>DNP3, Modbus and C37.118 configured to carry correct values at a usable rate.</p>' +
+      '<ul><li>What today spends: the protocol choice. C37.118 at ~16 ms instead of DNP3 at ~500 ms is what makes a 100 ms execution period possible at all.</li>' +
+      '<li>Also inherited: DDR needs both its library and its extension installed.</li></ul>',
+  d2: '<h4>Day 2 — Project and inverters</h4><p>Cloning the closest project and converting it to a different inverter model.</p>' +
+      '<ul><li>What today spends: the global structures and custom data types the control blocks read and write, and the project-level LGI and tuning parameters.</li>' +
+      '<li>Today also qualifies it — mixed vendors need parameters at the variable level, not in one shared type.</li></ul>',
+  d3: '<h4>Day 3 — Control and recording <span class="unconfirmed" style="border-style:solid">you are here</span></h4><p>The chain from setpoint source to individual inverter, the timing budget behind it, PID and clamping behaviour, and DDR for proving the response.</p>' +
+      '<ul><li>Ends pointing at a working session on the Grid Connect extension — the answer to most of Day 2\'s manual conversion work.</li></ul>'
+}, "d3");
+
+/* ---- the chain ---- */
+wireFlow("chain", {
+  src: '<h4>01 · Source select</h4><p>Active sources may include SCADA, QSC or another project input. <b>Only the active source supplies the standard setpoint.</b></p><ul><li>The others are ignored until they become active — at which point stage 02 handles the handover.</li></ul>',
+  bt: '<h4>02 · Bumpless transfer</h4><p>External or internal setpoints pass through bumpless transfer, so <b>a change of source produces a smooth transition rather than a step response</b>.</p><ul><li>Setpoint feedback is reused here for P, Q and V whenever the active source changes.</li></ul>',
+  pfr: '<h4>03 · Arithmetic and PFR compensation</h4><p>PFR calculates a real-power compensation from the POI frequency deviation and applies the resulting delta to the MPC P setpoint.</p><ul><li>Reactive control applies voltage compensation and power-factor limits — 0.95 to 1.05 in the example given.</li></ul>',
+  int: '<h4>04 · Intermediate setpoint</h4><p>The standard setpoint plus arithmetic and PFR compensation. Not yet limited.</p><ul><li>This is the last point at which the number reflects what was asked for rather than what the plant is allowed to do.</li></ul>',
+  lgi: '<h4>05 · LGI limits</h4><p>Final P setpoints are constrained by the LGI limits. <b>A 50 MW limit prevents an output above 50 MW</b>, whatever the source requested.</p><ul><li>LGI and tuning settings are project-specific: plant rating, Q rating, evolution period, Q high/low limits, jetband, P-limit delay.</li></ul>',
+  fin: '<h4>06 · Final plant setpoint</h4><p>The target that ramp logic, PID control and the individual inverters all chase.</p><ul><li>Everything downstream is about <em>how</em> the plant gets here, not <em>where</em> here is.</li></ul>',
+  ramp: '<h4>07 · Ramp</h4><p>Rate-limits the move to the final setpoint.</p><ul><li>The ramp time sets the whole timing budget: POI meter at least 10× faster, PID at least 3–4× faster (5× preferred).</li><li>Voltage control ramps toward a voltage setpoint too — but bypasses the ramp during a Volt-VAR event.</li></ul>',
+  pid: '<h4>08 · PID</h4><p>Closes the loop against POI feedback.</p><ul><li>Grid Connect\'s PI accumulates the previous P-term with the new error × KP term, so it can reach 100% even with KI at zero. <code>SCLutils.PID</code> cannot.</li><li>PI reset clears accumulated parameters after a source change or a DFR/PFR event.</li></ul>',
+  disp: '<h4>09 · Inverter dispatch</h4><p>The MPC block assigns setpoints directly to each inverter.</p><ul><li><b>That assignment is not visible in the main program</b> — expose it through DDR or a dedicated global variable.</li><li>Inverters excluded by remote enable, feeder-level control or individual include control drop out of the calculation here.</li></ul>'
+}, "src");
+
+/* ---- P/Q error compensation ---- */
+(function(){
+  var t = document.querySelector('[data-tool="pqe"]'); if (!t) return;
+  var cmd = document.getElementById("pq-cmd"), meas = document.getElementById("pq-meas");
+  function paint(){
+    var c = +cmd.value, m = +meas.value, gap = c - m, pct = m > 0 ? (gap / m * 100) : 0;
+    document.getElementById("pq-cmd-o").textContent = c.toFixed(2) + " MW";
+    document.getElementById("pq-meas-o").textContent = m.toFixed(2) + " MW";
+    t.querySelector("[data-gap]").innerHTML = gap.toFixed(2) + ' <small>MW</small>';
+    t.querySelector("[data-pct]").innerHTML = (pct >= 0 ? "+" : "") + pct.toFixed(1) + ' <small>%</small>';
+    t.querySelector("[data-pqmsg]").innerHTML = Math.abs(gap) < 0.01
+      ? "Command and measurement agree — no compensation needed."
+      : "Commanding <b>" + c.toFixed(2) + " MW</b> and measuring <b>" + m.toFixed(2) + " MW</b> is a <b>systematic</b> difference, not noise. It is corrected as a percentage on the command, so the PID is not left chasing a bias it cannot remove.";
+  }
+  cmd.oninput = meas.oninput = paint; paint();
+})();
+
+/* ---- timing budget ---- */
+(function(){
+  var t = document.querySelector('[data-tool="tb"]'); if (!t) return;
+  var r = document.getElementById("tb-ramp");
+  var PROTO = [
+    { n: "C37.118 from an SEL-735", ms: 16.7, note: "60 samples/s — needs an RTAC cycle of ~15–16 ms" },
+    { n: "DNP3 or SEL protocol from an SEL-735", ms: 500, note: "the meter itself will not serve faster" },
+    { n: "Inverter Modbus write cycle", ms: 225, note: "read/write/read, 200–250 ms typical — the command path, not the meter" }
+  ];
+  function paint(){
+    var ramp = +r.value, meter = ramp * 1000 / 10, pid = ramp * 1000 / 5;
+    document.getElementById("tb-ramp-o").textContent = ramp.toFixed(1) + " s";
+    t.querySelector("[data-tb-meter]").innerHTML = "≤ " + Math.round(meter) + ' <small>ms</small>';
+    t.querySelector("[data-tb-pid]").innerHTML = "≤ " + Math.round(pid) + ' <small>ms</small>';
+    t.querySelector("[data-tb-msg]").innerHTML = "A <b>" + ramp.toFixed(1) + " s</b> ramp needs POI data at <b>" + Math.round(meter) +
+      " ms</b> or faster, and the PID running at <b>" + Math.round(pid) + " ms</b> or faster (5&#215; the ramp — the preferred figure; 3–4&#215; is the stated minimum).";
+    t.querySelector("[data-tb-proto]").innerHTML = PROTO.map(function(p){
+      var ok = p.ms <= meter, isCmd = p.n.indexOf("Modbus") >= 0;
+      return '<div class="stat" data-s="' + (isCmd ? "" : ok ? "ok" : "bad") + '" style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">' +
+        '<dt style="text-transform:none;letter-spacing:0;font-family:var(--f-body);font-size:14px;color:var(--ink)">' + p.n +
+        '<span style="display:block;font-size:12px;color:var(--muted)">' + p.note + "</span></dt>" +
+        '<dd style="font-size:15px;white-space:nowrap">' + p.ms + " ms" +
+        (isCmd ? "" : " · " + (ok ? "fits" : "too slow")) + "</dd></div>";
+    }).join("");
+  }
+  r.oninput = paint; paint();
+})();
+
+/* ---- PFR ---- */
+(function(){
+  var t = document.querySelector('[data-tool="pfr"]'); if (!t) return;
+  var f = document.getElementById("pfr-f"), db = document.getElementById("pfr-db"), dr = document.getElementById("pfr-dr");
+  var RATING = 50; /* MW */
+  function paint(){
+    var fr = +f.value, dbv = +db.value / 1000, droop = +dr.value / 100;
+    var dev = fr - 60, eff = 0;
+    if (Math.abs(dev) > dbv) eff = dev - Math.sign(dev) * dbv;
+    var dP = -(eff / 60) / droop * RATING;
+    document.getElementById("pfr-f-o").textContent = fr.toFixed(3) + " Hz";
+    document.getElementById("pfr-db-o").textContent = (+db.value) + " mHz";
+    document.getElementById("pfr-dr-o").textContent = (+dr.value) + " %";
+    t.querySelector("[data-pfr-dev]").innerHTML = (dev * 1000).toFixed(0) + ' <small>mHz</small>';
+    var d = t.querySelector("[data-pfr-dp]");
+    d.innerHTML = (dP >= 0 ? "+" : "") + dP.toFixed(1) + ' <small>MW</small>';
+    d.parentNode.dataset.s = Math.abs(dP) < 0.05 ? "" : dP > 0 ? "ok" : "bad";
+    t.querySelector("[data-pfr-msg]").innerHTML = Math.abs(eff) < 1e-9
+      ? "Inside the dead band — <b>no compensation applied.</b> The delta added to the MPC P setpoint is zero."
+      : (dev < 0
+        ? "Frequency is <b>low</b>. PFR asks the plant for <b>" + Math.abs(dP).toFixed(1) + " MW more</b>, added as a delta on the MPC P setpoint — the plant setpoint itself has not changed."
+        : "Frequency is <b>high</b>. PFR backs the plant off by <b>" + Math.abs(dP).toFixed(1) + " MW</b>, applied as a negative delta on the MPC P setpoint.");
+  }
+  f.oninput = db.oninput = dr.oninput = paint; paint();
+})();
+
+/* ---- clamping ---- */
+(function(){
+  var t = document.querySelector('[data-tool="clamp"]'); if (!t) return;
+  var d = document.getElementById("cl-delay"), th = document.getElementById("cl-thr");
+  var host = t.querySelector("[data-clamp-chart]");
+  var T = 60, SP0 = 20, SP1 = 80, STALL = 15;
+  function sp(x){ return SP0 + (SP1 - SP0) * x / T; }
+  function paint(){
+    var delay = +d.value, thr = +th.value / 100;
+    document.getElementById("cl-delay-o").textContent = delay + " s";
+    document.getElementById("cl-thr-o").textContent = (+th.value) + " %";
+    var held = sp(STALL);
+    /* time at which output has fallen below (1 - thr) of setpoint */
+    var tBelow = T;
+    for (var x = STALL; x <= T; x += 0.1) { if (held < sp(x) * (1 - thr)) { tBelow = x; break; } }
+    var tRec = Math.min(tBelow + delay, T - 4);
+    var gap = sp(tRec) - held;
+    var over = Math.min(gap * 0.55, 18);
+    var spPts = [], outPts = [];
+    for (var i = 0; i <= T; i += 0.5) {
+      spPts.push([i, sp(i)]);
+      var y;
+      if (i <= STALL) y = sp(i) - 0.6;
+      else if (i <= tRec) y = held;
+      else if (i <= tRec + 3) y = held + (sp(tRec) + over - held) * (i - tRec) / 3;
+      else y = sp(i) + over * Math.exp(-(i - tRec - 3) / 3.2);
+      outPts.push([i, y]);
+    }
+    host.innerHTML = mkChart({
+      w: 720, h: 240, x: [0, T], y: [0, 100],
+      xTicks: [0, 15, 30, 45, 60], yTicks: [0, 25, 50, 75, 100],
+      xLabel: "seconds", yLabel: "MW",
+      alt: "Plant setpoint continues ramping while the inverter output is clamped, then overshoots on recovery",
+      rects: gap > 1 ? [{ x0: tRec - 0.9, x1: tRec + 0.9, y0: held, y1: sp(tRec), fill: "var(--crit-wash)", stroke: "var(--crit)" }] : [],
+      vlines: [{ at: STALL, color: "var(--muted)", label: "output stalls" },
+               { at: tRec, color: "var(--crit)", label: "clamp recognised" }],
+      series: [
+        { pts: spPts, color: "var(--pen)", w: 2, label: "setpoint", labelAt: [46, sp(46)] },
+        { pts: outPts, color: "var(--ink-2)", w: 2, dash: true, end: true }
+      ]
+    });
+    t.querySelector("[data-cl-gap]").innerHTML = gap.toFixed(1) + ' <small>MW</small>';
+    var st = t.querySelector("[data-cl-stat]");
+    st.dataset.s = gap > 12 ? "bad" : gap < 6 ? "ok" : "";
+    t.querySelector("[data-cl-v]").textContent = gap > 12 ? "Step-like" : gap < 6 ? "Contained" : "Noticeable";
+    t.querySelector("[data-cl-msg]").innerHTML =
+      "Clamping starts when output drops to the configured percentage of setpoint <b>and stays there for the delay</b>. With a <b>" +
+      delay + " s</b> delay and a <b>" + (+th.value) + "%</b> threshold, the setpoint has run <b>" + gap.toFixed(1) +
+      " MW</b> ahead of the output by the time the clamp is recognised. " +
+      (gap > 12
+        ? "<b>That is the overshoot problem from the session</b> — excessive delays such as 30 seconds or a minute produce a large gap and a step-like response when the inverter recovers."
+        : "The session's configuration used a <b>10% threshold and a 15-second delay</b>, which keeps the gap in this range.");
+  }
+  d.oninput = th.oninput = paint; paint();
+})();
+
+/* ---- PID: the two libraries, side by side ---- */
+(function(){
+  var t = document.querySelector('[data-tool="pid"]'); if (!t) return;
+  var kp = document.getElementById("pid-kp"), KI = 0.01;
+  var host = t.querySelector("[data-pid-chart]");
+  var dt = 0.05, T = 20, tau = 1.0, L = 0.35, nL = Math.round(L / dt);
+  /* Grid Connect: accumulates the previous P-term with the new error x KP term,
+     so it reaches 100% even with KI at zero. */
+  function gridConnect(KP, ki){
+    var y = 0, I = 0, u = 0, pts = [], us = [];
+    for (var i = 0; i * dt <= T; i++) {
+      var e = 100 - y; I += e * dt;
+      u = Math.max(0, Math.min(145, u + (KP * 0.7 * e + ki * 0.05 * I) * dt));
+      us.push(u);
+      y += ((us.length > nL ? us[us.length - 1 - nL] : 0) - y) / tau * dt;
+      pts.push([i * dt, y]);
+    }
+    return pts;
+  }
+  /* SCLutils.PID: positional form - with KI at zero it cannot reach 100% response. */
+  function sclUtils(KP, ki){
+    var y = 0, I = 0, pts = [], us = [];
+    for (var i = 0; i * dt <= T; i++) {
+      var e = 100 - y; I += e * dt;
+      us.push(Math.max(0, Math.min(145, KP * 2.8 * e + ki * 0.05 * I)));
+      y += ((us.length > nL ? us[us.length - 1 - nL] : 0) - y) / tau * dt;
+      pts.push([i * dt, y]);
+    }
+    return pts;
+  }
+  function paint(){
+    var KP = +kp.value;
+    document.getElementById("pid-kp-o").textContent = KP.toFixed(2);
+    var tag = document.querySelector("[data-pid-tag]");
+    if (tag) tag.textContent = "KP " + KP.toFixed(2) + " · KI " + KI.toFixed(3);
+    var a = gridConnect(KP, KI), b = sclUtils(KP, KI);
+    var peak = a.reduce(function(m, p){ return Math.max(m, p[1]); }, 0);
+    var over = Math.max(0, peak - 100);
+    var bFinal = b[b.length - 1][1];
+    host.innerHTML = mkChart({
+      w: 720, h: 240, x: [0, 20], y: [0, 145],
+      xTicks: [0, 5, 10, 15, 20], yTicks: [0, 50, 100, 145],
+      yFmt: function(v){ return v + "%"; }, xLabel: "seconds", yLabel: "response",
+      alt: "Step response of the Grid Connect PI compared with SCLutils.PID at the chosen KP and KI",
+      series: [
+        { pts: [[0, 100], [20, 100]], color: "var(--rule-strong)", w: 2, dash: true },
+        { pts: b, color: "var(--ink-2)", w: 2, dash: true, end: true },
+        { pts: a, color: "var(--pen)", w: 2, end: true }
+      ]
+    });
+    var os = t.querySelector("[data-pid-os]");
+    os.innerHTML = over < 0.5 ? "none" : over.toFixed(0) + ' <small>%</small>';
+    os.parentNode.dataset.s = over > 20 ? "bad" : over < 8 ? "ok" : "";
+    var ss = t.querySelector("[data-pid-ss]");
+    ss.innerHTML = bFinal.toFixed(0) + ' <small>% of setpoint</small>';
+    ss.parentNode.dataset.s = bFinal > 95 ? "ok" : "bad";
+    var msg;
+    if (KI === 0) msg = "<b>KI is zero.</b> Grid Connect's PI still climbs to 100% because it accumulates the previous P-term with the new error &#215; KP term. <b><code>SCLutils.PID</code> plateaus at " + bFinal.toFixed(0) + "%</b> and stays there — the same tuning numbers, a different outcome, decided entirely by which block you are in.";
+    else if (over > 20) msg = "<b>KP is too high.</b> This is the session's finding: excessive KP was identified as the more significant problem. The loop is boosted into overshoot faster than the integral can settle it — and on a real plant that arrives at the POI as a step.";
+    else if (KP < 0.25) msg = "KP is below the suggested starting range. <b>Start around 0.3–0.4</b> — KP is the booster; KI provides the compensation and the smoother response.";
+    else msg = "Around the configuration tested in the session — <b>KP 0.4, KI 0.01</b>. KP is the booster; KI does the compensating.";
+    t.querySelector("[data-pid-msg]").innerHTML = msg +
+      ' <span class="unconfirmed">illustrative first-order plant with 350 ms of loop delay — the shape and the library difference, not your plant\'s numbers</span>';
+  }
+  kp.oninput = paint;
+  [].forEach.call(t.querySelectorAll("[data-ki] [data-v]"), function(b){
+    b.onclick = function(){ KI = +b.dataset.v;
+      [].forEach.call(t.querySelectorAll("[data-ki] [data-v]"), function(x){ x.setAttribute("aria-pressed", String(x === b)); }); paint(); };
+  });
+  var r = document.querySelector('[data-reset="pid"]');
+  if (r) r.onclick = function(){ kp.value = 0.4; KI = 0.01;
+    [].forEach.call(t.querySelectorAll("[data-ki] [data-v]"), function(x){ x.setAttribute("aria-pressed", String(x.dataset.v === "0.01")); }); paint(); };
+  paint();
+})();
+
+/* ---- deadband ---- */
+(function(){
+  var t = document.querySelector('[data-tool="db"]'); if (!t) return;
+  var mw = document.getElementById("db-mw"), cl = document.getElementById("db-cl");
+  function paint(){
+    var m = +mw.value, c = +cl.value;
+    var band = m * c / 100, deadband = band * 100;  /* MW -> kW, 10% of the clamping band */
+    document.getElementById("db-mw-o").textContent = m + " MW";
+    document.getElementById("db-cl-o").textContent = c + " %";
+    var rounded = Math.ceil(deadband / 50) * 50;
+    t.querySelector("[data-db-msg]").innerHTML =
+      "<b>" + m + " MW</b> at <b>" + c + "%</b> clamping is a clamping band of <b class=\"num\">" + band.toFixed(2) +
+      " MW</b>. Ten percent of that is <b class=\"num\">" + Math.round(deadband) + " kW</b> — round up to about <b class=\"num\">" +
+      rounded + " kW</b>. <b>Deadband has to account for clamping</b>, which is how the session arrived at ~280 kW and a suggested 300 kW for a 56 MW plant at 5%.";
+  }
+  mw.oninput = cl.oninput = paint; paint();
+})();
+
+/* ---- DDR builder ---- */
+(function(){
+  var t = document.querySelector('[data-tool="ddr"]'); if (!t) return;
+  var out = t.querySelector("[data-ddr-out]"), n = document.querySelector("[data-ddr-n]");
+  var picked = [], mode = "event";
+  var REF = {
+    "P at POI": ["POI.PRG.main.P_MW", "MW"], "Q at POI": ["POI.PRG.main.Q_MVAr", "MVAr"],
+    "Plant setpoint": ["GridConnect.PRG.main.PlantSP", "MW"], "POI frequency": ["POI.PRG.main.Freq", "Hz"],
+    "Inverter 03 setpoint": ["MPC.PRG.main.InvSP[3]", "kW"], "Clamping state": ["MPC.PRG.main.Clamped[3]", "bool"]
+  };
+  function paint(){
+    if (n) n.textContent = picked.length + (picked.length === 1 ? " channel" : " channels");
+    var per = +document.getElementById("ddr-per").value;
+    var lines = [
+      "trigger      : " + (mode === "event" ? "event-driven" : "periodic"),
+      "sampling     : " + per + " ms",
+      "time base    : UTC",
+      "output path  : /ddr/pcod/          (project side — not your laptop)",
+      "file name    : pcod_response",
+      ""
+    ];
+    if (!picked.length) lines.push("channels     : none selected — pick the signals you need to prove the response");
+    else picked.forEach(function(p, i){
+      lines.push("channel " + String(i + 1).padStart(2, "0") + "   : " + REF[p][0].padEnd(32) + " [" + REF[p][1] + "]   " + p);
+    });
+    if (picked.length) {
+      lines.push("");
+      var has = picked.indexOf("P at POI") >= 0 && picked.indexOf("Plant setpoint") >= 0;
+      lines.push(has
+        ? "→ P and setpoint together: this CSV can show 100% response within 5 minutes of a 0-to-100 setpoint change."
+        : "→ add both P at POI and Plant setpoint to validate the 0-to-100 response requirement.");
+      if (per > 100) lines.push("→ " + per + " ms sampling is coarse for a PFR trace; the session's use was high-speed data.");
+    }
+    out.textContent = lines.join("\n");
+  }
+  [].forEach.call(t.querySelectorAll("[data-sig]"), function(b){
+    b.onclick = function(){
+      var s = b.dataset.sig, i = picked.indexOf(s);
+      if (i >= 0) picked.splice(i, 1); else picked.push(s);
+      b.setAttribute("aria-pressed", String(i < 0)); paint();
+    };
+  });
+  [].forEach.call(t.querySelectorAll("[data-mode]"), function(b){
+    b.onclick = function(){ mode = b.dataset.mode;
+      [].forEach.call(t.querySelectorAll("[data-mode]"), function(x){ x.setAttribute("aria-pressed", String(x === b)); }); paint(); };
+  });
+  document.getElementById("ddr-per").oninput = paint;
+  var r = document.querySelector('[data-reset="ddr"]');
+  if (r) r.onclick = function(){ picked = [];
+    [].forEach.call(t.querySelectorAll("[data-sig]"), function(x){ x.setAttribute("aria-pressed", "false"); }); paint(); };
+  paint();
+})();
+
+</script>

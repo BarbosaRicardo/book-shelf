@@ -1,0 +1,541 @@
+<!-- 01 COVER -->
+<section class="slide" data-short="Cover">
+  <div class="inner cover">
+    <span class="day">Day 3 · Wednesday 10 September 2026 · 07:04–08:36</span>
+    <h1>From Setpoint to Inverter</h1>
+    <p class="sub">A number arrives from SCADA. Ninety minutes later it is a megawatt at the point of interconnection — through bumpless transfer, PFR compensation, plant limits, a ramp, a PID, and fifteen inverters that each have an opinion. This is that chain, and how to prove it responded.</p>
+    <div class="trend" id="timeline"></div>
+    <div class="meta">
+      <div><dt>Session length</dt><dd>1h 32m</dd></div>
+      <div><dt>Tuning example</dt><dd>KP 0.4 · KI 0.01</dd></div>
+      <div><dt>Interactive tools</dt><dd>6</dd></div>
+      <div><dt>Source</dt><dd>Session transcript</dd></div>
+    </div>
+    <p class="standfirst" style="margin:0;font-size:15px">Use <span class="m">←</span> <span class="m">→</span> to move, <span class="m">G</span> for all slides, <span class="m">N</span> for notes. Progress is remembered on this device.</p>
+  </div>
+</section>
+
+<!-- 02 ARC -->
+<section class="slide" data-short="Where this sits">
+  <div class="inner">
+    <div class="eyebrow"><span>The three mornings</span></div>
+    <h2 class="title">Everything the first two days were for</h2>
+    <p class="standfirst">Day 1 decided how fast the point of interconnection can be seen. Day 2 built the structures the control blocks read and write. Today spends both — and the tuning advice on slide 12 only makes sense if you remember what the meter behind it can actually deliver.</p>
+    <div class="tool">
+      <div class="tool-h"><span class="lbl">Pick a day · <b>you are on Day 3</b></span></div>
+      <div class="tool-b">
+        <div class="flow" data-flow="arc">
+          <button class="node" type="button" data-k="d1"><span class="i">DAY 1 · 8 SEP</span><span class="n">Comms &amp; the RTAC</span></button>
+          <span class="arrow">→</span>
+          <button class="node" type="button" data-k="d2"><span class="i">DAY 2 · 9 SEP</span><span class="n">Project &amp; inverters</span></button>
+          <span class="arrow">→</span>
+          <button class="node" type="button" data-k="d3" aria-pressed="true"><span class="i">DAY 3 · 10 SEP</span><span class="n">Control &amp; recording</span></button>
+        </div>
+        <div class="detail" data-flow-out="arc"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 03 THE CHAIN -->
+<section class="slide" data-clock="07:04" data-short="The control chain">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">07:04</span><span>program structure · setpoint flow</span></div>
+    <h2 class="title">The chain, end to end</h2>
+    <p class="standfirst">Click any stage. Everything else this morning hangs off one of these nine boxes.</p>
+    <div class="tool">
+      <div class="tool-h"><span class="lbl">Setpoint path · click a stage</span></div>
+      <div class="tool-b">
+        <div class="flow" data-flow="chain">
+          <button class="node" type="button" data-k="src" aria-pressed="true"><span class="i">01</span><span class="n">Source select</span></button>
+          <button class="node" type="button" data-k="bt"><span class="i">02</span><span class="n">Bumpless transfer</span></button>
+          <button class="node" type="button" data-k="pfr"><span class="i">03</span><span class="n">Arithmetic + PFR</span></button>
+          <button class="node" type="button" data-k="int"><span class="i">04</span><span class="n">Intermediate setpoint</span></button>
+          <button class="node" type="button" data-k="lgi"><span class="i">05</span><span class="n">LGI limits</span></button>
+          <button class="node" type="button" data-k="fin"><span class="i">06</span><span class="n">Final plant setpoint</span></button>
+          <button class="node" type="button" data-k="ramp"><span class="i">07</span><span class="n">Ramp</span></button>
+          <button class="node" type="button" data-k="pid"><span class="i">08</span><span class="n">PID</span></button>
+          <button class="node" type="button" data-k="disp"><span class="i">09</span><span class="n">Inverter dispatch</span></button>
+        </div>
+        <div class="detail" data-flow-out="chain"></div>
+      </div>
+    </div>
+    <div class="grid g2" style="margin-top:20px">
+      <ul class="pts">
+        <li><b>Global variables have project-wide scope</b> and are usable across function blocks, functions and programs — which is how the inverter side and the Grid Connect side meet.</li>
+        <li>The main program initialises the function blocks, assigns project parameters, and routes feedback and setpoints through the chain above.</li>
+      </ul>
+      <div class="call"><span class="tag">Where the libraries stand today</span>Frequency, reactance, P/Q and voltage calculations currently run through the <b>MPC library</b>. Future tech talks are expected to cover the equivalent <b>Grid Connect library</b> features. <span class="unconfirmed">stated as planned</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 04 REDUNDANCY -->
+<section class="slide" data-clock="07:10" data-short="Redundancy & POI">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">07:10</span><span>RTAC redundancy · metering</span></div>
+    <h2 class="title">Only one RTAC gets to command</h2>
+    <div class="grid g2">
+      <div class="grid" style="gap:16px">
+        <ul class="pts">
+          <li>A <b>heartbeat</b> identifies the primary RTAC. A non-primary RTAC asserts disable control, so <b>no inverter commands leave the secondary</b>.</li>
+          <li><b>Keep both RTAC connections initialised.</b> Breaking the secondary's connection makes the transition worse, not safer.</li>
+          <li>POI meter points must be assigned and mapped in the POI area. Line-to-line and phase-line voltage may need conversion — check which one the meter is actually serving.</li>
+          <li><b>Mirroring blocks</b> handle primary/secondary selection, scaling, and ceiling/floor limiting for the redundant signals.</li>
+        </ul>
+      </div>
+      <div class="grid" style="gap:16px">
+        <div class="call"><span class="tag">Carried from Day 2</span>The redundancy logic that blocks commands when an RTU is not primary is the same block you inherited from the template — generally unchanged between projects, <b>except that every new inverter's references have to be added to it</b>.</div>
+        <div class="call trap"><span class="tag">Consequence</span>Status feedback is taken from the <b>primary</b> RTAC, not the secondary. A status page fed from the wrong one is a page that quietly disagrees with the plant.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 05 PARAMS -->
+<section class="slide" data-clock="07:13" data-short="Parameters & retained">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">07:13</span><span>project parameters · retained variables</span></div>
+    <h2 class="title">The parameters that vary by project</h2>
+    <div class="grid g23">
+      <div>
+        <ul class="pts">
+          <li>Full-scan initialisation, project-level parameters, retained variables, SCADA inputs and substation/QSC points all have to be assigned consistently across the project.</li>
+          <li><b>Setpoint feedback is reused by bumpless transfer</b> for P, Q and V whenever the active source changes — that reuse is what makes a source change a smooth move instead of a step.</li>
+          <li>Inverter ratings, ramp limits, minimum PV setpoints, P/Q errors and scaling values vary by project. These are the numbers Day 2 said to declare at project level and pass to Grid Connect.</li>
+        </ul>
+      </div>
+      <div class="tool">
+        <div class="tool-h"><span class="lbl">P/Q error compensation</span></div>
+        <div class="tool-b" data-tool="pqe">
+          <div class="ctl"><label for="pq-cmd">Commanded <output for="pq-cmd" id="pq-cmd-o">2.00 MW</output></label>
+            <input type="range" id="pq-cmd" min="0.5" max="5" step="0.1" value="2"></div>
+          <div class="ctl"><label for="pq-meas">Measured at POI <output for="pq-meas" id="pq-meas-o">1.80 MW</output></label>
+            <input type="range" id="pq-meas" min="0.5" max="5" step="0.05" value="1.8"></div>
+          <div class="readout">
+            <div class="stats">
+              <div class="stat"><dt>Shortfall</dt><dd data-gap>0.20 <small>MW</small></dd></div>
+              <div class="stat"><dt>Correction</dt><dd data-pct>+11.1 <small>%</small></dd></div>
+            </div>
+            <p class="verdict" data-pqmsg></p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="notes"><span class="tag">Speaker note</span>The 2 MW / 1.8 MW example came straight from the session. The point is that this is a <em>systematic</em> difference — losses, metering position, inverter behaviour — and it is corrected as a percentage, not chased by the PID.</div>
+  </div>
+</section>
+
+<!-- 06 INVERTER BLOCKS -->
+<section class="slide" data-clock="07:18" data-short="Inverter blocks">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">07:18</span><span>inverter parameters · visibility</span></div>
+    <h2 class="title">You cannot see what each inverter was told</h2>
+    <div class="grid g2">
+      <div class="grid" style="gap:16px">
+        <div class="call trap"><span class="tag">The visibility gap</span><b>The MPC block assigns setpoints directly to each inverter, and that assignment is not visible in the main program.</b> To see what a given inverter was actually commanded, expose it — through <b>DDR</b>, or through dedicated global variables.</div>
+        <ul class="pts">
+          <li>Inverter parameters cover P and Q ratings, error corrections, minimum PV setpoints, feedbacks, status and on/off conditions.</li>
+          <li><b>IBR read logic can be a program rather than a function block</b> when it only initialises or reads data and has no meaningful inputs and outputs. A function block with nothing to pass is ceremony.</li>
+        </ul>
+      </div>
+      <div class="grid" style="gap:16px">
+        <div class="call"><span class="tag">Qualifies Day 2</span>Day 2 made the case for putting inverter variables in a shared custom data type. Here is the limit of that: <b>mixed vendors on one site — SunGrow and SMA together — need parameters assigned at the variable level</b>, not embedded uniformly in one shared type.</div>
+        <p class="standfirst" style="margin:0;font-size:15px">Both things are true. The data type still normalises the <em>signals</em>; what cannot be shared is the per-model <em>parameter</em> values behind them.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 07 QUALITY -->
+<section class="slide" data-clock="07:23" data-short="Quality & source">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">07:23</span><span>quality · source selection · plant setpoint</span></div>
+    <h2 class="title">What happens when the meter goes bad</h2>
+    <div class="grid g23">
+      <div>
+        <ul class="pts">
+          <li><b>POI meter quality is checked from primary to secondary.</b> Bad quality can trigger a ramp-down, or continued operation at the last valid setpoint — <b>whichever the control-network definition specifies for that site</b>. This is a project decision, not a default.</li>
+          <li>Active sources may be SCADA, QSC or another project input. <b>Only the active source supplies the standard setpoint</b> — the others are ignored until they become active, and then bumpless transfer smooths the handover.</li>
+          <li>The <b>intermediate setpoint</b> takes the standard setpoint plus arithmetic and PFR compensation, and becomes the final MPC plant setpoint.</li>
+          <li>Final P setpoints are constrained by <b>LGI limits</b> — a 50 MW limit means no output above 50 MW, whatever the source asked for.</li>
+          <li>The final plant setpoint is the target that ramp logic, PID control and the individual inverters all chase.</li>
+        </ul>
+      </div>
+      <div class="grid" style="gap:14px;align-content:start">
+        <div class="call rule"><span class="tag">Sequence</span>source → bumpless transfer → <b>+ arithmetic, + PFR</b> → intermediate setpoint → <b>LGI clamp</b> → final plant setpoint → ramp → PID → inverters</div>
+        <div class="call trap"><span class="tag">Ask on every project</span>What does this site do on bad POI quality — ramp down, or hold the last valid value? If nobody can answer from the control-network definition, that is the finding.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 08 TIMING -->
+<section class="slide" data-clock="07:28" data-short="The timing budget">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">07:28</span><span>timing · the number that decides everything</span></div>
+    <h2 class="title">The timing budget</h2>
+    <p class="standfirst">Two ratios from the session, and they cascade all the way back to which protocol you chose on Day 1.</p>
+    <div class="grid g23">
+      <div class="tool">
+        <div class="tool-h"><span class="lbl">Ramp → required rates</span></div>
+        <div class="tool-b" data-tool="tb">
+          <div class="ctl"><label for="tb-ramp">Ramp time <output for="tb-ramp" id="tb-ramp-o">1.0 s</output></label>
+            <input type="range" id="tb-ramp" min="0.2" max="10" step="0.1" value="1"></div>
+          <div class="readout" style="border-top:0;padding-top:0;margin-top:4px">
+            <div class="stats">
+              <div class="stat"><dt>POI meter — at least 10&#215; faster</dt><dd data-tb-meter>100 <small>ms</small></dd></div>
+              <div class="stat"><dt>PID — at least 3–4&#215;, 5&#215; preferred</dt><dd data-tb-pid>200 <small>ms</small></dd></div>
+            </div>
+            <p class="verdict" data-tb-msg></p>
+            <h3 style="margin-top:6px">Can your protocol feed it?</h3>
+            <div data-tb-proto class="grid" style="gap:6px"></div>
+          </div>
+        </div>
+      </div>
+      <div class="grid" style="gap:14px;align-content:start">
+        <ul class="pts">
+          <li><b>POI meter data should be at least 10&#215; faster than the ramp.</b> For a 1-second ramp, that means meter data arriving at roughly <span class="num">100 ms</span>.</li>
+          <li><b>PID execution should be at least 3–4&#215; faster than the ramp</b>, with 5&#215; described as preferable.</li>
+          <li>Later in the session, the same rule stated from the other end: <b>the plant regulation execution period must match the POI meter response.</b> A 100 ms execution period needs 100 ms data behind it.</li>
+        </ul>
+        <div class="outside"><span class="tag">Outside the room · the standard behind the numbers</span>IEEE 2800-2022 sets performance targets that these ratios exist to meet. For <b>primary frequency response</b>: reaction time minimum 200 ms, default 500 ms, maximum 1 s; rise time 2 s minimum, 4 s default; settling time 10 s default; damping ratio 0.3 default; settling band 2.5% of change by default. For <b>automatic voltage regulation</b>: reaction under 200 ms, step response between 1 and 30 s as defined by the transmission operator, damping ratio above 0.3.<cite>Nor-Cal Controls, summarising IEEE Std 2800-2022, Sep 2024</cite></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 09 PFR -->
+<section class="slide" data-clock="07:30" data-short="PFR & reactive limits">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">07:30</span><span>frequency response · reactive limits</span></div>
+    <h2 class="title">Frequency in, megawatts out</h2>
+    <div class="grid g23">
+      <div class="tool">
+        <div class="tool-h"><span class="lbl">PFR compensation</span></div>
+        <div class="tool-b" data-tool="pfr">
+          <div class="ctl"><label for="pfr-f">POI frequency <output for="pfr-f" id="pfr-f-o">60.000 Hz</output></label>
+            <input type="range" id="pfr-f" min="59.5" max="60.5" step="0.005" value="60"></div>
+          <div class="ctl"><label for="pfr-db">Dead band <output for="pfr-db" id="pfr-db-o">36 mHz</output></label>
+            <input type="range" id="pfr-db" min="0" max="100" step="1" value="36"></div>
+          <div class="ctl"><label for="pfr-dr">Droop <output for="pfr-dr" id="pfr-dr-o">5 %</output></label>
+            <input type="range" id="pfr-dr" min="1" max="10" step="0.5" value="5"></div>
+          <div class="readout">
+            <div class="stats">
+              <div class="stat"><dt>Deviation</dt><dd data-pfr-dev>0 <small>mHz</small></dd></div>
+              <div class="stat"><dt>&Delta;P applied to MPC setpoint</dt><dd data-pfr-dp>0.0 <small>MW</small></dd></div>
+            </div>
+            <p class="verdict" data-pfr-msg></p>
+          </div>
+        </div>
+      </div>
+      <div class="grid" style="gap:14px;align-content:start">
+        <ul class="pts">
+          <li><b>PFR calculates a real-power compensation from the POI frequency deviation</b> and applies the resulting delta to the MPC P setpoint. It does not replace the setpoint; it adjusts it.</li>
+          <li>Reactive-power control applies <b>voltage compensation and power-factor limits</b> — the example range given was <span class="num">0.95</span> to <span class="num">1.05</span>.</li>
+          <li>Q output is either constrained by those power-factor limits, or provided directly within the configured maximum and minimum Q limits. Which one applies is a configuration choice, and worth knowing before you tune anything.</li>
+        </ul>
+        <div class="call"><span class="tag">Note on the tool</span>Dead band and droop are shown at conventional values so the arithmetic is visible; <b>the session gave the mechanism, not these specific settings.</b> Use your project's own numbers.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 10 INCLUSION -->
+<section class="slide" data-clock="07:33" data-short="Inclusion & the '2' trap">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">07:33</span><span>inverter inclusion · feeder control</span></div>
+    <h2 class="title">Taking an inverter out of the maths</h2>
+    <div class="grid g2">
+      <div class="grid" style="gap:16px">
+        <ul class="pts">
+          <li>HMI and SCADA commands can add or remove <b>individual inverters or whole feeder groups</b> from the MPC calculations — for lockout, maintenance, or any other operating condition.</li>
+          <li><b>Feeder-level and individual-inverter include controls are separate.</b> Cross-references will trace the source logic behind each signal.</li>
+          <li>A <b>remote-enable signal going false</b> excludes that inverter from the MPC calculations.</li>
+          <li>Reusable loop logic must <b>reset its calculation inputs to zero</b> where required — otherwise repeated inverter calculations accumulate values nobody intended.</li>
+        </ul>
+      </div>
+      <div class="grid" style="gap:16px">
+        <div class="call trap"><span class="tag">The whole plant, disabled by a 2</span><b>A value of 2 arriving from an RTAC during initialisation — or after retained variables are wiped — can disable remote enable for every inverter.</b> The fix is not a restart: trace the HMI or RTAC command and restore it. This is a plant-wide outage caused by a single unexpected enumeration.</div>
+        <div class="call"><span class="tag">Connects to Day 1</span>Reinitialising retained variables writes zeroes and rewrites the retained values — the Day 1 send option that sounds harmless. This is what it can look like from the plant side.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 11 CLAMPING -->
+<section class="slide" data-clock="07:39" data-short="Status & clamping">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">07:39</span><span>inverter status · clamping</span></div>
+    <h2 class="title">Clamping, and the overshoot it hides</h2>
+    <p class="standfirst">Drag the delay. Everything to the right of the recovery is the cost of waiting too long to notice an inverter stopped following.</p>
+    <div class="tool">
+      <div class="tool-h"><span class="lbl">Clamp behaviour</span><span class="lbl">Session configuration: <b>10% threshold · 15 s delay</b></span></div>
+      <div class="tool-b" data-tool="clamp">
+        <div class="grid g2" style="gap:18px;margin-bottom:14px">
+          <div class="ctl" style="margin:0"><label for="cl-delay">Clamp delay <output for="cl-delay" id="cl-delay-o">15 s</output></label>
+            <input type="range" id="cl-delay" min="2" max="60" step="1" value="15"></div>
+          <div class="ctl" style="margin:0"><label for="cl-thr">Clamping threshold <output for="cl-thr" id="cl-thr-o">10 %</output></label>
+            <input type="range" id="cl-thr" min="2" max="25" step="1" value="10"></div>
+        </div>
+        <div data-clamp-chart></div>
+        <div class="legend">
+          <span><i style="background:var(--pen)"></i>Plant setpoint</span>
+          <span><i class="dash"></i>Inverter output</span>
+          <span><i class="band"></i>Setpoint / output gap at recovery</span>
+        </div>
+        <div class="readout">
+          <div class="stats">
+            <div class="stat"><dt>Gap at recovery</dt><dd data-cl-gap>—</dd></div>
+            <div class="stat" data-cl-stat><dt>Recovery behaviour</dt><dd data-cl-v>—</dd></div>
+          </div>
+          <p class="verdict" data-cl-msg></p>
+        </div>
+      </div>
+    </div>
+    <div class="grid g2" style="margin-top:20px">
+      <ul class="pts">
+        <li>Inverter feedback covers P and Q values, limits, communication status, remote enable, fault status, offline state and <b>clamping state</b>.</li>
+        <li><b>Status updates are taken from the primary RTAC</b>, not the secondary.</li>
+      </ul>
+      <ul class="pts">
+        <li>Clamping begins when output drops to the configured percentage of setpoint <b>and stays there for the configured delay</b>.</li>
+        <li><b>A clamped setpoint keeps ramping upward — it is not frozen.</b> That is precisely why a long delay is expensive.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 12 PID -->
+<section class="slide" data-clock="07:46" data-short="PID, deadband, DVDQ">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">07:46</span><span>tuning</span></div>
+    <h2 class="title">KP is a booster. KI is the compensation.</h2>
+    <div class="grid g23">
+      <div class="tool">
+        <div class="tool-h"><span class="lbl">Step response · <b data-pid-tag>KP 0.40 · KI 0.010</b></span><button class="reset" type="button" data-reset="pid">Session values</button></div>
+        <div class="tool-b" data-tool="pid">
+          <div class="ctl"><label for="pid-kp">KP <output for="pid-kp" id="pid-kp-o">0.40</output></label>
+            <input type="range" id="pid-kp" min="0.05" max="1.5" step="0.05" value="0.4"></div>
+          <div class="ctl"><label>KI</label>
+            <div class="opts two" data-ki>
+              <button class="opt" type="button" data-v="0.01" aria-pressed="true"><span class="v">KI = 0.01</span><span class="d">the tested configuration</span></button>
+              <button class="opt" type="button" data-v="0"><span class="v">KI = 0</span><span class="d">no integral term at all</span></button>
+            </div>
+          </div>
+          <div data-pid-chart></div>
+          <div class="legend">
+            <span><i style="background:var(--pen)"></i>Grid Connect PI</span>
+            <span><i class="dash"></i>SCLutils.PID</span>
+            <span><i style="background:var(--rule-strong)"></i>Setpoint</span>
+          </div>
+          <div class="readout">
+            <div class="stats">
+              <div class="stat"><dt>Grid Connect — overshoot</dt><dd data-pid-os>—</dd></div>
+              <div class="stat"><dt>SCLutils.PID — reaches</dt><dd data-pid-ss>—</dd></div>
+            </div>
+            <p class="verdict" data-pid-msg></p>
+          </div>
+        </div>
+      </div>
+      <div class="grid" style="gap:14px;align-content:start">
+        <div class="call"><span class="tag">Why the library matters</span><b>Grid Connect's PI accumulates the previous P-term with the new error &#215; KP term</b>, so the output can reach 100% even when KI is zero. <b>The <code>SCLutils.PID</code> library used in the existing trim-mapping logic cannot do that</b> — with KI at zero it never gets there. Same tuning numbers, different outcome, depending on which block you are in.</div>
+        <ul class="pts">
+          <li>Start <b>KP around 0.3–0.4</b>. KP is the booster; KI provides the compensation and the smoother response.</li>
+          <li>The test configuration was <b>KP 0.4, KI 0.01</b> — and <b>excessive KP was identified as the more significant problem</b>, not KI.</li>
+        </ul>
+        <div class="tool">
+          <div class="tool-h"><span class="lbl">Deadband, accounting for clamping</span></div>
+          <div class="tool-b" data-tool="db">
+            <div class="grid g2" style="gap:14px">
+              <div class="ctl" style="margin:0"><label for="db-mw">Operating point <output for="db-mw" id="db-mw-o">56 MW</output></label>
+                <input type="range" id="db-mw" min="5" max="200" step="1" value="56"></div>
+              <div class="ctl" style="margin:0"><label for="db-cl">Clamping <output for="db-cl" id="db-cl-o">5 %</output></label>
+                <input type="range" id="db-cl" min="1" max="20" step="1" value="5"></div>
+            </div>
+            <p class="verdict" data-db-msg style="margin-top:12px"></p>
+          </div>
+        </div>
+        <div class="call trap"><span class="tag">DVDQ</span><b>DVDQ is the relationship between a voltage change and the Q response.</b> Set it too aggressively and a small voltage deviation commands maximum Q. Voltage control ramps toward a voltage setpoint normally — but <b>bypasses the ramp during a Volt-VAR event</b> to deliver direct Q compensation.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 13 OPERATING -->
+<section class="slide" data-clock="08:02" data-short="Operating & monitoring">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">08:02</span><span>operating parameters · online values</span></div>
+    <h2 class="title">Looking at it while it runs</h2>
+    <div class="grid g2">
+      <div class="grid" style="gap:16px">
+        <ul class="pts">
+          <li><b>The plant regulation execution period must match the POI meter response.</b> A 100 ms execution period requires meter data at that rate — the same budget as slide 8, stated from the controller's side.</li>
+          <li><b>PI reset</b> clears accumulated controller parameters after a setpoint-source change or an event such as DFR or PFR. Without it, the integrator carries history that no longer applies.</li>
+          <li>IEEE 2800-related behaviour has a <b>separate bit</b> where the project requires it.</li>
+        </ul>
+      </div>
+      <div class="grid" style="gap:16px">
+        <ul class="pts">
+          <li><b>Online Grid Connect parameters are exposed through the plus button beside the MPC block.</b> Values can be overridden or forced for testing, and revert on reboot unless retained.</li>
+          <li>Night-time Q response may be supported through a plant-loop condition and a separate operating mode. <span class="unconfirmed">implementation not confirmed</span></li>
+          <li>Battery-related logic exists in the library but was outside the scope of this project.</li>
+        </ul>
+        <div class="call"><span class="tag">Connects to Day 1</span>Forcing a value requires the full project download, not a logic-only send. If you plan to override online parameters during commissioning, that decision was made back on Day 1's send screen.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 14 DDR -->
+<section class="slide" data-clock="08:11" data-short="DDR & testing">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">08:11</span><span>Dynamic Disturbance Record</span></div>
+    <h2 class="title">Proving the plant actually responded</h2>
+    <p class="standfirst">DDR records high-speed signals to CSV — the evidence behind a P-COD test, and the only practical way to see what each inverter was really commanded.</p>
+    <div class="grid g23">
+      <div class="tool">
+        <div class="tool-h"><span class="lbl">DDR configuration · <b data-ddr-n>0 channels</b></span><button class="reset" type="button" data-reset="ddr">Clear</button></div>
+        <div class="tool-b" data-tool="ddr">
+          <div class="opts two" data-ddr-sigs style="margin-bottom:14px">
+            <button class="opt" type="button" data-sig="P at POI"><span class="k">Channel</span><span class="v">P at POI</span><span class="d">MW</span></button>
+            <button class="opt" type="button" data-sig="Q at POI"><span class="k">Channel</span><span class="v">Q at POI</span><span class="d">MVAr</span></button>
+            <button class="opt" type="button" data-sig="Plant setpoint"><span class="k">Channel</span><span class="v">Plant setpoint</span><span class="d">MW</span></button>
+            <button class="opt" type="button" data-sig="POI frequency"><span class="k">Channel</span><span class="v">POI frequency</span><span class="d">Hz</span></button>
+            <button class="opt" type="button" data-sig="Inverter 03 setpoint"><span class="k">Channel</span><span class="v">Inverter 03 setpoint</span><span class="d">kW — otherwise invisible</span></button>
+            <button class="opt" type="button" data-sig="Clamping state"><span class="k">Channel</span><span class="v">Clamping state</span><span class="d">bool</span></button>
+          </div>
+          <div class="grid g2" style="gap:14px">
+            <div class="ctl" style="margin:0"><label for="ddr-mode">Trigger</label>
+              <div class="opts two"><button class="opt" type="button" data-mode="event" aria-pressed="true"><span class="v">Event-driven</span></button><button class="opt" type="button" data-mode="periodic"><span class="v">Periodic</span></button></div></div>
+            <div class="ctl" style="margin:0"><label for="ddr-per">Sampling period <output for="ddr-per" id="ddr-per-o">20 ms</output></label>
+              <input type="range" id="ddr-per" min="10" max="500" step="10" value="20"></div>
+          </div>
+          <div class="readout"><pre style="margin:0;overflow-x:auto"><code data-ddr-out style="display:block;padding:12px;line-height:1.6;background:var(--sunk)"></code></pre></div>
+        </div>
+      </div>
+      <div class="grid" style="gap:14px;align-content:start">
+        <ul class="pts">
+          <li>DDR compares P/Q behaviour, PFR response and setpoint transitions during <b>P-COD testing</b>. It can validate a requirement such as <b>reaching 100% response within 5 minutes of a 0-to-100 setpoint change</b>.</li>
+          <li>Recording is <b>event-driven or periodic</b>, with configurable sampling period, UTC or local time, output path, file name, folder size and file size.</li>
+          <li><b>The path creates a project-side directory</b> — it does not point at a folder on your laptop. This surprises people once each.</li>
+          <li>Data points need <b>fully qualified references</b> — <code>program.PRG.main.counter</code> — plus a channel assignment and units where they apply.</li>
+          <li>The CSV opens straight into plotting and analysis. <b>DDR is for testing across projects</b>, not only Grid Connect ones.</li>
+        </ul>
+        <div class="call"><span class="tag">Carried from Day 1</span>DDR needs <b>both its library and its extension</b> installed. Half of it is the usual reason it is not there when you go looking.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 15 EXTENSION -->
+<section class="slide" data-clock="08:22" data-short="Extension & maps">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">08:22</span><span>Grid Connect extension · reusable maps</span></div>
+    <h2 class="title">The version of this that is less work</h2>
+    <div class="grid g2">
+      <div class="grid" style="gap:16px">
+        <ul class="pts">
+          <li>The <b>Grid Connect extension assigns parameters directly</b>, with less programming than the current function-block approach.</li>
+          <li><b>Reusable maps</b> support multiple clients and inverter vendors — a map for SMA, a map for SunGrow. Holding registers and other Modbus points are defined once in a map and reused across devices.</li>
+          <li>Adding another client or inverter becomes <b>selecting the right existing map</b> instead of updating mappings in several program locations. That is the whole of Day 2's conversion work, collapsed.</li>
+          <li>Projects and extension configurations can be exported and imported into other projects.</li>
+          <li>Compatibility with newer Grid Connect versions was considered likely. <span class="unconfirmed">not confirmed</span></li>
+        </ul>
+      </div>
+      <div class="grid" style="gap:16px">
+        <div class="call rule"><span class="tag">Where the three days point</span>Day 2 taught the manual conversion because that is what these projects are today. This slide is the argument for not needing it — the same mapping, declared once and selected per device.</div>
+        <div class="call"><span class="tag">Next session</span>A future working session is expected to use an <b>Arch Tech / Grid Connect project</b> to trace references, inspect the logic, and demonstrate the extension. Bring a project and specific questions.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 16 QUIZ -->
+<section class="slide" data-short="Knowledge check">
+  <div class="inner">
+    <div class="eyebrow"><span>Knowledge check</span><span>seven questions</span></div>
+    <h2 class="title">Seven from the control chain</h2>
+    <div class="quiz" data-quiz>
+      <div class="q"><div class="qh"><span class="qn">01</span><span class="qt">The plant ramp is 1 second. How fast must POI meter data arrive?</span></div>
+        <div class="as">
+          <button class="a" type="button">Around 500 ms</button>
+          <button class="a" type="button" data-ok="1">Around 100 ms — at least 10× faster than the ramp</button>
+          <button class="a" type="button">Same as the ramp, 1 s</button>
+        </div>
+        <p class="why">And the PID needs at least 3–4× the ramp rate, 5× preferred. Both ratios come off the ramp time.</p>
+      </div>
+      <div class="q"><div class="qh"><span class="qn">02</span><span class="qt">KI is set to zero. Which block can still drive the output to 100%?</span></div>
+        <div class="as">
+          <button class="a" type="button">Both, if KP is high enough</button>
+          <button class="a" type="button" data-ok="1">Grid Connect's PI — it accumulates the previous P-term with the new error × KP term</button>
+          <button class="a" type="button">SCLutils.PID</button>
+        </div>
+        <p class="why">SCLutils.PID, used in the existing trim-mapping logic, cannot reach 100% response with KI at zero. Grid Connect's accumulation behaviour can.</p>
+      </div>
+      <div class="q"><div class="qh"><span class="qn">03</span><span class="qt">Operating at 56 MW with 5% clamping. Roughly what deadband?</span></div>
+        <div class="as">
+          <button class="a" type="button">About 56 kW</button>
+          <button class="a" type="button" data-ok="1">About 300 kW — the calculation gives ~280 kW</button>
+          <button class="a" type="button">About 2.8 MW</button>
+        </div>
+        <p class="why">Deadband has to account for clamping. 56 MW × 5% = 2.8 MW of clamping band; the derived deadband was around 280 kW, so ~300 kW was suggested.</p>
+      </div>
+      <div class="q"><div class="qh"><span class="qn">04</span><span class="qt">Every inverter has lost remote enable after a restart. Most likely cause?</span></div>
+        <div class="as">
+          <button class="a" type="button">The heartbeat failed and the secondary RTAC took over</button>
+          <button class="a" type="button" data-ok="1">A value of 2 arrived from an RTAC during initialisation, or after retained variables were wiped</button>
+          <button class="a" type="button">POI meter quality went bad</button>
+        </div>
+        <p class="why">Trace and restore the HMI or RTAC command. A restart on its own does not fix it — it is what caused it.</p>
+      </div>
+      <div class="q"><div class="qh"><span class="qn">05</span><span class="qt">Why is a 30-second clamp delay worse than 15?</span></div>
+        <div class="as">
+          <button class="a" type="button">The setpoint freezes for 30 seconds instead of 15</button>
+          <button class="a" type="button" data-ok="1">The setpoint keeps ramping while the output does not, so the gap grows — and the inverter overshoots or steps when it recovers</button>
+          <button class="a" type="button">It has no effect on the response, only on alarming</button>
+        </div>
+        <p class="why">A clamped setpoint continues ramping upward. The longer you wait to recognise the clamp, the larger the setpoint/output gap that has to be closed at once.</p>
+      </div>
+      <div class="q"><div class="qh"><span class="qn">06</span><span class="qt">You need to see what setpoint inverter 3 was actually sent. Where do you look?</span></div>
+        <div class="as">
+          <button class="a" type="button">The main program — the MPC assignment is visible there</button>
+          <button class="a" type="button" data-ok="1">Nowhere by default; expose it through DDR or a dedicated global variable</button>
+          <button class="a" type="button">The Ignition server points</button>
+        </div>
+        <p class="why">The MPC block assigns setpoints directly to each inverter and the assignment is not visible in the main program. You have to expose it deliberately.</p>
+      </div>
+      <div class="q"><div class="qh"><span class="qn">07</span><span class="qt">You set the DDR output path to a folder on your laptop. What happens?</span></div>
+        <div class="as">
+          <button class="a" type="button">The CSV files appear in that folder</button>
+          <button class="a" type="button" data-ok="1">A project-side directory is created instead — the path is not your machine</button>
+          <button class="a" type="button">DDR refuses the configuration</button>
+        </div>
+        <p class="why">The path creates a directory on the project side. Retrieve the CSV from there.</p>
+      </div>
+    </div>
+    <div class="score"><span>Knowledge check</span><span data-score><b>0</b> / 7</span></div>
+  </div>
+</section>
+
+<!-- 17 CLOSE -->
+<section class="slide" data-short="Three mornings, one system">
+  <div class="inner">
+    <div class="eyebrow"><span>End of Day 3</span><span>and of the series</span></div>
+    <h2 class="title">Three mornings, one system</h2>
+    <p class="standfirst">The through-line: <b>every choice on Day 1 shows up as a limit on Day 3.</b> The protocol you picked sets the meter rate, the meter rate sets the ramp you can support, the ramp sets the PID, and the PID is what a compliance test measures.</p>
+    <div class="grid g2" style="margin-bottom:22px">
+      <div class="call rule"><span class="tag">The chain, in one line</span>C37.118 at ~16 ms instead of DNP3 at ~500 ms → a POI meter fast enough for a 100 ms execution period → a 1-second ramp with a PID running 5× faster → a response that can meet a 200 ms reaction target.</div>
+      <div class="call"><span class="tag">And in the other direction</span>Day 3's extension and reusable maps are the answer to Day 2's conversion work — the same Modbus point list from Day 1, declared once as a map and selected per device instead of re-mapped by hand.</div>
+    </div>
+    <div class="grid" style="gap:10px">
+      <h3>Action items from Day 3</h3>
+      <div class="actions">
+        <div class="act"><span class="who">Presenter</span><span class="what">Prepare a sample project demonstrating the Grid Connect extension, reusable maps and multi-vendor inverter configuration for a future tech talk</span></div>
+        <div class="act"><span class="who">Babu</span><span class="what">Share a relevant Grid Connect project with the group for the working session</span></div>
+        <div class="act"><span class="who">Presenter</span><span class="what">Provide the DDR / deadband manual screenshot, and cover extension usage in a subsequent session</span></div>
+        <div class="act"><span class="who">Everyone</span><span class="what">Bring an Arch Tech or Grid Connect project — and specific questions — to the next working session</span></div>
+      </div>
+    </div>
+  </div>
+</section>

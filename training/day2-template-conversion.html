@@ -1,0 +1,1287 @@
+<title>Template to Plant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap">
+<style>
+/* ============ TOKENS ============ */
+:root{
+  --paper:#F2F5F7; --surface:#FFFFFF; --sunk:#EAEFF3;
+  --ink:#111A21; --ink-2:#33424E; --muted:#5C6B77; --faint:#8496A3;
+  --rule:#DCE3E8; --rule-strong:#C3CFD8;
+  --pen-1:#B87A12; --pen-2:#0A76B0; --pen-3:#AE2E6E;
+  --pen-1-text:#8F5D0A; --pen-2-text:#075C8B; --pen-3-text:#8C2456;
+  --pen-1-wash:#B87A121A; --pen-2-wash:#0A76B01A; --pen-3-wash:#AE2E6E1A;
+  --good:#1C7A4F; --good-wash:#1C7A4F14;
+  --crit:#A82420; --crit-wash:#A8242012;
+  --shadow:0 1px 2px #101a2110, 0 8px 24px -12px #101a2124;
+  --stage-max:1120px;
+  --f-display:"Source Serif 4",Georgia,"Times New Roman",serif;
+  --f-body:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#0D1418; --surface:#161F26; --sunk:#111A20;
+    --ink:#E4EDF3; --ink-2:#C2D0DA; --muted:#8FA1AD; --faint:#6C7E8B;
+    --rule:#26333C; --rule-strong:#374753;
+    --pen-1:#BC8018; --pen-2:#1F92D2; --pen-3:#CB5C95;
+    --pen-1-text:#E0AA4E; --pen-2-text:#6DBBEA; --pen-3-text:#E68CBA;
+    --pen-1-wash:#BC801826; --pen-2-wash:#1F92D226; --pen-3-wash:#CB5C9526;
+    --good:#43B37D; --good-wash:#43B37D1F;
+    --crit:#E8756D; --crit-wash:#E8756D1A;
+    --shadow:0 1px 2px #0007, 0 10px 28px -14px #000a;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0D1418; --surface:#161F26; --sunk:#111A20;
+  --ink:#E4EDF3; --ink-2:#C2D0DA; --muted:#8FA1AD; --faint:#6C7E8B;
+  --rule:#26333C; --rule-strong:#374753;
+  --pen-1:#BC8018; --pen-2:#1F92D2; --pen-3:#CB5C95;
+  --pen-1-text:#E0AA4E; --pen-2-text:#6DBBEA; --pen-3-text:#E68CBA;
+  --pen-1-wash:#BC801826; --pen-2-wash:#1F92D226; --pen-3-wash:#CB5C9526;
+  --good:#43B37D; --good-wash:#43B37D1F;
+  --crit:#E8756D; --crit-wash:#E8756D1A;
+  --shadow:0 1px 2px #0007, 0 10px 28px -14px #000a;
+}
+/* per-deck accent alias */
+body[data-pen="1"]{--pen:var(--pen-1);--pen-text:var(--pen-1-text);--pen-wash:var(--pen-1-wash);}
+body[data-pen="2"]{--pen:var(--pen-2);--pen-text:var(--pen-2-text);--pen-wash:var(--pen-2-wash);}
+body[data-pen="3"]{--pen:var(--pen-3);--pen-text:var(--pen-3-text);--pen-wash:var(--pen-3-wash);}
+
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--f-body);font-size:16px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,h4{margin:0;text-wrap:balance;font-family:var(--f-display);font-weight:600;letter-spacing:-.012em;line-height:1.12}
+p{margin:0}
+a{color:var(--pen-text)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--pen);outline-offset:2px;border-radius:2px}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;transition-duration:.001ms!important}}
+
+/* ============ RAILS ============ */
+.rail{position:fixed;left:0;right:0;z-index:40;background:color-mix(in srgb,var(--paper) 88%,transparent);
+  backdrop-filter:blur(10px);display:flex;align-items:center;gap:14px;
+  padding:0 clamp(16px,4vw,40px);font-family:var(--f-mono);font-size:11.5px;letter-spacing:.04em}
+.rail--top{top:0;height:46px;border-bottom:1px solid var(--rule)}
+.rail--bot{bottom:0;height:52px;border-top:1px solid var(--rule)}
+.rail-id{display:flex;align-items:baseline;gap:9px;min-width:0}
+.rail-id b{font-family:var(--f-display);font-size:14px;font-weight:600;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rail-id span{color:var(--faint);text-transform:uppercase;white-space:nowrap}
+.spacer{flex:1}
+.pens{display:flex;gap:5px;align-items:center}
+.pen-dot{width:26px;height:26px;border-radius:50%;border:1px solid var(--rule-strong);background:var(--surface);
+  display:grid;place-items:center;text-decoration:none;color:var(--faint);font-family:var(--f-mono);font-size:10.5px;
+  cursor:pointer;transition:transform .12s ease,border-color .12s}
+.pen-dot:hover{transform:translateY(-1px);border-color:var(--rule-strong)}
+.pen-dot[data-p="1"]{--d:var(--pen-1)} .pen-dot[data-p="2"]{--d:var(--pen-2)} .pen-dot[data-p="3"]{--d:var(--pen-3)}
+.pen-dot[aria-current="page"]{background:var(--d);border-color:var(--d);color:#fff;font-weight:600}
+.pen-dot:not([href]){opacity:.5;cursor:default}
+.count{color:var(--muted);font-variant-numeric:tabular-nums}
+.count b{color:var(--ink);font-weight:500}
+.progress{position:fixed;top:45px;left:0;height:2px;background:var(--pen);z-index:41;transition:width .25s ease;width:0}
+
+.rbtn{background:var(--surface);border:1px solid var(--rule-strong);border-radius:6px;padding:6px 12px;
+  font-family:var(--f-mono);font-size:11.5px;letter-spacing:.03em;cursor:pointer;color:var(--ink-2);
+  display:inline-flex;align-items:center;gap:6px;transition:border-color .12s,color .12s}
+.rbtn:hover{border-color:var(--pen);color:var(--pen-text)}
+.rbtn[disabled]{opacity:.35;cursor:default}
+.rbtn kbd{font:inherit;color:var(--faint)}
+.hint{color:var(--faint);display:none}
+@media (min-width:820px){.hint{display:inline}}
+
+/* ============ STAGE ============ */
+main{padding:46px 0 52px}
+.slide{display:none;padding:clamp(24px,4.5vw,52px) clamp(16px,4vw,40px) 104px}
+.slide.on{display:block;animation:rise .3s ease}
+@keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.inner{max-width:var(--stage-max);margin:0 auto}
+.eyebrow{font-family:var(--f-mono);font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--muted);display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:14px}
+.eyebrow .clock{color:var(--pen-text);font-weight:500}
+.eyebrow .clock::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;
+  background:var(--pen);margin-right:7px;vertical-align:1px}
+h2.title{font-size:clamp(28px,4.4vw,44px);margin-bottom:10px}
+.standfirst{font-size:clamp(16px,1.7vw,19px);color:var(--ink-2);max-width:64ch;margin-bottom:26px;line-height:1.5}
+.slide h3{font-size:15px;font-family:var(--f-body);font-weight:600;letter-spacing:.01em;margin-bottom:10px}
+.grid{display:grid;gap:18px}
+@media(min-width:760px){.g2{grid-template-columns:1fr 1fr}.g23{grid-template-columns:1.15fr .85fr}.g32{grid-template-columns:.85fr 1.15fr}}
+
+/* ============ CONTENT BLOCKS ============ */
+ul.pts{list-style:none;margin:0;padding:0;display:grid;gap:11px}
+ul.pts li{padding-left:20px;position:relative;color:var(--ink-2);font-size:15.5px;line-height:1.5}
+ul.pts li::before{content:"";position:absolute;left:2px;top:.62em;width:7px;height:1.5px;background:var(--rule-strong)}
+ul.pts li b,ul.pts li strong{color:var(--ink);font-weight:600}
+.panel{background:var(--surface);border:1px solid var(--rule);border-radius:10px;padding:20px}
+.panel-h{font-family:var(--f-mono);font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);
+  margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+code,.m{font-family:var(--f-mono);font-size:.9em;background:var(--sunk);padding:1.5px 5px;border-radius:4px;color:var(--ink)}
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+
+/* callouts */
+.call{border-left:3px solid var(--pen);background:var(--pen-wash);padding:14px 16px;border-radius:0 8px 8px 0;font-size:15px;color:var(--ink-2)}
+.call b{color:var(--ink)}
+.call.trap{border-color:var(--crit);background:var(--crit-wash)}
+.call.rule{border-color:var(--good);background:var(--good-wash)}
+.call .tag{display:block;font-family:var(--f-mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:5px}
+.call.trap .tag{color:var(--crit)} .call.rule .tag{color:var(--good)}
+.unconfirmed{display:inline-flex;align-items:center;gap:5px;font-family:var(--f-mono);font-size:10.5px;
+  letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border:1px dashed var(--rule-strong);
+  border-radius:999px;padding:2px 9px;vertical-align:1px}
+.outside{border:1px solid var(--rule);border-radius:10px;padding:16px 18px;background:
+  repeating-linear-gradient(135deg,transparent,transparent 7px,var(--sunk) 7px,var(--sunk) 8px);font-size:14.5px;color:var(--ink-2)}
+.outside .tag{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--muted);display:block;margin-bottom:6px}
+.outside cite{display:block;margin-top:9px;font-style:normal;font-family:var(--f-mono);font-size:11px;color:var(--faint)}
+.outside b{color:var(--ink)}
+
+/* tables */
+.tw{overflow-x:auto;border:1px solid var(--rule);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:440px}
+th,td{text-align:left;padding:9px 14px;border-bottom:1px solid var(--rule)}
+th{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:400;
+  background:var(--sunk)}
+tr:last-child td{border-bottom:0}
+td.n{font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* ============ COVER ============ */
+.cover{display:grid;gap:26px;padding-block:clamp(10px,3vw,34px)}
+.cover .day{font-family:var(--f-mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--pen-text)}
+.cover h1{font-size:clamp(38px,7.4vw,76px);line-height:1.02;letter-spacing:-.026em;max-width:15ch}
+.cover .sub{font-size:clamp(17px,2vw,21px);color:var(--ink-2);max-width:56ch;line-height:1.45}
+.meta{display:flex;flex-wrap:wrap;gap:10px 28px;font-family:var(--f-mono);font-size:12px;color:var(--muted);
+  border-top:1px solid var(--rule);padding-top:18px}
+.meta div{display:grid;gap:2px}
+.meta dt{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+.meta dd{margin:0;color:var(--ink);font-variant-numeric:tabular-nums}
+
+/* trend strip on cover */
+.trend{border:1px solid var(--rule);border-radius:10px;background:var(--surface);padding:14px 16px}
+.trend svg{display:block;width:100%;height:auto;max-width:100%}
+.trend-legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:10px;font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+.trend-legend span{display:inline-flex;align-items:center;gap:6px}
+.trend-legend i{width:14px;height:2px;border-radius:1px;display:inline-block}
+
+/* ============ INTERACTIVE ============ */
+.tool{background:var(--surface);border:1px solid var(--rule-strong);border-radius:12px;overflow:hidden;box-shadow:var(--shadow)}
+.tool-h{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 16px;
+  border-bottom:1px solid var(--rule);background:var(--sunk)}
+.tool-h .lbl{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.tool-h .lbl b{color:var(--pen-text);font-weight:500}
+.tool-b{padding:18px}
+.reset{background:none;border:0;font-family:var(--f-mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--faint);cursor:pointer;padding:2px 4px}
+.reset:hover{color:var(--pen-text)}
+
+.opts{display:grid;gap:9px}
+@media(min-width:620px){.opts.two{grid-template-columns:1fr 1fr}.opts.three{grid-template-columns:repeat(3,1fr)}}
+.opt{text-align:left;background:var(--surface);border:1px solid var(--rule-strong);border-radius:9px;padding:12px 14px;
+  cursor:pointer;transition:border-color .12s,background .12s;display:grid;gap:3px;line-height:1.35}
+.opt:hover{border-color:var(--pen)}
+.opt .k{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--faint)}
+.opt .v{font-size:15px;font-weight:500;color:var(--ink)}
+.opt .d{font-size:13px;color:var(--muted)}
+.opt[aria-pressed="true"]{border-color:var(--pen);background:var(--pen-wash)}
+.opt[aria-pressed="true"] .k{color:var(--pen-text)}
+.opt.ok{border-color:var(--good);background:var(--good-wash)}
+.opt.no{border-color:var(--crit);background:var(--crit-wash)}
+
+.readout{margin-top:16px;border-top:1px solid var(--rule);padding-top:16px;display:grid;gap:12px}
+.stats{display:grid;gap:10px}
+@media(min-width:560px){.stats{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}}
+.stat{border:1px solid var(--rule);border-radius:9px;padding:11px 13px;display:grid;gap:3px;background:var(--sunk)}
+.stat dt{font-family:var(--f-mono);font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.stat dd{margin:0;font-family:var(--f-mono);font-size:19px;font-variant-numeric:tabular-nums;color:var(--ink);letter-spacing:-.02em}
+.stat dd small{font-size:11px;color:var(--muted);letter-spacing:0}
+.stat[data-s="ok"]{border-color:var(--good);background:var(--good-wash)}
+.stat[data-s="ok"] dd{color:var(--good)}
+.stat[data-s="bad"]{border-color:var(--crit);background:var(--crit-wash)}
+.stat[data-s="bad"] dd{color:var(--crit)}
+.verdict{font-size:15px;color:var(--ink-2);line-height:1.5}
+.verdict b{color:var(--ink)}
+
+.ctl{display:grid;gap:7px;margin-bottom:16px}
+.ctl label{font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
+  display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.ctl label output{font-size:14px;color:var(--pen-text);font-variant-numeric:tabular-nums;letter-spacing:0;text-transform:none}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:22px;background:transparent;cursor:pointer;margin:0}
+input[type=range]::-webkit-slider-runnable-track{height:4px;background:var(--rule-strong);border-radius:2px}
+input[type=range]::-moz-range-track{height:4px;background:var(--rule-strong);border-radius:2px}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--pen);
+  border:2px solid var(--surface);margin-top:-6px;box-shadow:0 0 0 1px var(--rule-strong)}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--pen);border:2px solid var(--surface);
+  box-shadow:0 0 0 1px var(--rule-strong)}
+input[type=text],input[type=number],select{width:100%;padding:9px 11px;border:1px solid var(--rule-strong);border-radius:8px;
+  background:var(--surface);color:var(--ink);font-family:var(--f-mono);font-size:14px}
+
+/* checklist */
+.chk{display:grid;gap:2px}
+.chk-item{display:flex;gap:11px;align-items:flex-start;padding:10px 12px;border-radius:8px;cursor:pointer;
+  border:1px solid transparent;transition:background .12s}
+.chk-item:hover{background:var(--sunk)}
+.chk-item input{margin:3px 0 0;width:16px;height:16px;accent-color:var(--pen);flex:none;cursor:pointer}
+.chk-item .t{font-size:15px;color:var(--ink-2);line-height:1.4}
+.chk-item .t b{color:var(--ink);font-weight:600}
+.chk-item .t em{font-style:normal;display:block;font-size:13px;color:var(--muted);margin-top:2px}
+.chk-item input:checked + .t{color:var(--faint)}
+.chk-item input:checked + .t b{color:var(--muted)}
+.chk-bar{display:flex;align-items:center;gap:10px;margin-top:12px;font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+.chk-bar .track{flex:1;height:4px;background:var(--rule);border-radius:2px;overflow:hidden}
+.chk-bar .fill{height:100%;background:var(--good);width:0;transition:width .2s ease}
+
+/* flow diagram */
+.flow{display:flex;flex-wrap:wrap;gap:6px;align-items:stretch}
+.node{flex:1 1 118px;min-width:0;text-align:left;background:var(--surface);border:1px solid var(--rule-strong);
+  border-radius:9px;padding:10px 11px;cursor:pointer;display:grid;gap:3px;transition:border-color .12s,background .12s}
+.node:hover{border-color:var(--pen)}
+.node .i{font-family:var(--f-mono);font-size:10px;color:var(--faint);letter-spacing:.08em}
+.node .n{font-size:13.5px;font-weight:600;color:var(--ink);line-height:1.25}
+.node[aria-pressed="true"]{border-color:var(--pen);background:var(--pen-wash)}
+.node[aria-pressed="true"] .i{color:var(--pen-text)}
+.arrow{align-self:center;color:var(--rule-strong);font-family:var(--f-mono);font-size:13px;flex:none}
+.detail{margin-top:16px;border-top:1px solid var(--rule);padding-top:16px;font-size:15px;color:var(--ink-2);line-height:1.5;min-height:88px}
+.detail h4{font-family:var(--f-body);font-size:15px;font-weight:600;color:var(--ink);margin-bottom:7px}
+.detail ul{margin:8px 0 0;padding-left:18px;display:grid;gap:5px}
+
+/* charts */
+.chart{width:100%;height:auto;display:block;max-width:100%;overflow:visible}
+.chart text{font-family:var(--f-mono);font-size:10px;fill:var(--muted)}
+.chart .axis{stroke:var(--rule);stroke-width:1}
+.chart .grid{stroke:var(--rule);stroke-width:1;stroke-dasharray:2 4;opacity:.7}
+.legend{display:flex;flex-wrap:wrap;gap:16px;margin-top:10px;font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.legend i{width:16px;height:2px;border-radius:1px;flex:none}
+.legend i.dash{background:repeating-linear-gradient(90deg,var(--ink-2) 0 4px,transparent 4px 7px);height:2px}
+.legend i.band{height:9px;border-radius:2px;border:1px solid var(--crit);background:var(--crit-wash)}
+
+/* register map */
+.regs{display:grid;grid-template-columns:repeat(auto-fill,minmax(74px,1fr));gap:4px}
+.reg{border:1px solid var(--rule);border-radius:6px;padding:7px 6px;text-align:center;background:var(--sunk);
+  font-family:var(--f-mono);font-size:10.5px;color:var(--muted);display:grid;gap:2px;transition:background .15s}
+.reg .a{color:var(--faint);font-size:9.5px}
+.reg .l{color:var(--ink);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.reg[data-part="hi"]{background:var(--pen-wash);border-color:var(--pen)}
+.reg[data-part="lo"]{background:var(--pen-wash);border-color:var(--pen);border-top-style:dashed}
+.reg[data-part="one"]{background:var(--pen-wash);border-color:var(--pen)}
+
+/* quiz */
+.quiz{display:grid;gap:16px}
+.q{border:1px solid var(--rule);border-radius:11px;padding:16px 18px;background:var(--surface)}
+.q .qh{display:flex;gap:10px;align-items:baseline;margin-bottom:12px}
+.q .qn{font-family:var(--f-mono);font-size:11px;color:var(--faint);flex:none}
+.q .qt{font-size:16px;font-weight:500;color:var(--ink);line-height:1.4}
+.q .as{display:grid;gap:7px}
+.a{text-align:left;background:var(--surface);border:1px solid var(--rule-strong);border-radius:8px;padding:10px 13px;
+  cursor:pointer;font-size:14.5px;color:var(--ink-2);transition:border-color .12s,background .12s;line-height:1.4}
+.a:hover:not([disabled]){border-color:var(--pen)}
+.a[data-r="ok"]{border-color:var(--good);background:var(--good-wash);color:var(--ink)}
+.a[data-r="no"]{border-color:var(--crit);background:var(--crit-wash);color:var(--ink)}
+.a[disabled]{cursor:default}
+.why{margin-top:11px;font-size:14px;color:var(--muted);border-left:2px solid var(--rule-strong);padding-left:12px;line-height:1.5;display:none}
+.why.on{display:block}
+.score{position:sticky;bottom:60px;background:var(--surface);border:1px solid var(--rule-strong);border-radius:11px;
+  padding:13px 18px;display:flex;align-items:center;justify-content:space-between;gap:14px;box-shadow:var(--shadow);
+  font-family:var(--f-mono);font-size:13px}
+.score b{font-size:19px;color:var(--pen-text);font-variant-numeric:tabular-nums}
+
+/* overview */
+.ov{position:fixed;inset:0;z-index:60;background:color-mix(in srgb,var(--paper) 94%,transparent);
+  backdrop-filter:blur(6px);overflow:auto;padding:clamp(20px,5vw,52px)}
+.ov[hidden]{display:none}
+.ov-h{max-width:1080px;margin:0 auto 22px;display:flex;align-items:baseline;justify-content:space-between;gap:16px}
+.ov-h h3{font-family:var(--f-display);font-size:22px}
+.ov-grid{max-width:1080px;margin:0 auto;display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(215px,1fr))}
+.ov-card{text-align:left;background:var(--surface);border:1px solid var(--rule);border-radius:9px;padding:12px 14px;
+  cursor:pointer;display:grid;gap:5px;transition:border-color .12s,transform .12s}
+.ov-card:hover{border-color:var(--pen);transform:translateY(-1px)}
+.ov-card .oi{font-family:var(--f-mono);font-size:10.5px;color:var(--faint);display:flex;justify-content:space-between;gap:8px}
+.ov-card .ot{font-size:14.5px;font-weight:500;color:var(--ink);line-height:1.3}
+.ov-card[aria-current="true"]{border-color:var(--pen);background:var(--pen-wash)}
+.ov-card .bar{height:2px;background:var(--pen);border-radius:1px;width:0;opacity:.5}
+.ov-card[data-seen="1"] .bar{width:100%}
+
+/* notes */
+.notes{border-top:1px dashed var(--rule-strong);margin-top:26px;padding-top:16px;font-size:14.5px;color:var(--muted);
+  line-height:1.55;max-width:70ch}
+.notes .tag{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--faint);
+  display:block;margin-bottom:6px}
+body:not([data-notes="1"]) .notes{display:none}
+
+/* end card */
+.actions{display:grid;gap:9px}
+.act{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--rule);border-radius:9px;padding:12px 14px;background:var(--surface)}
+.act .who{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--pen-text);
+  flex:none;width:88px;padding-top:2px}
+.act .what{font-size:14.5px;color:var(--ink-2);line-height:1.45}
+@media(max-width:520px){.act{flex-direction:column;gap:4px}.act .who{width:auto}}
+
+</style>
+<script>
+document.body.setAttribute("data-deck","2");
+document.body.setAttribute("data-pen","2");
+window.DECK_URLS={"1": "https://claude.ai/code/artifact/65d204b8-174d-4bad-990c-3ea81fd14555", "2": "https://claude.ai/code/artifact/b460dbde-c6da-402a-bc43-12db1d1b3a5b", "3": "https://claude.ai/code/artifact/ffc7b1ac-d8dd-4d61-805f-dd31c73dcf38"};
+</script>
+
+<header class="rail rail--top">
+  <span class="rail-id"><b>Template to Plant</b><span>Day 2 · 9 Sep 2026</span></span>
+  <span class="spacer"></span>
+  <nav class="pens" aria-label="Other decks in this series">
+    <a class="pen-dot" data-p="1" href="https://claude.ai/code/artifact/65d204b8-174d-4bad-990c-3ea81fd14555" target="_blank" rel="noopener"  title="Day 1 — RTAC Configuration &amp; Protocols">1</a>
+    <a class="pen-dot" data-p="2"  aria-current="page" title="Day 2 — Template Conversion &amp; Inverter Integration">2</a>
+    <a class="pen-dot" data-p="3" href="https://claude.ai/code/artifact/ffc7b1ac-d8dd-4d61-805f-dd31c73dcf38" target="_blank" rel="noopener"  title="Day 3 — Grid Connect Control Logic &amp; DDR">3</a>
+  </nav>
+  <span class="count" id="count">01 / 15</span>
+</header>
+<div class="progress" id="prog"></div>
+
+<main>
+<!-- 01 COVER -->
+<section class="slide" data-short="Cover">
+  <div class="inner cover">
+    <span class="day">Day 2 · Tuesday 9 September 2026 · 07:00–08:36</span>
+    <h1>Template to Plant</h1>
+    <p class="sub">Nobody builds a plant project from an empty page. You find the closest one that already works, save it under a new name, and then spend the morning chasing every cross-reference the inverter swap just broke.</p>
+    <div class="trend" id="timeline"></div>
+    <div class="meta">
+      <div><dt>Session length</dt><dd>1h 36m</dd></div>
+      <div><dt>Worked example</dt><dd>SunGrow 4400 → 3150U</dd></div>
+      <div><dt>Interactive tools</dt><dd>5</dd></div>
+      <div><dt>Source</dt><dd>Session transcript</dd></div>
+    </div>
+    <p class="standfirst" style="margin:0;font-size:15px">Use <span class="m">←</span> <span class="m">→</span> to move, <span class="m">G</span> for all slides, <span class="m">N</span> for notes. Progress is remembered on this device.</p>
+  </div>
+</section>
+
+<!-- 02 ARC -->
+<section class="slide" data-short="Where this sits">
+  <div class="inner">
+    <div class="eyebrow"><span>The three mornings</span></div>
+    <h2 class="title">Between the wire and the setpoint</h2>
+    <p class="standfirst">Day 1 got values moving across DNP3, Modbus and C37.118. Day 3 will make the plant follow a number. Today is the project in between — the part that decides how much of either you have to rebuild for the next site.</p>
+    <div class="tool">
+      <div class="tool-h"><span class="lbl">Pick a day · <b>you are on Day 2</b></span></div>
+      <div class="tool-b">
+        <div class="flow" data-flow="arc">
+          <button class="node" type="button" data-k="d1"><span class="i">DAY 1 · 8 SEP</span><span class="n">Comms &amp; the RTAC</span></button>
+          <span class="arrow">→</span>
+          <button class="node" type="button" data-k="d2" aria-pressed="true"><span class="i">DAY 2 · 9 SEP</span><span class="n">Project &amp; inverters</span></button>
+          <span class="arrow">→</span>
+          <button class="node" type="button" data-k="d3"><span class="i">DAY 3 · 10 SEP</span><span class="n">Control &amp; recording</span></button>
+        </div>
+        <div class="detail" data-flow-out="arc"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 03 RULE ZERO -->
+<section class="slide" data-clock="07:00" data-short="Rule zero: Save As">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">07:00</span><span>locks · cross-check · Save As</span></div>
+    <h2 class="title">Rule zero: rename it before you touch it</h2>
+    <div class="grid g2">
+      <div class="grid" style="gap:16px">
+        <div class="call rule"><span class="tag">Do this first, every time</span><b>Save As, rename, then modify.</b> Every device change, data type change and mapping change after this point is destructive — and the project you started from is very likely running a plant right now.</div>
+        <ul class="pts">
+          <li>A project that was not closed properly stays locked. <b>Right-click to unlock</b> — but only the user or credential that created the lock can release it.</li>
+          <li><b>Admin credentials cannot unlock a project locked under another engineering credential.</b> Find the person, not a workaround.</li>
+          <li>Cross-check and clear the existing errors <b>before</b> you change anything. Otherwise you cannot tell your new breakage from the breakage you inherited.</li>
+        </ul>
+      </div>
+      <div class="tool">
+        <div class="tool-h"><span class="lbl">Opening sequence</span><button class="reset" type="button" data-chk-reset>Clear</button></div>
+        <div class="tool-b">
+          <div class="chk" data-chk="open">
+            <label class="chk-item"><input type="checkbox"><span class="t"><b>Project unlocked</b><em>right-click; only the locking credential can release it</em></span></label>
+            <label class="chk-item"><input type="checkbox"><span class="t"><b>Cross-check run on the untouched project</b><em>establishes your baseline error count</em></span></label>
+            <label class="chk-item"><input type="checkbox"><span class="t"><b>Inherited errors cleared</b><em>so new errors are unambiguously yours</em></span></label>
+            <label class="chk-item"><input type="checkbox"><span class="t"><b>Save As, renamed</b><em>before a single device or data type changes</em></span></label>
+          </div>
+          <div class="chk-bar"><span class="n">0 of 4</span><span class="track"><span class="fill"></span></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 04 ARCHITECTURE -->
+<section class="slide" data-clock="07:03" data-short="What a project holds">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">07:03</span><span>project architecture</span></div>
+    <h2 class="title">What is actually in one of these projects</h2>
+    <p class="standfirst">Click any block to see what it does and what varies from site to site — the varying parts are your conversion work.</p>
+    <div class="tool">
+      <div class="tool-h"><span class="lbl">Plant project · click a block</span></div>
+      <div class="tool-b">
+        <div class="flow" data-flow="arch">
+          <button class="node" type="button" data-k="ign" aria-pressed="true"><span class="i">SCADA</span><span class="n">Ignition server</span></button>
+          <button class="node" type="button" data-k="rtu"><span class="i">CONTROLLER</span><span class="n">RTU redundancy</span></button>
+          <button class="node" type="button" data-k="inv"><span class="i">FIELD</span><span class="n">Inverters</span></button>
+          <button class="node" type="button" data-k="mtr"><span class="i">FIELD</span><span class="n">Primary &amp; backup meters</span></button>
+          <button class="node" type="button" data-k="sub"><span class="i">FIELD</span><span class="n">Substation</span></button>
+          <button class="node" type="button" data-k="util"><span class="i">LOGIC</span><span class="n">Utility connection</span></button>
+        </div>
+        <div class="detail" data-flow-out="arch"></div>
+      </div>
+    </div>
+    <div class="notes"><span class="tag">Speaker note</span>Sites either bring everything through a concentrator or need separate connections per device — substation, QSC/QTD, met station, Ignition. Which one you are looking at changes the device tree substantially, so it belongs in the template inventory on the next slide.</div>
+  </div>
+</section>
+
+<!-- 05 TEMPLATE PICK -->
+<section class="slide" data-clock="07:08" data-short="Picking the template">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">07:08</span><span>the inventory</span></div>
+    <h2 class="title">The right template is the one you change least</h2>
+    <p class="standfirst">Score four candidates against a new project. The point is not the arithmetic — it is that this decision is made once, on evidence, instead of by whoever remembers a project name.</p>
+    <div class="grid g32">
+      <div class="grid" style="gap:16px;align-content:start">
+        <div class="call"><span class="tag">Build this once</span>A shared <b>Excel inventory</b>: project name, inverter brand and type, met station, FPS, substation connection, and any other device worth reusing. Filter it to find the closest template instead of guessing.</div>
+        <ul class="pts">
+          <li>A project with the <b>same inverter type</b> beats one with a completely different inverter, even if other things match.</li>
+          <li>A <b>hybrid project is the better base for another hybrid project</b> — battery and storage configuration is expensive to add and cheap to inherit.</li>
+          <li>Reuse the project with the largest matching device set. Meter-only changes are easy; control-architecture changes are not.</li>
+        </ul>
+      </div>
+      <div class="tool">
+        <div class="tool-h"><span class="lbl">Template match · <b data-best>—</b></span><button class="reset" type="button" data-reset="tmpl">Reset weights</button></div>
+        <div class="tool-b" data-tool="tmpl">
+          <p class="verdict" style="margin-bottom:14px">New project: <b>15 SunGrow inverters, hybrid with storage, met station, substation via concentrator.</b> Toggle what matters to you:</p>
+          <div class="opts two" data-w style="margin-bottom:16px">
+            <button class="opt" type="button" data-f="inv" aria-pressed="true"><span class="v">Inverter type</span><span class="d">Same brand and model</span></button>
+            <button class="opt" type="button" data-f="hyb" aria-pressed="true"><span class="v">Hybrid / storage</span><span class="d">Battery configuration</span></button>
+            <button class="opt" type="button" data-f="met" aria-pressed="true"><span class="v">Met station</span><span class="d">Weather data present</span></button>
+            <button class="opt" type="button" data-f="sub" aria-pressed="true"><span class="v">Substation link</span><span class="d">Concentrator vs direct</span></button>
+          </div>
+          <div data-rank></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 06 SWAP -->
+<section class="slide" data-clock="07:12" data-short="Swapping the inverter">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">07:12</span><span>globals · data types</span></div>
+    <h2 class="title">One data type, a hundred broken references</h2>
+    <div class="grid g2">
+      <div class="grid" style="gap:16px">
+        <ul class="pts">
+          <li>Update the <b>inverter and feeder counts</b> in global variables first. The worked example ran <span class="num">15</span> inverters across <span class="num">3</span> feeders.</li>
+          <li>Change the inverter-specific data type and its naming <b>consistently</b> — the example moved from <b>SunGrow 4400</b> to <b>SunGrow 3150U</b>.</li>
+          <li>Strings such as <code>PT01</code> and <code>PT02</code> are not themselves mapped, but keeping the naming consistent is what makes the project traceable six months later.</li>
+        </ul>
+        <div class="call trap"><span class="tag">Why it cascades</span>Changing a data type or a reference <b>breaks the mappings between programs, substations and data points</b>. Every one of those surfaces as a cross-reference error — which is the good news, because it means the tool will hand you the list.</div>
+      </div>
+      <div class="tool">
+        <div class="tool-h"><span class="lbl">What breaks when you change the type</span></div>
+        <div class="tool-b">
+          <div class="flow" data-flow="brk">
+            <button class="node" type="button" data-k="gv" aria-pressed="true"><span class="i">1</span><span class="n">Global variables</span></button>
+            <span class="arrow">→</span>
+            <button class="node" type="button" data-k="rw"><span class="i">2</span><span class="n">Read / write blocks</span></button>
+            <span class="arrow">→</span>
+            <button class="node" type="button" data-k="pg"><span class="i">3</span><span class="n">Programs &amp; FBs</span></button>
+            <span class="arrow">→</span>
+            <button class="node" type="button" data-k="sv"><span class="i">4</span><span class="n">Server points</span></button>
+          </div>
+          <div class="detail" data-flow-out="brk"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 07 LOOP -->
+<section class="slide" data-clock="07:18" data-short="The repair loop">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">07:18</span><span>error-driven repair</span></div>
+    <h2 class="title">The loop that gets you to zero</h2>
+    <p class="standfirst">Change one thing. Save. Cross-check. Follow the error to the page it names. Fix it. Repeat. It is slow and it is the only method that converges.</p>
+    <div class="grid g23">
+      <div class="tool">
+        <div class="tool-h"><span class="lbl">Run the loop · <b data-pass>pass 0</b></span><button class="reset" type="button" data-reset="loop">Restart</button></div>
+        <div class="tool-b" data-tool="loop">
+          <div class="flow" data-loop-steps>
+            <button class="node" type="button" data-s="0"><span class="i">STEP 1</span><span class="n">Change one reference</span></button>
+            <span class="arrow">→</span>
+            <button class="node" type="button" data-s="1"><span class="i">STEP 2</span><span class="n">Save</span></button>
+            <span class="arrow">→</span>
+            <button class="node" type="button" data-s="2"><span class="i">STEP 3</span><span class="n">Cross-check</span></button>
+            <span class="arrow">→</span>
+            <button class="node" type="button" data-s="3"><span class="i">STEP 4</span><span class="n">Follow the error</span></button>
+          </div>
+          <div class="readout">
+            <div class="stats">
+              <div class="stat"><dt>Cross-reference errors</dt><dd data-errs>47</dd></div>
+              <div class="stat"><dt>Pass</dt><dd data-passn>0 <small>of 5</small></dd></div>
+            </div>
+            <p class="verdict" data-loop-msg>Press <b>Advance</b> to walk one pass of the loop.</p>
+            <button class="rbtn" type="button" data-advance style="justify-self:start">Advance →</button>
+          </div>
+        </div>
+      </div>
+      <div class="grid" style="gap:14px;align-content:start">
+        <ul class="pts">
+          <li><b>Change one inverter or reference at a time.</b> Batch the changes and you lose the ability to tell which one caused what.</li>
+          <li><code>Ctrl+H</code> finds and replaces references — <b>SG 4400</b> to <b>SGT 3150</b>. Use <b>Replace All only when you understand the scope</b>; otherwise you have traded a known list of errors for an unknown one.</li>
+          <li>Delete references to things that <b>do not exist on the target inverter</b>, then run the cycle again.</li>
+          <li><code>Ctrl+Z</code> and the undo arrow will revert — but <b>save first</b>, because undo can reach into other program changes you meant to keep.</li>
+        </ul>
+        <div class="call trap"><span class="tag">Small change, real error</span>A changed register or name creates errors in places you did not edit — a prior reference to <span class="num">10</span> that now has to be <span class="num">09</span>. The cross-check finds it; guesswork does not.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 08 REGISTERS -->
+<section class="slide" data-clock="07:25" data-short="Registers & point lists">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">07:25</span><span>point lists</span></div>
+    <h2 class="title">The vendor point list is the contract</h2>
+    <div class="grid g2">
+      <ul class="pts">
+        <li>Match <b>register numbers and data-point names</b> to the target inverter's point list. That document, not the old project, is the authority.</li>
+        <li>Register numbers may not be mapped directly — but the naming convention normally mirrors the register number, which is what makes a mismatch visible.</li>
+        <li><b>Copy and paste accelerates repeated mappings.</b> On a first conversion, do it manually and one at a time anyway; you are still learning where this particular vendor differs.</li>
+      </ul>
+      <div class="grid" style="gap:14px">
+        <div class="call"><span class="tag">Carried from Day 1</span>Everything about signed vs unsigned, 16-bit vs 32-bit, and word order applies here unchanged. A point list that reads correctly in the vendor document still decodes to nonsense if the map disagrees about the byte order.</div>
+        <div class="outside"><span class="tag">Outside the room</span>Inverter Modbus is typically <b>cyclical — read, write, read</b> — averaging <b>200–250 ms</b> per cycle depending on model. That number sets a floor under how fast the plant controller can act on anything you map here, and it is why Day 3 spends so long on timing.<cite>Nor-Cal Controls, on IEEE 2800 response times, Sep 2024</cite></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 09 ADD INVERTER -->
+<section class="slide" data-clock="07:38" data-short="Adding an inverter">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">07:38</span><span>read · write · server points</span></div>
+    <h2 class="title">Adding inverter 16</h2>
+    <p class="standfirst">Six artifacts have to exist before a new inverter is real. Miss one and the plant runs — just without that inverter, quietly.</p>
+    <div class="grid g23">
+      <div class="tool">
+        <div class="tool-h"><span class="lbl">Six artifacts</span><button class="reset" type="button" data-chk-reset>Clear</button></div>
+        <div class="tool-b">
+          <div class="chk" data-chk="addinv">
+            <label class="chk-item"><input type="checkbox"><span class="t"><b>Global variable entry</b><em>and the inverter count raised — 15 → 16</em></span></label>
+            <label class="chk-item"><input type="checkbox"><span class="t"><b>Inverter read block</b><em>copy an existing structure, rename, remap registers to the point list</em></span></label>
+            <label class="chk-item"><input type="checkbox"><span class="t"><b>Inverter write block</b><em>setpoints and commands out</em></span></label>
+            <label class="chk-item"><input type="checkbox"><span class="t"><b>Ignition server points</b><em>control and feedback, mapped to the read/write structures</em></span></label>
+            <label class="chk-item"><input type="checkbox"><span class="t"><b>Read/write registers allocated</b><em>including control feedback such as local/remote status</em></span></label>
+            <label class="chk-item"><input type="checkbox"><span class="t"><b>Program, status and control logic updated</b><em>follow the cross-reference errors to find them all</em></span></label>
+          </div>
+          <div class="chk-bar"><span class="n">0 of 6</span><span class="track"><span class="fill"></span></span></div>
+        </div>
+      </div>
+      <div class="grid" style="gap:14px;align-content:start">
+        <div class="call"><span class="tag">Register allocation, from the session</span>The new inverter took register <b><span class="num">116</span></b> — not because 116 was next, but because <b>there was a gap in the existing layout</b>. Read the map before you assume the end of it.</div>
+        <div class="tool">
+          <div class="tool-h"><span class="lbl">Array bounds check</span></div>
+          <div class="tool-b" data-tool="bounds">
+            <div class="ctl" style="margin-bottom:12px"><label for="b-idx">Array index you are referencing <output for="b-idx" id="b-idx-o">46</output></label>
+              <input type="range" id="b-idx" min="1" max="60" step="1" value="46"></div>
+            <p class="verdict" data-bmsg></p>
+          </div>
+        </div>
+        <div class="call trap"><span class="tag">The failure from the session</span>Referencing register <span class="num">46</span> failed because the available array range was <span class="num">1–49</span> — <b>an in-range-looking number outside the array the code actually declared.</b> Validate bounds, not plausibility.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 10 CHANGES / DOESN'T -->
+<section class="slide" data-clock="07:57" data-short="Changes vs stays">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">07:57</span><span>programs · status · control</span></div>
+    <h2 class="title">What you touch, and what you leave alone</h2>
+    <p class="standfirst">Most of a plant project does not change between sites. Knowing which half is which is the difference between a two-day conversion and a two-week one.</p>
+    <div class="tool">
+      <div class="tool-h"><span class="lbl">Sort each one</span><span class="lbl" data-sort-out></span></div>
+      <div class="tool-b" data-sort="chg">
+        <div class="grid g2" style="gap:14px">
+          <div data-ans="chg"><p style="font-size:15px;margin-bottom:8px">Fault, comms-loss, remote-enable, clamp, PPC-control and inverter-status signals</p>
+            <div class="opts two"><button class="opt" type="button" data-pick="chg"><span class="v">Changes</span></button><button class="opt" type="button" data-pick="same"><span class="v">Stays</span></button></div>
+            <p class="why">Every one of these has to be mapped <b>per inverter</b>. Adding an inverter means adding all of them.</p></div>
+          <div data-ans="same"><p style="font-size:15px;margin-bottom:8px">Generic group control and NOC calculations</p>
+            <div class="opts two"><button class="opt" type="button" data-pick="chg"><span class="v">Changes</span></button><button class="opt" type="button" data-pick="same"><span class="v">Stays</span></button></div>
+            <p class="why">Fixed program logic. Leave it alone.</p></div>
+          <div data-ans="same"><p style="font-size:15px;margin-bottom:8px">Met station calculations and PF / performance calculations</p>
+            <div class="opts two"><button class="opt" type="button" data-pick="chg"><span class="v">Changes</span></button><button class="opt" type="button" data-pick="same"><span class="v">Stays</span></button></div>
+            <p class="why">Unchanged between projects — the inputs change, the arithmetic does not.</p></div>
+          <div data-ans="same"><p style="font-size:15px;margin-bottom:8px">Redundancy logic that blocks commands when the RTU is not primary</p>
+            <div class="opts two"><button class="opt" type="button" data-pick="chg"><span class="v">Changes</span></button><button class="opt" type="button" data-pick="same"><span class="v">Stays</span></button></div>
+            <p class="why">Generally unchanged — <b>except that the new inverter's references have to be added to it</b>. The logic stays; its coverage grows.</p></div>
+          <div data-ans="chg"><p style="font-size:15px;margin-bottom:8px">Module counts and model-specific control logic</p>
+            <div class="opts two"><button class="opt" type="button" data-pick="chg"><span class="v">Changes</span></button><button class="opt" type="button" data-pick="same"><span class="v">Stays</span></button></div>
+            <p class="why">Inverter-specific by definition. And if the control type is <b>fundamentally different</b>, expect to write a new control implementation rather than adapt this one.</p></div>
+          <div data-ans="chg"><p style="font-size:15px;margin-bottom:8px">Ignition mappings for the added inverter</p>
+            <div class="opts two"><button class="opt" type="button" data-pick="chg"><span class="v">Changes</span></button><button class="opt" type="button" data-pick="same"><span class="v">Stays</span></button></div>
+            <p class="why">Control and feedback points both. Follow the cross-reference errors into the programs and function blocks to find every place they are needed.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 11 PLANT SETTINGS -->
+<section class="slide" data-clock="08:07" data-short="Plant settings & meters">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">08:07</span><span>LGI · tuning · metering</span></div>
+    <h2 class="title">The settings that are project-specific</h2>
+    <div class="grid g23">
+      <div class="grid" style="gap:16px">
+        <ul class="pts">
+          <li><b>LGI and tuning settings</b> vary per project: plant rating, Q rating, evolution period, Q high and low limits, jetband changes, P-limit delay.</li>
+          <li><b>Declare them at project level and pass them to Grid Connect automatically</b> — settings scattered across blocks are the ones that get missed on the next conversion.</li>
+          <li>Manual tuning is still needed when the modelled behaviour and the real plant disagree. The model is a starting point, not an answer.</li>
+          <li>Add the required <b>POI meter points and map them on both the read side and the project side</b>. Add met station data when the site has one.</li>
+          <li>Update <b>QSC data points or indexes</b> when names, data types or indexes differ — then follow the resulting errors to the affected address or name.</li>
+        </ul>
+      </div>
+      <div class="tool">
+        <div class="tool-h"><span class="lbl">Evolution period</span></div>
+        <div class="tool-b" data-tool="evo">
+          <div class="ctl"><label for="e-per">Evolution period <output for="e-per" id="e-per-o">100 ms</output></label>
+            <input type="range" id="e-per" min="50" max="1000" step="50" value="100"></div>
+          <div class="readout">
+            <div class="stats">
+              <div class="stat"><dt>PID reruns</dt><dd data-rate>10.0 <small>× per second</small></dd></div>
+              <div class="stat"><dt>Meter must deliver</dt><dd data-meter>≤ 100 <small>ms</small></dd></div>
+            </div>
+            <p class="verdict" data-emsg></p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="notes"><span class="tag">Speaker note</span>This slide is the hand-off. Day 3 opens on exactly these parameters — where they are declared, how they reach the MPC block, and what happens when the evolution period is faster than the meter behind it.</div>
+  </div>
+</section>
+
+<!-- 12 NO TEMPLATE -->
+<section class="slide" data-clock="08:17" data-short="No matching template">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">08:17</span><span>brand-new inverter models</span></div>
+    <h2 class="title">When nothing in the inventory matches</h2>
+    <div class="grid g2">
+      <div class="grid" style="gap:16px">
+        <h3>What a brand-new inverter needs</h3>
+        <ul class="pts">
+          <li>Its <b>Modbus connection</b> and its <b>point list</b></li>
+          <li>An <b>inverter structure</b> — the data type that holds its variables</li>
+          <li><b>Read and write blocks</b></li>
+          <li><b>Grid Connect mappings</b> and the required status and control points</li>
+        </ul>
+      </div>
+      <div class="grid" style="gap:16px">
+        <div class="call rule"><span class="tag">The shape never changes</span>However exotic the inverter, <b>the same two-block interface holds</b>: inverter data flows into the MPC / Grid Connect block, and Grid Connect setpoints and commands flow back out to the inverter. Everything else is translation.</div>
+        <ul class="pts">
+          <li>Model-specific signals — <b>fault status, module count, naming</b> — get converted into the common Grid Connect representation. That conversion is the work.</li>
+          <li>Experience with existing SunGrow, SMA or other implementations is how you spot the equivalent point across models when the vendor names them differently.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 13 DATA TYPES -->
+<section class="slide" data-clock="08:24" data-short="Data types & scope">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">08:24</span><span>custom types · global vs local</span></div>
+    <h2 class="title">Why the custom data type exists</h2>
+    <p class="standfirst">A data type is not bookkeeping. It is the thing that lets four vendors' inverters present one face to the control logic.</p>
+    <div class="grid g23">
+      <div class="tool">
+        <div class="tool-h"><span class="lbl">Normalising a fault</span><span class="lbl">Toggle any vendor bit</span></div>
+        <div class="tool-b" data-tool="norm">
+          <div class="opts two" data-bits style="margin-bottom:16px">
+            <button class="opt" type="button" data-b="0"><span class="k">Vendor bit</span><span class="v">DC overvoltage</span></button>
+            <button class="opt" type="button" data-b="1"><span class="k">Vendor bit</span><span class="v">IGBT over-temp</span></button>
+            <button class="opt" type="button" data-b="2"><span class="k">Vendor bit</span><span class="v">Grid relay fail</span></button>
+            <button class="opt" type="button" data-b="3"><span class="k">Vendor bit</span><span class="v">Insulation low</span></button>
+          </div>
+          <div class="readout" style="margin:0;border-top:0;padding-top:0">
+            <div class="stats">
+              <div class="stat" data-fstat><dt>Grid Connect sees</dt><dd data-fault>Fault = FALSE</dd></div>
+            </div>
+            <p class="verdict">Grid Connect wants <b>one true/false fault input</b>. The data type is where four model-specific bits become that one bit — so the control logic never learns which vendor it is talking to.</p>
+          </div>
+        </div>
+      </div>
+      <div class="grid" style="gap:14px;align-content:start">
+        <ul class="pts">
+          <li>Custom data types define <b>reusable structures</b> holding inverter variables — on/off status, control mode, faults, setpoints.</li>
+          <li>They let you <b>pass an entire structure into a function block</b> instead of declaring every variable by hand, which is where the object-oriented value is.</li>
+          <li><b>Global variables</b> read and write across programs and function blocks; <b>local variables</b> stay in their defining scope unless exposed as inputs or outputs.</li>
+          <li>The project uses global structures to connect the inverter side to the Grid Connect side.</li>
+          <li><b>Global retained variables carry memory-related risk</b> — understand it before extending the pattern.</li>
+          <li>The compiled repository exposes structures, function blocks, data types and programs for inspection and reuse. Read it before you write something that already exists.</li>
+        </ul>
+        <div class="call"><span class="tag">Day 3 qualifies this</span>Mixed vendors on one site — SunGrow and SMA together — need parameters assigned <b>at the variable level</b> rather than embedded uniformly in a shared data type. Same idea, one level of indirection more.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 14 QUIZ -->
+<section class="slide" data-short="Knowledge check">
+  <div class="inner">
+    <div class="eyebrow"><span>Knowledge check</span><span>six questions</span></div>
+    <h2 class="title">Six that decide the conversion</h2>
+    <div class="quiz" data-quiz>
+      <div class="q"><div class="qh"><span class="qn">01</span><span class="qt">A project is locked under another engineer's credential and they are on leave. As admin, you can…</span></div>
+        <div class="as">
+          <button class="a" type="button">Unlock it — admin overrides the lock</button>
+          <button class="a" type="button" data-ok="1">Not unlock it; only the locking user or credential can</button>
+          <button class="a" type="button">Unlock it after a cross-check</button>
+        </div>
+        <p class="why">Admin credentials cannot unlock a project locked under another engineering credential.</p>
+      </div>
+      <div class="q"><div class="qh"><span class="qn">02</span><span class="qt">You have two candidate templates: same inverter but no battery, or different inverter but hybrid like your new site. Which base?</span></div>
+        <div class="as">
+          <button class="a" type="button">Same inverter, no battery</button>
+          <button class="a" type="button" data-ok="1">Hybrid, different inverter</button>
+          <button class="a" type="button">Either; the effort is comparable</button>
+        </div>
+        <p class="why">A hybrid project is the better base for another hybrid project even when the inverter model differs — the storage configuration is the expensive thing to add.</p>
+      </div>
+      <div class="q"><div class="qh"><span class="qn">03</span><span class="qt">Fastest safe way to rename SG 4400 references to SGT 3150 across a project?</span></div>
+        <div class="as">
+          <button class="a" type="button">Ctrl+H, Replace All, then cross-check</button>
+          <button class="a" type="button" data-ok="1">Change one at a time, saving and cross-checking as you go — Replace All only when the scope is understood</button>
+          <button class="a" type="button">Delete the data type and rebuild it</button>
+        </div>
+        <p class="why">Replace All is a fine tool once you know the scope. On a first conversion you do not, and you have traded a known error list for an unknown one.</p>
+      </div>
+      <div class="q"><div class="qh"><span class="qn">04</span><span class="qt">Referencing array index 46 throws an error. The array range is 1–49. What went wrong?</span></div>
+        <div class="as">
+          <button class="a" type="button">46 is out of range</button>
+          <button class="a" type="button" data-ok="1">46 is inside the declared range, so the fault is elsewhere in the reference — bounds have to be validated, not assumed from a plausible-looking number</button>
+          <button class="a" type="button">Arrays are always zero-indexed</button>
+        </div>
+        <p class="why">This is the trap: a number that looks reasonable is not the same as a number the declared array actually accepts. Validate the bounds the code declares.</p>
+      </div>
+      <div class="q"><div class="qh"><span class="qn">05</span><span class="qt">Which of these normally changes when you convert a template to a new site?</span></div>
+        <div class="as">
+          <button class="a" type="button">Met station calculations</button>
+          <button class="a" type="button">Generic group control</button>
+          <button class="a" type="button" data-ok="1">Inverter-specific references, point mappings, module counts and model-specific control logic</button>
+        </div>
+        <p class="why">The generic calculations stay. The inverter-specific layer is the conversion.</p>
+      </div>
+      <div class="q"><div class="qh"><span class="qn">06</span><span class="qt">Grid Connect expects a single true/false fault input, but the inverter reports four separate fault bits. Where does that get resolved?</span></div>
+        <div class="as">
+          <button class="a" type="button">In the Ignition server mapping</button>
+          <button class="a" type="button" data-ok="1">In the custom data type, which normalises model-specific signals into the common representation</button>
+          <button class="a" type="button">In the PID block</button>
+        </div>
+        <p class="why">That normalisation is exactly what the custom data type is for — it is why the control logic never has to know the vendor.</p>
+      </div>
+    </div>
+    <div class="score"><span>Knowledge check</span><span data-score><b>0</b> / 6</span></div>
+  </div>
+</section>
+
+<!-- 15 CLOSE -->
+<section class="slide" data-short="Carry forward">
+  <div class="inner">
+    <div class="eyebrow"><span>End of Day 2</span></div>
+    <h2 class="title">What Day 2 buys you</h2>
+    <p class="standfirst">You can now take a working plant project and turn it into a different working plant project without breaking either. What you have not touched is the logic in the middle — the part that decides what number each inverter is told to produce.</p>
+    <div class="grid g2">
+      <div class="call rule"><span class="tag">You can now</span>Choose a template on evidence, unlock and clone it safely, swap an inverter model and drive the cross-reference errors to zero, add an inverter with all six of its artifacts, and tell project-specific settings apart from the fixed logic around them.</div>
+      <div class="call"><span class="tag">Next: Day 3 · 10 September</span><b>From Setpoint to Inverter</b> — the control chain end to end, the timing budget that ties back to Day 1's protocol choice, PID and clamping behaviour, and DDR for proving the plant actually responded.</div>
+    </div>
+    <div class="grid" style="gap:10px;margin-top:22px">
+      <h3>Action items from Day 2</h3>
+      <div class="actions">
+        <div class="act"><span class="who">Team</span><span class="what">Create and maintain a shared Excel inventory of projects, inverter brands and types, met stations, FPS, substation connections and other reusable characteristics</span></div>
+        <div class="act"><span class="who">Everyone</span><span class="what">Before modifying a template, Save As and rename the copy</span></div>
+        <div class="act"><span class="who">Everyone</span><span class="what">For each inverter conversion, update one mapping at a time, run cross-checks, and repair every resulting cross-reference error</span></div>
+        <div class="act"><span class="who">Presenter</span><span class="what">Continue into Grid Connect / MPC logic, variables, and IEEE 2800 performance recording in the next session</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="rail rail--bot">
+  <button class="rbtn" id="ovBtn" type="button">All slides <kbd>G</kbd></button>
+  <button class="rbtn" id="notesBtn" type="button" aria-pressed="false">Notes <kbd>N</kbd></button>
+  <span class="spacer"></span>
+  <span class="hint">← → to move</span>
+  <button class="rbtn" id="prev" type="button">←</button>
+  <button class="rbtn" id="next" type="button">→</button>
+</footer>
+
+<div class="ov" id="ov" hidden>
+  <div class="ov-h">
+    <h3>Template to Plant</h3>
+    <button class="rbtn" id="ovClose" type="button">Close <kbd>Esc</kbd></button>
+  </div>
+  <div class="ov-grid" id="ovGrid"></div>
+</div>
+
+<script>
+/* ===== deck core ===== */
+(function(){
+"use strict";
+var KEY = "deck:" + (document.body.dataset.deck || "x");
+var slides = [].slice.call(document.querySelectorAll(".slide"));
+var N = slides.length, cur = 0, seen = {};
+
+function store(k, v){ try{ localStorage.setItem(KEY + ":" + k, JSON.stringify(v)); }catch(e){} }
+function load(k, d){ try{ var v = localStorage.getItem(KEY + ":" + k); return v === null ? d : JSON.parse(v); }catch(e){ return d; } }
+
+seen = load("seen", {});
+
+/* ---- navigation ---- */
+var elCount = document.getElementById("count"),
+    elProg  = document.getElementById("prog"),
+    elPrev  = document.getElementById("prev"),
+    elNext  = document.getElementById("next");
+
+function go(i, push){
+  i = Math.max(0, Math.min(N - 1, i));
+  slides[cur].classList.remove("on");
+  cur = i;
+  slides[cur].classList.add("on");
+  seen[i] = 1; store("seen", seen); store("at", i);
+  if (elCount) elCount.innerHTML = "<b>" + String(i + 1).padStart(2, "0") + "</b> / " + String(N).padStart(2, "0");
+  if (elProg) elProg.style.width = ((i) / (N - 1) * 100) + "%";
+  if (elPrev) elPrev.disabled = i === 0;
+  if (elNext) elNext.disabled = i === N - 1;
+  if (push !== false && ("#" + (i + 1)) !== location.hash) history.replaceState(null, "", "#" + (i + 1));
+  window.scrollTo({ top: 0, behavior: "instant" in document.body.style ? "instant" : "auto" });
+  paintOverview();
+}
+if (elPrev) elPrev.onclick = function(){ go(cur - 1); };
+if (elNext) elNext.onclick = function(){ go(cur + 1); };
+
+document.addEventListener("keydown", function(e){
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+  var k = e.key;
+  if (k === "ArrowRight" || k === "PageDown" || k === " ") { e.preventDefault(); go(cur + 1); }
+  else if (k === "ArrowLeft" || k === "PageUp") { e.preventDefault(); go(cur - 1); }
+  else if (k === "Home") { e.preventDefault(); go(0); }
+  else if (k === "End") { e.preventDefault(); go(N - 1); }
+  else if (k === "g" || k === "G") { toggleOv(); }
+  else if (k === "n" || k === "N") { toggleNotes(); }
+  else if (k === "Escape") { closeOv(); }
+});
+
+/* touch */
+var tx = 0, ty = 0;
+document.addEventListener("touchstart", function(e){ tx = e.changedTouches[0].clientX; ty = e.changedTouches[0].clientY; }, {passive:true});
+document.addEventListener("touchend", function(e){
+  var dx = e.changedTouches[0].clientX - tx, dy = e.changedTouches[0].clientY - ty;
+  if (Math.abs(dx) > 64 && Math.abs(dx) > Math.abs(dy) * 1.8) go(cur + (dx < 0 ? 1 : -1));
+}, {passive:true});
+
+/* ---- overview ---- */
+var ov = document.getElementById("ov"), ovGrid = document.getElementById("ovGrid");
+function buildOverview(){
+  if (!ovGrid) return;
+  ovGrid.innerHTML = "";
+  slides.forEach(function(s, i){
+    var b = document.createElement("button");
+    b.className = "ov-card"; b.type = "button";
+    var clock = s.dataset.clock || "";
+    var t = s.dataset.short || (s.querySelector(".title, h1") || {}).textContent || ("Slide " + (i + 1));
+    b.innerHTML = '<span class="oi"><span>' + String(i + 1).padStart(2, "0") + '</span><span>' + clock + '</span></span>' +
+                  '<span class="ot"></span><span class="bar"></span>';
+    b.querySelector(".ot").textContent = t.trim();
+    b.onclick = function(){ closeOv(); go(i); };
+    ovGrid.appendChild(b);
+  });
+  paintOverview();
+}
+function paintOverview(){
+  if (!ovGrid) return;
+  [].forEach.call(ovGrid.children, function(c, i){
+    c.setAttribute("aria-current", i === cur ? "true" : "false");
+    c.dataset.seen = seen[i] ? "1" : "0";
+  });
+}
+function toggleOv(){ if (!ov) return; ov.hidden ? (ov.hidden = false) : closeOv(); }
+function closeOv(){ if (ov) ov.hidden = true; }
+var ovBtn = document.getElementById("ovBtn"), ovClose = document.getElementById("ovClose");
+if (ovBtn) ovBtn.onclick = toggleOv;
+if (ovClose) ovClose.onclick = closeOv;
+if (ov) ov.addEventListener("click", function(e){ if (e.target === ov) closeOv(); });
+
+/* ---- notes ---- */
+function toggleNotes(){
+  var on = document.body.dataset.notes === "1";
+  document.body.dataset.notes = on ? "0" : "1";
+  store("notes", !on);
+  var b = document.getElementById("notesBtn");
+  if (b) b.setAttribute("aria-pressed", String(!on));
+}
+var nb = document.getElementById("notesBtn");
+if (nb) nb.onclick = toggleNotes;
+document.body.dataset.notes = load("notes", false) ? "1" : "0";
+if (nb) nb.setAttribute("aria-pressed", document.body.dataset.notes);
+
+/* ---- checklists ---- */
+[].forEach.call(document.querySelectorAll("[data-chk]"), function(list){
+  var id = list.dataset.chk, saved = load("chk:" + id, {});
+  var boxes = [].slice.call(list.querySelectorAll("input[type=checkbox]"));
+  var bar = list.parentNode.querySelector(".chk-bar .fill");
+  var cnt = list.parentNode.querySelector(".chk-bar .n");
+  function paint(){
+    var done = boxes.filter(function(b){ return b.checked; }).length;
+    if (bar) bar.style.width = (done / boxes.length * 100) + "%";
+    if (cnt) cnt.textContent = done + " of " + boxes.length;
+  }
+  boxes.forEach(function(b, i){
+    b.checked = !!saved[i];
+    b.onchange = function(){ saved[i] = b.checked; store("chk:" + id, saved); paint(); };
+  });
+  paint();
+  var r = list.parentNode.querySelector("[data-chk-reset]");
+  if (r) r.onclick = function(){ boxes.forEach(function(b, i){ b.checked = false; saved[i] = false; }); store("chk:" + id, saved); paint(); };
+});
+
+/* ---- classify / sorter ---- */
+[].forEach.call(document.querySelectorAll("[data-sort]"), function(w){
+  var items = [].slice.call(w.querySelectorAll("[data-ans]"));
+  var out = w.querySelector("[data-sort-out]");
+  var done = 0, right = 0;
+  items.forEach(function(it){
+    [].forEach.call(it.querySelectorAll("button[data-pick]"), function(b){
+      b.onclick = function(){
+        if (it.dataset.done) return;
+        it.dataset.done = "1"; done++;
+        var ok = b.dataset.pick === it.dataset.ans;
+        if (ok) right++;
+        b.classList.add(ok ? "ok" : "no");
+        [].forEach.call(it.querySelectorAll("button[data-pick]"), function(x){
+          x.disabled = true;
+          if (!ok && x.dataset.pick === it.dataset.ans) x.classList.add("ok");
+        });
+        var why = it.querySelector(".why"); if (why) why.classList.add("on");
+        if (out) out.textContent = right + " of " + done + " right" + (done === items.length ? " — all sorted." : "");
+      };
+    });
+  });
+});
+
+/* ---- quiz ---- */
+[].forEach.call(document.querySelectorAll("[data-quiz]"), function(q){
+  var qs = [].slice.call(q.querySelectorAll(".q"));
+  var scoreEl = q.querySelector("[data-score]");
+  var right = 0, answered = 0;
+  qs.forEach(function(item){
+    var btns = [].slice.call(item.querySelectorAll(".a"));
+    btns.forEach(function(b){
+      b.onclick = function(){
+        if (item.dataset.done) return;
+        item.dataset.done = "1"; answered++;
+        var ok = b.dataset.ok === "1";
+        if (ok) right++;
+        b.dataset.r = ok ? "ok" : "no";
+        btns.forEach(function(x){ x.disabled = true; if (!ok && x.dataset.ok === "1") x.dataset.r = "ok"; });
+        var why = item.querySelector(".why"); if (why) why.classList.add("on");
+        if (scoreEl) scoreEl.innerHTML = "<b>" + right + "</b> / " + qs.length +
+          (answered === qs.length ? " &nbsp;·&nbsp; " + (right === qs.length ? "clean sweep" : right >= qs.length - 1 ? "solid" : "worth a re-read") : "");
+      };
+    });
+  });
+});
+
+/* ---- chart helper ---- */
+window.mkChart = function(opts){
+  var W = opts.w || 720, H = opts.h || 250;
+  var m = opts.m || { l: 52, r: 20, t: 26, b: 32 };
+  var xd = opts.x, yd = opts.y;
+  var iw = W - m.l - m.r, ih = H - m.t - m.b;
+  function X(v){ return m.l + (v - xd[0]) / (xd[1] - xd[0]) * iw; }
+  function Y(v){ return m.t + ih - (v - yd[0]) / (yd[1] - yd[0]) * ih; }
+  var s = '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + (opts.alt || "chart") + '">';
+  (opts.rects || []).forEach(function(r){
+    s += '<rect x="' + X(r.x0) + '" y="' + Y(r.y1) + '" width="' + Math.max(2, X(r.x1) - X(r.x0)) +
+         '" height="' + Math.max(2, Y(r.y0) - Y(r.y1)) + '" fill="' + r.fill + '" stroke="' + (r.stroke || "none") + '" stroke-width="1"></rect>';
+  });
+  (opts.bands || []).forEach(function(b){
+    s += '<rect x="' + X(xd[0]) + '" y="' + Y(b.to) + '" width="' + iw + '" height="' + Math.max(1, Y(b.from) - Y(b.to)) +
+         '" fill="' + b.fill + '"></rect>';
+    if (b.label) s += '<text x="' + (X(xd[1]) - 4) + '" y="' + (Y(b.to) - 4) + '" text-anchor="end">' + b.label + '</text>';
+  });
+  (opts.yTicks || []).forEach(function(t){
+    s += '<line class="grid" x1="' + m.l + '" y1="' + Y(t) + '" x2="' + (W - m.r) + '" y2="' + Y(t) + '"></line>' +
+         '<text x="' + (m.l - 8) + '" y="' + (Y(t) + 3.5) + '" text-anchor="end">' + (opts.yFmt ? opts.yFmt(t) : t) + '</text>';
+  });
+  (opts.xTicks || []).forEach(function(t){
+    s += '<text x="' + X(t) + '" y="' + (H - m.b + 15) + '" text-anchor="middle">' + (opts.xFmt ? opts.xFmt(t) : t) + '</text>';
+  });
+  s += '<line class="axis" x1="' + m.l + '" y1="' + (m.t + ih) + '" x2="' + (W - m.r) + '" y2="' + (m.t + ih) + '"></line>';
+  (opts.vlines || []).forEach(function(v){
+    s += '<line x1="' + X(v.at) + '" y1="' + m.t + '" x2="' + X(v.at) + '" y2="' + (m.t + ih) +
+         '" stroke="' + v.color + '" stroke-width="1.5" stroke-dasharray="3 3"></line>';
+    if (v.label) s += '<text x="' + (X(v.at) + 5) + '" y="' + (m.t + 11) + '" fill="' + v.color + '">' + v.label + '</text>';
+  });
+  (opts.series || []).forEach(function(se){
+    var d = se.pts.map(function(p, i){ return (i ? "L" : "M") + X(p[0]).toFixed(2) + " " + Y(p[1]).toFixed(2); }).join(" ");
+    if (se.fill) s += '<path d="' + d + ' L' + X(se.pts[se.pts.length - 1][0]).toFixed(2) + ' ' + Y(yd[0]) + ' L' + X(se.pts[0][0]).toFixed(2) + ' ' + Y(yd[0]) + ' Z" fill="' + se.fill + '"></path>';
+    s += '<path d="' + d + '" fill="none" stroke="' + se.color + '" stroke-width="' + (se.w || 2) +
+         '" stroke-linejoin="round" stroke-linecap="round"' + (se.dash ? ' stroke-dasharray="5 4"' : "") + '></path>';
+    if (se.end) {
+      var lp = se.pts[se.pts.length - 1];
+      s += '<circle cx="' + X(lp[0]).toFixed(2) + '" cy="' + Y(lp[1]).toFixed(2) + '" r="3.5" fill="' + se.color +
+           '" stroke="var(--surface)" stroke-width="2"></circle>';
+    }
+    if (se.label) {
+      var p0 = se.labelAt || se.pts[Math.floor(se.pts.length * 0.62)];
+      s += '<text x="' + (X(p0[0]) + 6) + '" y="' + (Y(p0[1]) - 7) + '" fill="' + se.color + '" style="font-weight:500">' + se.label + '</text>';
+    }
+  });
+  if (opts.yLabel) s += '<text x="' + (m.l - 8) + '" y="' + (m.t - 12) + '" text-anchor="end">' + opts.yLabel + '</text>';
+  if (opts.xLabel) s += '<text x="' + (W - m.r) + '" y="' + (H - 2) + '" text-anchor="end">' + opts.xLabel + '</text>';
+  return s + "</svg>";
+};
+window.penColor = function(){ return getComputedStyle(document.body).getPropertyValue("--pen").trim(); };
+window.tok = function(n){ return getComputedStyle(document.body).getPropertyValue(n).trim(); };
+
+/* ---- boot ---- */
+buildOverview();
+var start = 0;
+var h = parseInt((location.hash || "").slice(1), 10);
+if (h >= 1 && h <= N) start = h - 1; else start = Math.min(load("at", 0), N - 1);
+slides.forEach(function(s){ s.classList.remove("on"); });
+go(start, false);
+window.addEventListener("hashchange", function(){
+  var i = parseInt((location.hash || "").slice(1), 10);
+  if (i >= 1 && i <= N && i - 1 !== cur) go(i - 1, false);
+});
+if (window.claude && window.claude.hot) {
+  window.claude.hot.snapshot(function(){ return { at: cur }; });
+}
+window.deckGo = go;
+})();
+
+/* ===== shared cover timeline: three mornings on one time axis ===== */
+(function(){
+"use strict";
+var host = document.getElementById("timeline");
+if (!host) return;
+var DAYS = [
+  { d: 1, label: "Mon 8 Sep", t: "RTAC Configuration & Protocols",   s: 15.77, e: 140.05, dur: "2h 04m" },
+  { d: 2, label: "Tue 9 Sep", t: "Template Conversion & Inverters",  s: 10.50, e: 106.65, dur: "1h 36m" },
+  { d: 3, label: "Wed 10 Sep", t: "Grid Connect Control Logic & DDR", s: 14.60, e: 106.82, dur: "1h 32m" }
+];
+var me = parseInt(document.body.dataset.pen, 10);
+var W = 720, H = 132, L = 74, R = 16, T = 20, rowH = 26;
+var T0 = 0, T1 = 150; /* 06:50 -> 09:20 */
+function X(m){ return L + (m - T0) / (T1 - T0) * (W - L - R); }
+function hhmm(m){ var t = 410 + m; return String(Math.floor(t / 60)).padStart(2, "0") + ":" + String(Math.round(t % 60)).padStart(2, "0"); }
+
+/* clock ticks for THIS deck, read from the slides themselves */
+var ticks = [].slice.call(document.querySelectorAll(".slide[data-clock]")).map(function(s, i){
+  var p = (s.dataset.clock || "").split(":");
+  if (p.length !== 2) return null;
+  return { m: (+p[0]) * 60 + (+p[1]) - 410, i: [].indexOf.call(document.querySelectorAll(".slide"), s), label: s.dataset.short || "" };
+}).filter(Boolean);
+
+var s = '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="The three morning sessions on one time axis">';
+[0, 30, 60, 90, 120, 150].forEach(function(m){
+  s += '<line class="grid" x1="' + X(m) + '" y1="' + (T - 6) + '" x2="' + X(m) + '" y2="' + (T + rowH * 3 - 8) + '"></line>' +
+       '<text x="' + X(m) + '" y="' + (T + rowH * 3 + 8) + '" text-anchor="middle">' + hhmm(m) + '</text>';
+});
+DAYS.forEach(function(day, r){
+  var y = T + r * rowH, on = day.d === me;
+  var c = "var(--pen-" + day.d + ")";
+  s += '<text x="' + (L - 10) + '" y="' + (y + 4) + '" text-anchor="end" fill="' + (on ? c : "var(--faint)") + '"' +
+       (on ? ' style="font-weight:500"' : "") + '>' + day.label + '</text>';
+  s += '<rect x="' + X(day.s) + '" y="' + (y - 5) + '" width="' + (X(day.e) - X(day.s)) + '" height="10" rx="5" fill="' + c + '"' +
+       (on ? "" : ' opacity="0.28"') + '></rect>';
+  s += '<text x="' + (X(day.e) + 7) + '" y="' + (y + 4) + '" fill="var(--faint)">' + day.dur + '</text>';
+  if (on) ticks.forEach(function(tk){
+    if (tk.m < day.s - 1 || tk.m > day.e + 1) return;
+    s += '<line class="tk" data-i="' + tk.i + '" x1="' + X(tk.m) + '" y1="' + (y - 9) + '" x2="' + X(tk.m) + '" y2="' + (y + 9) +
+         '" stroke="var(--surface)" stroke-width="1.5"></line>';
+  });
+});
+s += "</svg>";
+host.innerHTML = s +
+  '<div class="trend-legend">' +
+    DAYS.map(function(d){ return '<span><i style="background:var(--pen-' + d.d + ');' + (d.d === me ? "" : "opacity:.35") + '"></i>' +
+      "Day " + d.d + " · " + d.t + "</span>"; }).join("") +
+  "</div>";
+})();
+
+/* ===== generic click-through flow / node detail ===== */
+window.wireFlow = function(name, content, initial){
+  var wrap = document.querySelector('[data-flow="' + name + '"]');
+  var out = document.querySelector('[data-flow-out="' + name + '"]');
+  if (!wrap || !out) return;
+  var nodes = [].slice.call(wrap.querySelectorAll(".node"));
+  function pick(k){
+    nodes.forEach(function(n){ n.setAttribute("aria-pressed", String(n.dataset.k === k)); });
+    out.innerHTML = content[k] || "";
+    if (name === "arc" && window.DECK_URLS) {
+      var d = +(k || "").replace("d", "");
+      if (d && d !== +document.body.dataset.deck && window.DECK_URLS[d]) {
+        out.insertAdjacentHTML("beforeend",
+          '<p style="margin-top:12px"><a href="' + window.DECK_URLS[d] + '" target="_blank" rel="noopener" style="font-family:var(--f-mono);font-size:12px;letter-spacing:.04em">Open the Day ' + d + ' deck &rarr;</a></p>');
+      }
+    }
+  }
+  nodes.forEach(function(n){ n.onclick = function(){ pick(n.dataset.k); }; });
+  pick(initial || nodes[0].dataset.k);
+};
+
+</script>
+<script>
+/* ---- arc ---- */
+wireFlow("arc", {
+  d1: '<h4>Day 1 — Comms and the RTAC</h4><p>WebPatrol access, protecting the project through a firmware update, libraries and extensions, and DNP3 / Modbus / C37.118 configured to carry correct values fast enough.</p>' +
+      '<ul><li>What today inherits: Modbus point lists and register layout, the data types the RTAC will accept, and cross-check as the tool that finds broken references.</li></ul>',
+  d2: '<h4>Day 2 — Project and inverters <span class="unconfirmed" style="border-style:solid">you are here</span></h4><p>Choosing the closest existing project, cloning it safely, and converting it to a different inverter model without leaving broken cross-references behind.</p>' +
+      '<ul><li>Ends by naming Day 3: Grid Connect variables, the main program, how data enters and leaves the MPC, and recording inputs and outputs for IEEE 2800 performance.</li></ul>',
+  d3: '<h4>Day 3 — Control and recording</h4><p>The chain from setpoint source to individual inverter, the timing budget behind it, PID and clamping behaviour, and DDR for proving the response.</p>' +
+      '<ul><li>What it inherits from today: the global structures, the custom data types, and the project-level LGI and tuning parameters declared on this morning\'s slide 11.</li></ul>'
+}, "d2");
+
+/* ---- architecture ---- */
+wireFlow("arch", {
+  ign: '<h4>Ignition server</h4><p>Receives PPC data and serves the operator interface. Every inverter you add needs its control and feedback points added here too.</p><ul><li>Varies per site: which devices report through it, and whether the site uses a concentrator or separate connections.</li></ul>',
+  rtu: '<h4>RTU redundancy</h4><p>Receive and transmit channels between a primary and a secondary RTU. <b>The primary sends a pulse to the secondary every 200 milliseconds.</b></p><ul><li>Redundancy logic blocks commands when an RTU is not primary — generally unchanged between projects, except that new inverter references must be added to it.</li></ul>',
+  inv: '<h4>Inverters</h4><p>The largest source of variation between projects: count, brand, model, and the point list each one publishes.</p><ul><li>Each needs a global variable entry, a read block, a write block, server points, register allocation, and program logic.</li></ul>',
+  mtr: '<h4>Primary and backup meters</h4><p>POI metering, with points mapped on both the read side and the project side.</p><ul><li>Day 3 adds the rest of this story: quality is checked primary-to-secondary, and bad quality can trigger a ramp-down or a hold at the last valid value.</li></ul>',
+  sub: '<h4>Substation</h4><p>Connected through a concentrator on some sites, directly on others — along with QSC/QTD, the met station and Ignition.</p><ul><li>Which arrangement a template uses belongs in the inventory: it changes the device tree substantially.</li></ul>',
+  util: '<h4>Utility connection logic</h4><p>Curtailment and the interface to the area electric power system.</p><ul><li>Usually inherited whole from the template — the numbers change, the structure does not.</li></ul>'
+}, "ign");
+
+/* ---- what breaks ---- */
+wireFlow("brk", {
+  gv: '<h4>1 · Global variables</h4><p>Inverter count and feeder count — <span class="num">15</span> inverters, <span class="num">3</span> feeders in the worked example — plus the inverter-specific data type itself.</p><ul><li>Change the type here and everything downstream that referenced it goes red at once. That is the intended behaviour.</li></ul>',
+  rw: '<h4>2 · Read and write blocks</h4><p>Every register mapping that named the old type now points at nothing.</p><ul><li>Register numbers and point names have to match the <b>target inverter\'s</b> point list, not the old one.</li><li>Delete references to points that do not exist on the new model rather than trying to map them to something close.</li></ul>',
+  pg: '<h4>3 · Programs and function blocks</h4><p>Read/write logic, inverter status, control commands, redundancy logic and Ignition mappings all hold references you have just invalidated.</p><ul><li>Follow the cross-reference errors into each one. The error list is the work list.</li></ul>',
+  sv: '<h4>4 · Server points</h4><p>Ignition control and feedback points for each inverter, mapped back to the read and write structures.</p><ul><li>Fault, comms loss, remote enable, clamp, PPC control and inverter status — per inverter, every time.</li></ul>'
+}, "gv");
+
+/* ---- template scorer ---- */
+(function(){
+  var t = document.querySelector('[data-tool="tmpl"]'); if (!t) return;
+  var out = t.querySelector("[data-rank]"), best = document.querySelector("[data-best]");
+  var W = { inv: 1, hyb: 1, met: 1, sub: 1 };
+  var CANDS = [
+    { n: "Mesquite Flats", d: "SunGrow, hybrid, met station, concentrator", m: { inv: 1, hyb: 1, met: 1, sub: 1 }, note: "Same inverter family and hybrid — the fewest changes by a wide margin." },
+    { n: "Cholla Ridge", d: "SunGrow, PV only, met station, direct links", m: { inv: 1, hyb: 0, met: 1, sub: 0 }, note: "Same inverter, but the whole storage layer has to be built and the device tree rearranged." },
+    { n: "Saguaro West", d: "SMA, hybrid, met station, concentrator", m: { inv: 0, hyb: 1, met: 1, sub: 1 }, note: "Different inverter, but the expensive parts — storage, metering, device tree — come across intact." },
+    { n: "Ocotillo", d: "SMA, PV only, no met station, direct links", m: { inv: 0, hyb: 0, met: 0, sub: 0 }, note: "Nothing in common. This is a rebuild wearing a template's name." }
+  ];
+  function paint(){
+    var total = Object.keys(W).reduce(function(a, k){ return a + W[k]; }, 0) || 1;
+    var scored = CANDS.map(function(c){
+      var s = 0; Object.keys(W).forEach(function(k){ if (W[k] && c.m[k]) s += 1; });
+      return { c: c, s: s, pct: Math.round(s / total * 100) };
+    }).sort(function(a, b){ return b.s - a.s; });
+    if (best) best.textContent = scored[0].s === 0 ? "no usable base" : scored[0].c.n;
+    out.innerHTML = scored.map(function(r, i){
+      return '<div class="stat" style="margin-bottom:8px;' + (i === 0 && r.s > 0 ? "border-color:var(--good);background:var(--good-wash)" : "") + '">' +
+        '<dt>' + r.c.n + " · " + r.c.d + "</dt>" +
+        '<dd style="font-size:15px;display:flex;align-items:center;gap:10px">' + r.pct + "%" +
+        '<span style="flex:1;height:4px;border-radius:2px;background:var(--rule);overflow:hidden;display:block">' +
+        '<span style="display:block;height:100%;width:' + r.pct + '%;background:' + (i === 0 && r.s > 0 ? "var(--good)" : "var(--pen)") + '"></span></span></dd>' +
+        '<dt style="text-transform:none;letter-spacing:0;font-family:var(--f-body);font-size:13px;color:var(--muted)">' + r.c.note + "</dt></div>";
+    }).join("");
+  }
+  [].forEach.call(t.querySelectorAll("[data-f]"), function(b){
+    b.onclick = function(){
+      var on = b.getAttribute("aria-pressed") !== "true";
+      b.setAttribute("aria-pressed", String(on)); W[b.dataset.f] = on ? 1 : 0; paint();
+    };
+  });
+  var r = document.querySelector('[data-reset="tmpl"]');
+  if (r) r.onclick = function(){ Object.keys(W).forEach(function(k){ W[k] = 1; });
+    [].forEach.call(t.querySelectorAll("[data-f]"), function(b){ b.setAttribute("aria-pressed", "true"); }); paint(); };
+  paint();
+})();
+
+/* ---- repair loop ---- */
+(function(){
+  var t = document.querySelector('[data-tool="loop"]'); if (!t) return;
+  var steps = [].slice.call(t.querySelectorAll("[data-loop-steps] .node"));
+  var ERRS = [47, 31, 12, 5, 1, 0];
+  var MSG = [
+    "Cross-check on the untouched clone: <b>47 cross-reference errors</b> from the inverter data type change. This is the work list.",
+    "First pass: the global variables and the inverter data type are consistent. <b>31 left</b> — mostly read and write blocks now pointing at registers that moved.",
+    "Second pass: read and write blocks remapped to the new point list. <b>12 left</b>, all inside programs and function blocks.",
+    "Third pass: programs and status logic updated. <b>5 left</b> — the Ignition server points for the changed inverter.",
+    "Fourth pass: server points mapped. <b>1 left</b> — a prior reference to <span class=\"num\">10</span> that has to become <span class=\"num\">09</span>. Small, real, and only findable this way.",
+    "<b>Zero errors.</b> Five passes, one change at a time, each one saved and cross-checked. There is no faster method that converges."
+  ];
+  var i = 0;
+  function paint(){
+    t.querySelector("[data-errs]").textContent = ERRS[i];
+    t.querySelector("[data-errs]").parentNode.dataset.s = ERRS[i] === 0 ? "ok" : ERRS[i] > 20 ? "bad" : "";
+    t.querySelector("[data-passn]").innerHTML = i + ' <small>of 5</small>';
+    t.querySelector("[data-loop-msg]").innerHTML = MSG[i];
+    var lbl = document.querySelector("[data-pass]"); if (lbl) lbl.textContent = "pass " + i;
+    steps.forEach(function(s, k){ s.setAttribute("aria-pressed", String(i > 0 && k === (i - 1) % 4)); });
+    var adv = t.querySelector("[data-advance]");
+    adv.disabled = i >= ERRS.length - 1;
+    adv.textContent = i >= ERRS.length - 1 ? "Zero errors ✓" : "Advance →";
+  }
+  t.querySelector("[data-advance]").onclick = function(){ if (i < ERRS.length - 1) { i++; paint(); } };
+  var r = document.querySelector('[data-reset="loop"]'); if (r) r.onclick = function(){ i = 0; paint(); };
+  paint();
+})();
+
+/* ---- array bounds ---- */
+(function(){
+  var t = document.querySelector('[data-tool="bounds"]'); if (!t) return;
+  var s = document.getElementById("b-idx"), msg = t.querySelector("[data-bmsg]");
+  function paint(){
+    var v = +s.value, ok = v >= 1 && v <= 49;
+    document.getElementById("b-idx-o").textContent = v;
+    msg.innerHTML = ok
+      ? 'Index <b class="num">' + v + '</b> is inside the declared range <span class="num">1–49</span>. It resolves.'
+      : '<b style="color:var(--crit)">Index ' + v + ' is outside the declared range 1–49.</b> The reference fails at cross-check — which is the only place you will see it before it fails on the plant.';
+  }
+  s.oninput = paint; paint();
+})();
+
+/* ---- evolution period ---- */
+(function(){
+  var t = document.querySelector('[data-tool="evo"]'); if (!t) return;
+  var s = document.getElementById("e-per"), msg = t.querySelector("[data-emsg]");
+  function paint(){
+    var p = +s.value;
+    document.getElementById("e-per-o").textContent = p + " ms";
+    t.querySelector("[data-rate]").innerHTML = (1000 / p).toFixed(1) + ' <small>× per second</small>';
+    t.querySelector("[data-meter]").innerHTML = "≤ " + p + ' <small>ms</small>';
+    msg.innerHTML = "A <b>" + p + " ms</b> evolution period reruns the PID every " + p + " milliseconds" +
+      (p >= 1000 ? " — a <b>1,000 ms</b> value reruns it once a second." : ".") +
+      " <b>The meter behind it has to keep up:</b> an execution period the POI meter cannot feed is a PID acting on stale numbers. Day 3 turns this into a full timing budget.";
+  }
+  s.oninput = paint; paint();
+})();
+
+/* ---- fault normaliser ---- */
+(function(){
+  var t = document.querySelector('[data-tool="norm"]'); if (!t) return;
+  var bits = [0, 0, 0, 0];
+  function paint(){
+    var any = bits.some(Boolean);
+    var st = t.querySelector("[data-fstat]");
+    st.dataset.s = any ? "bad" : "ok";
+    t.querySelector("[data-fault]").textContent = "Fault = " + (any ? "TRUE" : "FALSE");
+  }
+  [].forEach.call(t.querySelectorAll("[data-b]"), function(b){
+    b.onclick = function(){
+      var i = +b.dataset.b; bits[i] = bits[i] ? 0 : 1;
+      b.setAttribute("aria-pressed", String(!!bits[i])); paint();
+    };
+  });
+  paint();
+})();
+
+</script>

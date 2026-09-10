@@ -1,0 +1,1283 @@
+<title>Getting the Point Online</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap">
+<style>
+/* ============ TOKENS ============ */
+:root{
+  --paper:#F2F5F7; --surface:#FFFFFF; --sunk:#EAEFF3;
+  --ink:#111A21; --ink-2:#33424E; --muted:#5C6B77; --faint:#8496A3;
+  --rule:#DCE3E8; --rule-strong:#C3CFD8;
+  --pen-1:#B87A12; --pen-2:#0A76B0; --pen-3:#AE2E6E;
+  --pen-1-text:#8F5D0A; --pen-2-text:#075C8B; --pen-3-text:#8C2456;
+  --pen-1-wash:#B87A121A; --pen-2-wash:#0A76B01A; --pen-3-wash:#AE2E6E1A;
+  --good:#1C7A4F; --good-wash:#1C7A4F14;
+  --crit:#A82420; --crit-wash:#A8242012;
+  --shadow:0 1px 2px #101a2110, 0 8px 24px -12px #101a2124;
+  --stage-max:1120px;
+  --f-display:"Source Serif 4",Georgia,"Times New Roman",serif;
+  --f-body:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#0D1418; --surface:#161F26; --sunk:#111A20;
+    --ink:#E4EDF3; --ink-2:#C2D0DA; --muted:#8FA1AD; --faint:#6C7E8B;
+    --rule:#26333C; --rule-strong:#374753;
+    --pen-1:#BC8018; --pen-2:#1F92D2; --pen-3:#CB5C95;
+    --pen-1-text:#E0AA4E; --pen-2-text:#6DBBEA; --pen-3-text:#E68CBA;
+    --pen-1-wash:#BC801826; --pen-2-wash:#1F92D226; --pen-3-wash:#CB5C9526;
+    --good:#43B37D; --good-wash:#43B37D1F;
+    --crit:#E8756D; --crit-wash:#E8756D1A;
+    --shadow:0 1px 2px #0007, 0 10px 28px -14px #000a;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0D1418; --surface:#161F26; --sunk:#111A20;
+  --ink:#E4EDF3; --ink-2:#C2D0DA; --muted:#8FA1AD; --faint:#6C7E8B;
+  --rule:#26333C; --rule-strong:#374753;
+  --pen-1:#BC8018; --pen-2:#1F92D2; --pen-3:#CB5C95;
+  --pen-1-text:#E0AA4E; --pen-2-text:#6DBBEA; --pen-3-text:#E68CBA;
+  --pen-1-wash:#BC801826; --pen-2-wash:#1F92D226; --pen-3-wash:#CB5C9526;
+  --good:#43B37D; --good-wash:#43B37D1F;
+  --crit:#E8756D; --crit-wash:#E8756D1A;
+  --shadow:0 1px 2px #0007, 0 10px 28px -14px #000a;
+}
+/* per-deck accent alias */
+body[data-pen="1"]{--pen:var(--pen-1);--pen-text:var(--pen-1-text);--pen-wash:var(--pen-1-wash);}
+body[data-pen="2"]{--pen:var(--pen-2);--pen-text:var(--pen-2-text);--pen-wash:var(--pen-2-wash);}
+body[data-pen="3"]{--pen:var(--pen-3);--pen-text:var(--pen-3-text);--pen-wash:var(--pen-3-wash);}
+
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--f-body);font-size:16px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,h4{margin:0;text-wrap:balance;font-family:var(--f-display);font-weight:600;letter-spacing:-.012em;line-height:1.12}
+p{margin:0}
+a{color:var(--pen-text)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--pen);outline-offset:2px;border-radius:2px}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;transition-duration:.001ms!important}}
+
+/* ============ RAILS ============ */
+.rail{position:fixed;left:0;right:0;z-index:40;background:color-mix(in srgb,var(--paper) 88%,transparent);
+  backdrop-filter:blur(10px);display:flex;align-items:center;gap:14px;
+  padding:0 clamp(16px,4vw,40px);font-family:var(--f-mono);font-size:11.5px;letter-spacing:.04em}
+.rail--top{top:0;height:46px;border-bottom:1px solid var(--rule)}
+.rail--bot{bottom:0;height:52px;border-top:1px solid var(--rule)}
+.rail-id{display:flex;align-items:baseline;gap:9px;min-width:0}
+.rail-id b{font-family:var(--f-display);font-size:14px;font-weight:600;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rail-id span{color:var(--faint);text-transform:uppercase;white-space:nowrap}
+.spacer{flex:1}
+.pens{display:flex;gap:5px;align-items:center}
+.pen-dot{width:26px;height:26px;border-radius:50%;border:1px solid var(--rule-strong);background:var(--surface);
+  display:grid;place-items:center;text-decoration:none;color:var(--faint);font-family:var(--f-mono);font-size:10.5px;
+  cursor:pointer;transition:transform .12s ease,border-color .12s}
+.pen-dot:hover{transform:translateY(-1px);border-color:var(--rule-strong)}
+.pen-dot[data-p="1"]{--d:var(--pen-1)} .pen-dot[data-p="2"]{--d:var(--pen-2)} .pen-dot[data-p="3"]{--d:var(--pen-3)}
+.pen-dot[aria-current="page"]{background:var(--d);border-color:var(--d);color:#fff;font-weight:600}
+.pen-dot:not([href]){opacity:.5;cursor:default}
+.count{color:var(--muted);font-variant-numeric:tabular-nums}
+.count b{color:var(--ink);font-weight:500}
+.progress{position:fixed;top:45px;left:0;height:2px;background:var(--pen);z-index:41;transition:width .25s ease;width:0}
+
+.rbtn{background:var(--surface);border:1px solid var(--rule-strong);border-radius:6px;padding:6px 12px;
+  font-family:var(--f-mono);font-size:11.5px;letter-spacing:.03em;cursor:pointer;color:var(--ink-2);
+  display:inline-flex;align-items:center;gap:6px;transition:border-color .12s,color .12s}
+.rbtn:hover{border-color:var(--pen);color:var(--pen-text)}
+.rbtn[disabled]{opacity:.35;cursor:default}
+.rbtn kbd{font:inherit;color:var(--faint)}
+.hint{color:var(--faint);display:none}
+@media (min-width:820px){.hint{display:inline}}
+
+/* ============ STAGE ============ */
+main{padding:46px 0 52px}
+.slide{display:none;padding:clamp(24px,4.5vw,52px) clamp(16px,4vw,40px) 104px}
+.slide.on{display:block;animation:rise .3s ease}
+@keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.inner{max-width:var(--stage-max);margin:0 auto}
+.eyebrow{font-family:var(--f-mono);font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--muted);display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:14px}
+.eyebrow .clock{color:var(--pen-text);font-weight:500}
+.eyebrow .clock::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;
+  background:var(--pen);margin-right:7px;vertical-align:1px}
+h2.title{font-size:clamp(28px,4.4vw,44px);margin-bottom:10px}
+.standfirst{font-size:clamp(16px,1.7vw,19px);color:var(--ink-2);max-width:64ch;margin-bottom:26px;line-height:1.5}
+.slide h3{font-size:15px;font-family:var(--f-body);font-weight:600;letter-spacing:.01em;margin-bottom:10px}
+.grid{display:grid;gap:18px}
+@media(min-width:760px){.g2{grid-template-columns:1fr 1fr}.g23{grid-template-columns:1.15fr .85fr}.g32{grid-template-columns:.85fr 1.15fr}}
+
+/* ============ CONTENT BLOCKS ============ */
+ul.pts{list-style:none;margin:0;padding:0;display:grid;gap:11px}
+ul.pts li{padding-left:20px;position:relative;color:var(--ink-2);font-size:15.5px;line-height:1.5}
+ul.pts li::before{content:"";position:absolute;left:2px;top:.62em;width:7px;height:1.5px;background:var(--rule-strong)}
+ul.pts li b,ul.pts li strong{color:var(--ink);font-weight:600}
+.panel{background:var(--surface);border:1px solid var(--rule);border-radius:10px;padding:20px}
+.panel-h{font-family:var(--f-mono);font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);
+  margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+code,.m{font-family:var(--f-mono);font-size:.9em;background:var(--sunk);padding:1.5px 5px;border-radius:4px;color:var(--ink)}
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+
+/* callouts */
+.call{border-left:3px solid var(--pen);background:var(--pen-wash);padding:14px 16px;border-radius:0 8px 8px 0;font-size:15px;color:var(--ink-2)}
+.call b{color:var(--ink)}
+.call.trap{border-color:var(--crit);background:var(--crit-wash)}
+.call.rule{border-color:var(--good);background:var(--good-wash)}
+.call .tag{display:block;font-family:var(--f-mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:5px}
+.call.trap .tag{color:var(--crit)} .call.rule .tag{color:var(--good)}
+.unconfirmed{display:inline-flex;align-items:center;gap:5px;font-family:var(--f-mono);font-size:10.5px;
+  letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border:1px dashed var(--rule-strong);
+  border-radius:999px;padding:2px 9px;vertical-align:1px}
+.outside{border:1px solid var(--rule);border-radius:10px;padding:16px 18px;background:
+  repeating-linear-gradient(135deg,transparent,transparent 7px,var(--sunk) 7px,var(--sunk) 8px);font-size:14.5px;color:var(--ink-2)}
+.outside .tag{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--muted);display:block;margin-bottom:6px}
+.outside cite{display:block;margin-top:9px;font-style:normal;font-family:var(--f-mono);font-size:11px;color:var(--faint)}
+.outside b{color:var(--ink)}
+
+/* tables */
+.tw{overflow-x:auto;border:1px solid var(--rule);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:440px}
+th,td{text-align:left;padding:9px 14px;border-bottom:1px solid var(--rule)}
+th{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:400;
+  background:var(--sunk)}
+tr:last-child td{border-bottom:0}
+td.n{font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* ============ COVER ============ */
+.cover{display:grid;gap:26px;padding-block:clamp(10px,3vw,34px)}
+.cover .day{font-family:var(--f-mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--pen-text)}
+.cover h1{font-size:clamp(38px,7.4vw,76px);line-height:1.02;letter-spacing:-.026em;max-width:15ch}
+.cover .sub{font-size:clamp(17px,2vw,21px);color:var(--ink-2);max-width:56ch;line-height:1.45}
+.meta{display:flex;flex-wrap:wrap;gap:10px 28px;font-family:var(--f-mono);font-size:12px;color:var(--muted);
+  border-top:1px solid var(--rule);padding-top:18px}
+.meta div{display:grid;gap:2px}
+.meta dt{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+.meta dd{margin:0;color:var(--ink);font-variant-numeric:tabular-nums}
+
+/* trend strip on cover */
+.trend{border:1px solid var(--rule);border-radius:10px;background:var(--surface);padding:14px 16px}
+.trend svg{display:block;width:100%;height:auto;max-width:100%}
+.trend-legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:10px;font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+.trend-legend span{display:inline-flex;align-items:center;gap:6px}
+.trend-legend i{width:14px;height:2px;border-radius:1px;display:inline-block}
+
+/* ============ INTERACTIVE ============ */
+.tool{background:var(--surface);border:1px solid var(--rule-strong);border-radius:12px;overflow:hidden;box-shadow:var(--shadow)}
+.tool-h{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 16px;
+  border-bottom:1px solid var(--rule);background:var(--sunk)}
+.tool-h .lbl{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.tool-h .lbl b{color:var(--pen-text);font-weight:500}
+.tool-b{padding:18px}
+.reset{background:none;border:0;font-family:var(--f-mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--faint);cursor:pointer;padding:2px 4px}
+.reset:hover{color:var(--pen-text)}
+
+.opts{display:grid;gap:9px}
+@media(min-width:620px){.opts.two{grid-template-columns:1fr 1fr}.opts.three{grid-template-columns:repeat(3,1fr)}}
+.opt{text-align:left;background:var(--surface);border:1px solid var(--rule-strong);border-radius:9px;padding:12px 14px;
+  cursor:pointer;transition:border-color .12s,background .12s;display:grid;gap:3px;line-height:1.35}
+.opt:hover{border-color:var(--pen)}
+.opt .k{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--faint)}
+.opt .v{font-size:15px;font-weight:500;color:var(--ink)}
+.opt .d{font-size:13px;color:var(--muted)}
+.opt[aria-pressed="true"]{border-color:var(--pen);background:var(--pen-wash)}
+.opt[aria-pressed="true"] .k{color:var(--pen-text)}
+.opt.ok{border-color:var(--good);background:var(--good-wash)}
+.opt.no{border-color:var(--crit);background:var(--crit-wash)}
+
+.readout{margin-top:16px;border-top:1px solid var(--rule);padding-top:16px;display:grid;gap:12px}
+.stats{display:grid;gap:10px}
+@media(min-width:560px){.stats{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}}
+.stat{border:1px solid var(--rule);border-radius:9px;padding:11px 13px;display:grid;gap:3px;background:var(--sunk)}
+.stat dt{font-family:var(--f-mono);font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.stat dd{margin:0;font-family:var(--f-mono);font-size:19px;font-variant-numeric:tabular-nums;color:var(--ink);letter-spacing:-.02em}
+.stat dd small{font-size:11px;color:var(--muted);letter-spacing:0}
+.stat[data-s="ok"]{border-color:var(--good);background:var(--good-wash)}
+.stat[data-s="ok"] dd{color:var(--good)}
+.stat[data-s="bad"]{border-color:var(--crit);background:var(--crit-wash)}
+.stat[data-s="bad"] dd{color:var(--crit)}
+.verdict{font-size:15px;color:var(--ink-2);line-height:1.5}
+.verdict b{color:var(--ink)}
+
+.ctl{display:grid;gap:7px;margin-bottom:16px}
+.ctl label{font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
+  display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.ctl label output{font-size:14px;color:var(--pen-text);font-variant-numeric:tabular-nums;letter-spacing:0;text-transform:none}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:22px;background:transparent;cursor:pointer;margin:0}
+input[type=range]::-webkit-slider-runnable-track{height:4px;background:var(--rule-strong);border-radius:2px}
+input[type=range]::-moz-range-track{height:4px;background:var(--rule-strong);border-radius:2px}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--pen);
+  border:2px solid var(--surface);margin-top:-6px;box-shadow:0 0 0 1px var(--rule-strong)}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--pen);border:2px solid var(--surface);
+  box-shadow:0 0 0 1px var(--rule-strong)}
+input[type=text],input[type=number],select{width:100%;padding:9px 11px;border:1px solid var(--rule-strong);border-radius:8px;
+  background:var(--surface);color:var(--ink);font-family:var(--f-mono);font-size:14px}
+
+/* checklist */
+.chk{display:grid;gap:2px}
+.chk-item{display:flex;gap:11px;align-items:flex-start;padding:10px 12px;border-radius:8px;cursor:pointer;
+  border:1px solid transparent;transition:background .12s}
+.chk-item:hover{background:var(--sunk)}
+.chk-item input{margin:3px 0 0;width:16px;height:16px;accent-color:var(--pen);flex:none;cursor:pointer}
+.chk-item .t{font-size:15px;color:var(--ink-2);line-height:1.4}
+.chk-item .t b{color:var(--ink);font-weight:600}
+.chk-item .t em{font-style:normal;display:block;font-size:13px;color:var(--muted);margin-top:2px}
+.chk-item input:checked + .t{color:var(--faint)}
+.chk-item input:checked + .t b{color:var(--muted)}
+.chk-bar{display:flex;align-items:center;gap:10px;margin-top:12px;font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+.chk-bar .track{flex:1;height:4px;background:var(--rule);border-radius:2px;overflow:hidden}
+.chk-bar .fill{height:100%;background:var(--good);width:0;transition:width .2s ease}
+
+/* flow diagram */
+.flow{display:flex;flex-wrap:wrap;gap:6px;align-items:stretch}
+.node{flex:1 1 118px;min-width:0;text-align:left;background:var(--surface);border:1px solid var(--rule-strong);
+  border-radius:9px;padding:10px 11px;cursor:pointer;display:grid;gap:3px;transition:border-color .12s,background .12s}
+.node:hover{border-color:var(--pen)}
+.node .i{font-family:var(--f-mono);font-size:10px;color:var(--faint);letter-spacing:.08em}
+.node .n{font-size:13.5px;font-weight:600;color:var(--ink);line-height:1.25}
+.node[aria-pressed="true"]{border-color:var(--pen);background:var(--pen-wash)}
+.node[aria-pressed="true"] .i{color:var(--pen-text)}
+.arrow{align-self:center;color:var(--rule-strong);font-family:var(--f-mono);font-size:13px;flex:none}
+.detail{margin-top:16px;border-top:1px solid var(--rule);padding-top:16px;font-size:15px;color:var(--ink-2);line-height:1.5;min-height:88px}
+.detail h4{font-family:var(--f-body);font-size:15px;font-weight:600;color:var(--ink);margin-bottom:7px}
+.detail ul{margin:8px 0 0;padding-left:18px;display:grid;gap:5px}
+
+/* charts */
+.chart{width:100%;height:auto;display:block;max-width:100%;overflow:visible}
+.chart text{font-family:var(--f-mono);font-size:10px;fill:var(--muted)}
+.chart .axis{stroke:var(--rule);stroke-width:1}
+.chart .grid{stroke:var(--rule);stroke-width:1;stroke-dasharray:2 4;opacity:.7}
+.legend{display:flex;flex-wrap:wrap;gap:16px;margin-top:10px;font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.legend i{width:16px;height:2px;border-radius:1px;flex:none}
+.legend i.dash{background:repeating-linear-gradient(90deg,var(--ink-2) 0 4px,transparent 4px 7px);height:2px}
+.legend i.band{height:9px;border-radius:2px;border:1px solid var(--crit);background:var(--crit-wash)}
+
+/* register map */
+.regs{display:grid;grid-template-columns:repeat(auto-fill,minmax(74px,1fr));gap:4px}
+.reg{border:1px solid var(--rule);border-radius:6px;padding:7px 6px;text-align:center;background:var(--sunk);
+  font-family:var(--f-mono);font-size:10.5px;color:var(--muted);display:grid;gap:2px;transition:background .15s}
+.reg .a{color:var(--faint);font-size:9.5px}
+.reg .l{color:var(--ink);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.reg[data-part="hi"]{background:var(--pen-wash);border-color:var(--pen)}
+.reg[data-part="lo"]{background:var(--pen-wash);border-color:var(--pen);border-top-style:dashed}
+.reg[data-part="one"]{background:var(--pen-wash);border-color:var(--pen)}
+
+/* quiz */
+.quiz{display:grid;gap:16px}
+.q{border:1px solid var(--rule);border-radius:11px;padding:16px 18px;background:var(--surface)}
+.q .qh{display:flex;gap:10px;align-items:baseline;margin-bottom:12px}
+.q .qn{font-family:var(--f-mono);font-size:11px;color:var(--faint);flex:none}
+.q .qt{font-size:16px;font-weight:500;color:var(--ink);line-height:1.4}
+.q .as{display:grid;gap:7px}
+.a{text-align:left;background:var(--surface);border:1px solid var(--rule-strong);border-radius:8px;padding:10px 13px;
+  cursor:pointer;font-size:14.5px;color:var(--ink-2);transition:border-color .12s,background .12s;line-height:1.4}
+.a:hover:not([disabled]){border-color:var(--pen)}
+.a[data-r="ok"]{border-color:var(--good);background:var(--good-wash);color:var(--ink)}
+.a[data-r="no"]{border-color:var(--crit);background:var(--crit-wash);color:var(--ink)}
+.a[disabled]{cursor:default}
+.why{margin-top:11px;font-size:14px;color:var(--muted);border-left:2px solid var(--rule-strong);padding-left:12px;line-height:1.5;display:none}
+.why.on{display:block}
+.score{position:sticky;bottom:60px;background:var(--surface);border:1px solid var(--rule-strong);border-radius:11px;
+  padding:13px 18px;display:flex;align-items:center;justify-content:space-between;gap:14px;box-shadow:var(--shadow);
+  font-family:var(--f-mono);font-size:13px}
+.score b{font-size:19px;color:var(--pen-text);font-variant-numeric:tabular-nums}
+
+/* overview */
+.ov{position:fixed;inset:0;z-index:60;background:color-mix(in srgb,var(--paper) 94%,transparent);
+  backdrop-filter:blur(6px);overflow:auto;padding:clamp(20px,5vw,52px)}
+.ov[hidden]{display:none}
+.ov-h{max-width:1080px;margin:0 auto 22px;display:flex;align-items:baseline;justify-content:space-between;gap:16px}
+.ov-h h3{font-family:var(--f-display);font-size:22px}
+.ov-grid{max-width:1080px;margin:0 auto;display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(215px,1fr))}
+.ov-card{text-align:left;background:var(--surface);border:1px solid var(--rule);border-radius:9px;padding:12px 14px;
+  cursor:pointer;display:grid;gap:5px;transition:border-color .12s,transform .12s}
+.ov-card:hover{border-color:var(--pen);transform:translateY(-1px)}
+.ov-card .oi{font-family:var(--f-mono);font-size:10.5px;color:var(--faint);display:flex;justify-content:space-between;gap:8px}
+.ov-card .ot{font-size:14.5px;font-weight:500;color:var(--ink);line-height:1.3}
+.ov-card[aria-current="true"]{border-color:var(--pen);background:var(--pen-wash)}
+.ov-card .bar{height:2px;background:var(--pen);border-radius:1px;width:0;opacity:.5}
+.ov-card[data-seen="1"] .bar{width:100%}
+
+/* notes */
+.notes{border-top:1px dashed var(--rule-strong);margin-top:26px;padding-top:16px;font-size:14.5px;color:var(--muted);
+  line-height:1.55;max-width:70ch}
+.notes .tag{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--faint);
+  display:block;margin-bottom:6px}
+body:not([data-notes="1"]) .notes{display:none}
+
+/* end card */
+.actions{display:grid;gap:9px}
+.act{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--rule);border-radius:9px;padding:12px 14px;background:var(--surface)}
+.act .who{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--pen-text);
+  flex:none;width:88px;padding-top:2px}
+.act .what{font-size:14.5px;color:var(--ink-2);line-height:1.45}
+@media(max-width:520px){.act{flex-direction:column;gap:4px}.act .who{width:auto}}
+
+</style>
+<script>
+document.body.setAttribute("data-deck","1");
+document.body.setAttribute("data-pen","1");
+window.DECK_URLS={"1": "https://claude.ai/code/artifact/65d204b8-174d-4bad-990c-3ea81fd14555", "2": "https://claude.ai/code/artifact/b460dbde-c6da-402a-bc43-12db1d1b3a5b", "3": "https://claude.ai/code/artifact/ffc7b1ac-d8dd-4d61-805f-dd31c73dcf38"};
+</script>
+
+<header class="rail rail--top">
+  <span class="rail-id"><b>Getting the Point Online</b><span>Day 1 · 8 Sep 2026</span></span>
+  <span class="spacer"></span>
+  <nav class="pens" aria-label="Other decks in this series">
+    <a class="pen-dot" data-p="1"  aria-current="page" title="Day 1 — RTAC Configuration &amp; Protocols">1</a>
+    <a class="pen-dot" data-p="2" href="https://claude.ai/code/artifact/b460dbde-c6da-402a-bc43-12db1d1b3a5b" target="_blank" rel="noopener"  title="Day 2 — Template Conversion &amp; Inverter Integration">2</a>
+    <a class="pen-dot" data-p="3" href="https://claude.ai/code/artifact/ffc7b1ac-d8dd-4d61-805f-dd31c73dcf38" target="_blank" rel="noopener"  title="Day 3 — Grid Connect Control Logic &amp; DDR">3</a>
+  </nav>
+  <span class="count" id="count">01 / 13</span>
+</header>
+<div class="progress" id="prog"></div>
+
+<main>
+<!-- 01 COVER -->
+<section class="slide" data-short="Cover">
+  <div class="inner cover">
+    <span class="day">Day 1 · Monday 8 September 2026 · 07:05–09:10</span>
+    <h1>Getting the Point Online</h1>
+    <p class="sub">Two hours on the SEL RTAC: how to get in, how not to lose the project, and the handful of numbers that decide whether a device comes online or sits dark with perfectly healthy TCP traffic.</p>
+    <div class="trend" id="timeline"></div>
+    <div class="meta">
+      <div><dt>Session length</dt><dd>2h 04m</dd></div>
+      <div><dt>Protocols covered</dt><dd>DNP3 · Modbus · C37.118</dd></div>
+      <div><dt>Interactive tools</dt><dd>5</dd></div>
+      <div><dt>Source</dt><dd>Session transcript</dd></div>
+    </div>
+    <p class="standfirst" style="margin:0;font-size:15px">Use <span class="m">←</span> <span class="m">→</span> to move, <span class="m">G</span> for all slides, <span class="m">N</span> for notes. Progress is remembered on this device.</p>
+  </div>
+</section>
+
+<!-- 02 THE ARC -->
+<section class="slide" data-short="Where this sits">
+  <div class="inner">
+    <div class="eyebrow"><span>The three mornings</span></div>
+    <h2 class="title">Three days, one path from wire to setpoint</h2>
+    <p class="standfirst">Each morning picks up exactly where the last one stopped. Day 1 makes data move. Day 2 makes a project out of it. Day 3 makes the plant follow a number.</p>
+    <div class="tool">
+      <div class="tool-h"><span class="lbl">Pick a day · <b>you are on Day 1</b></span></div>
+      <div class="tool-b">
+        <div class="flow" data-flow="arc">
+          <button class="node" type="button" data-k="d1" aria-pressed="true"><span class="i">DAY 1 · 8 SEP</span><span class="n">Comms &amp; the RTAC</span></button>
+          <span class="arrow">→</span>
+          <button class="node" type="button" data-k="d2"><span class="i">DAY 2 · 9 SEP</span><span class="n">Project &amp; inverters</span></button>
+          <span class="arrow">→</span>
+          <button class="node" type="button" data-k="d3"><span class="i">DAY 3 · 10 SEP</span><span class="n">Control &amp; recording</span></button>
+        </div>
+        <div class="detail" data-flow-out="arc"></div>
+      </div>
+    </div>
+    <div class="notes"><span class="tag">Speaker note</span>The three sessions were consecutive weekday mornings and each closed by naming the next one's scope. Day 1 ended with "device setup, project bindings, GridConnect mapping, error resolution" — which is exactly what Day 2 opened with. Day 2 ended promising "Grid Connect variables, the main program, how data enters and leaves the MPC" — which is Day 3.</div>
+  </div>
+</section>
+
+<!-- 03 ACCESS -->
+<section class="slide" data-clock="07:05" data-short="Getting in">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">07:05</span><span>WebPatrol · licensing · network</span></div>
+    <h2 class="title">Getting in, and proving the path exists</h2>
+    <p class="standfirst">Before any protocol argument is worth having, confirm you can reach the box and that the port you need is actually open.</p>
+    <div class="grid g23">
+      <div>
+        <ul class="pts">
+          <li>Reach the SCL <b>WebPatrol</b> interface at <code>https://</code> + the RTAC IP. First login sets a password; after that it is username and password.</li>
+          <li><b>Device Management</b> is where license files go — uploaded through the firmware upload workflow even though a licence is not firmware. It appears under <b>License Features</b> after roughly <span class="num">3 minutes</span>.</li>
+          <li>Check IP settings, and configure <b>IP bonding</b> where the site needs it.</li>
+          <li>Security tools will ping a device and check its ports. <b>A port that does not show as open is usually a firewall</b>, not a device fault — that is a network-team ticket.</li>
+          <li>For packet capture, use <b>Connected IEDs</b> to isolate one device. The Utilities capture pulls traffic from everywhere and buries the thing you are looking for.</li>
+        </ul>
+      </div>
+      <div class="tool">
+        <div class="tool-h"><span class="lbl">Pre-flight</span><button class="reset" type="button" data-chk-reset>Clear</button></div>
+        <div class="tool-b">
+          <div class="chk" data-chk="access">
+            <label class="chk-item"><input type="checkbox"><span class="t"><b>WebPatrol reachable</b><em>https:// + RTAC IP resolves and logs in</em></span></label>
+            <label class="chk-item"><input type="checkbox"><span class="t"><b>Licence shows under License Features</b><em>allow ~3 min after upload</em></span></label>
+            <label class="chk-item"><input type="checkbox"><span class="t"><b>Ping succeeds to the target IED</b><em>from the RTAC, not from your laptop</em></span></label>
+            <label class="chk-item"><input type="checkbox"><span class="t"><b>Port shows open</b><em>if not: firewall, escalate to network</em></span></label>
+            <label class="chk-item"><input type="checkbox"><span class="t"><b>Capture scoped to one IED</b><em>Connected IEDs, not Utilities</em></span></label>
+          </div>
+          <div class="chk-bar"><span class="n">0 of 5</span><span class="track"><span class="fill"></span></span></div>
+        </div>
+      </div>
+    </div>
+    <div class="notes"><span class="tag">Speaker note</span>The order matters: people lose an hour arguing about DNP3 addresses on a link the firewall was never going to pass. Ping, then port, then protocol.</div>
+  </div>
+</section>
+
+<!-- 04 PROJECT SAFETY -->
+<section class="slide" data-clock="07:12" data-short="Don't lose the project">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">07:12</span><span>backup · cross-check · send</span></div>
+    <h2 class="title">The firmware update that erases your plant</h2>
+    <div class="grid g2">
+      <div class="grid" style="gap:16px">
+        <div class="call trap"><span class="tag">The one that bites</span><b>A firmware update can wipe the active project</b> and leave the RTAC looking like a brand-new device with nothing on it. Download the project locally first, then upload it through <b>Project Management</b> and <b>activate</b> it after the update.</div>
+        <ul class="pts">
+          <li><b>Cross-check before you send.</b> A clean save is not a clean project — errors surface at the bottom of the interface only once cross-check runs.</li>
+          <li><b>Send</b> downloads to the RTAC after you supply the port and credentials.</li>
+          <li>Reinitialising retained variables writes zeroes and rewrites the retained values.</li>
+          <li>Advanced send settings let you exclude selected areas — Ethernet settings, reader settings — from the download.</li>
+        </ul>
+        <div class="call trap"><span class="tag">Symptom → cause</span>Repeated <b>"reconnecting"</b> messages followed by the project failing, while cross-check reports zero errors and zero warnings, points at a <b>watchdog or a reference problem</b> — not at the network.</div>
+      </div>
+      <div class="tool">
+        <div class="tool-h"><span class="lbl">Which send do I use?</span><button class="reset" type="button" data-reset="send">Restart</button></div>
+        <div class="tool-b" data-tool="send">
+          <p class="verdict" data-q>Will you need to <b>force a value</b> once this is running?</p>
+          <div class="opts two" data-a>
+            <button class="opt" type="button" data-v="yes"><span class="k">Yes</span><span class="v">I need to force</span><span class="d">Testing, commissioning, proving a point</span></button>
+            <button class="opt" type="button" data-v="no"><span class="k">No</span><span class="v">Logic change only</span><span class="d">Ordinary IEC 61131-3 edit</span></button>
+          </div>
+          <div class="readout" data-out hidden></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 05 LIBRARIES -->
+<section class="slide" data-clock="07:42" data-short="Libraries & extensions">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">07:42</span><span>Manage Library · extensions · devices</span></div>
+    <h2 class="title">Compiled library, or project item?</h2>
+    <p class="standfirst">The distinction decides where the thing lands, how you version it, and whether it can be edited at all.</p>
+    <div class="grid g32">
+      <div class="tool">
+        <div class="tool-h"><span class="lbl">Sort each one</span><span class="lbl" data-sort-out></span></div>
+        <div class="tool-b" data-sort="libs">
+          <div class="grid" style="gap:12px">
+            <div data-ans="lib">
+              <p style="font-size:15px;margin-bottom:8px">A compiled <b>SCL library</b> arrives as a packaged version — <code>0.17</code>, say.</p>
+              <div class="opts two"><button class="opt" type="button" data-pick="lib"><span class="v">Manage Library</span></button><button class="opt" type="button" data-pick="item"><span class="v">Import as project item</span></button></div>
+              <p class="why">Installed through <b>Manage Library</b>. When a reference will not resolve, hover it — the tooltip names the version you actually need.</p>
+            </div>
+            <div data-ans="item">
+              <p style="font-size:15px;margin-bottom:8px">Uncompiled source content someone handed you.</p>
+              <div class="opts two"><button class="opt" type="button" data-pick="lib"><span class="v">Manage Library</span></button><button class="opt" type="button" data-pick="item"><span class="v">Import as project item</span></button></div>
+              <p class="why">Uncompiled content comes in as a <b>project item</b>, not an installed library.</p>
+            </div>
+            <div data-ans="both">
+              <p style="font-size:15px;margin-bottom:8px"><b>DDR</b> — the Dynamic Disturbance Record you will use on Day 3.</p>
+              <div class="opts two"><button class="opt" type="button" data-pick="lib"><span class="v">Library alone is enough</span></button><button class="opt" type="button" data-pick="both"><span class="v">Library <em style="font-style:normal">and</em> extension</span></button></div>
+              <p class="why">DDR needs <b>both its library and its extension</b>. Half of it installed is the usual reason it is not there when you go looking.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="grid" style="gap:16px;align-content:start">
+        <ul class="pts">
+          <li><b>GridConnect</b> normally ships inside the SCL project. To take a newer SCL-provided version — <code>3.5.9.2</code> replacing <code>3.5.9.0</code> — remove the existing project reference first, then insert the new one.</li>
+          <li>Extra SEL devices, DNP3 devices, IEC 61850 devices and OPC UA components are inserted through the project tree. For the less familiar protocols the device manual is still the authority.</li>
+          <li><b>Custom libraries must use RTAC-supported data types.</b> An SCL type such as a measured value may need the corresponding RTAC library type instead.</li>
+        </ul>
+        <div class="call"><span class="tag">Carried into Day 2</span>Data types are the hinge. Day 2 spends most of its time on what breaks when you change one — and Day 3 shows why the structure exists at all.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 06 DNP3 -->
+<section class="slide" data-clock="07:53" data-short="DNP3: four numbers">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">07:53</span><span>DNP3 client &amp; server</span></div>
+    <h2 class="title">Four numbers have to agree</h2>
+    <p class="standfirst">IP address, port, DNP server address, DNP client&#8202;/&#8202;master address. Get one wrong and the traffic looks fine while the device stays offline.</p>
+    <div class="grid g23">
+      <div class="tool">
+        <div class="tool-h"><span class="lbl">Why is my DNP3 device offline?</span><button class="reset" type="button" data-reset="dnp">Start over</button></div>
+        <div class="tool-b" data-tool="dnp">
+          <p class="verdict" data-q></p>
+          <div class="opts" data-a></div>
+          <div class="readout" data-out hidden></div>
+        </div>
+      </div>
+      <ul class="pts">
+        <li>For a client, the <b>server IP and server port must match the remote server</b>. The client address is commonly zero unless the system demands otherwise.</li>
+        <li><b>Reverse the client and server DNP addresses</b> and you get the worst failure mode there is: IP traffic acknowledged, application layer dead, device offline.</li>
+        <li>The client IP port identifies the local source of the connection. Multiple DNP3 clients get different ports — RTAC Architect can increment them for you. Use <code>netstat -an</code> or a capture to see what is already taken.</li>
+        <li>A server can allow anonymous connections, but the DNP addresses still have to line up. Wireshark's application-layer view will show you the addresses actually on the wire.</li>
+        <li>DST and UTC offset can be handled globally; with the global setting off, configure them per device.</li>
+        <li>Integrity polling, class 1&#8202;/&#8202;2&#8202;/&#8202;3 polling, poll timeout and poll period follow bandwidth and device response time. <b>Custom requests</b> give you faster polling on just the points that need it.</li>
+        <li>A larger event buffer preserves events across a connection loss — rarely changed from the default.</li>
+      </ul>
+    </div>
+    <div class="notes"><span class="tag">Speaker note</span>The reversed-address case is worth dwelling on. Everyone's instinct on "device offline" is to blame the network, and the network is provably fine — that is what makes it expensive.</div>
+  </div>
+</section>
+
+<!-- 07 VARIATIONS -->
+<section class="slide" data-clock="08:10" data-short="Objects & variations">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">08:10</span><span>DNP3 data types</span></div>
+    <h2 class="title">Right object, wrong variation</h2>
+    <p class="standfirst">The device comes online and the values are still wrong: integers where you wanted floats, no timestamps, no flags, or events that never arrive.</p>
+    <div class="grid g23">
+      <div class="tool">
+        <div class="tool-h"><span class="lbl">Variation picker</span></div>
+        <div class="tool-b" data-tool="var">
+          <div class="ctl"><label for="v-kind">What are you carrying?</label>
+            <div class="opts two" data-k>
+              <button class="opt" type="button" data-v="float"><span class="k">Analog</span><span class="v">Floating point</span><span class="d">MW, MVAR, volts</span></button>
+              <button class="opt" type="button" data-v="int"><span class="k">Analog</span><span class="v">Integer</span><span class="d">Counts, enumerations</span></button>
+              <button class="opt" type="button" data-v="bin"><span class="k">Status</span><span class="v">Binary input</span><span class="d">On / off</span></button>
+              <button class="opt" type="button" data-v="cnt"><span class="k">Counter</span><span class="v">Accumulator</span><span class="d">Energy, pulses</span></button>
+            </div>
+          </div>
+          <div class="ctl"><label for="v-ts">Do you need time and quality flags?</label>
+            <div class="opts two" data-t>
+              <button class="opt" type="button" data-v="1"><span class="v">Yes — with flag / time</span></button>
+              <button class="opt" type="button" data-v="0"><span class="v">No — value only</span></button>
+            </div>
+          </div>
+          <div class="readout" data-out hidden></div>
+        </div>
+      </div>
+      <div class="grid" style="gap:14px;align-content:start">
+        <div class="call trap"><span class="tag">Dead band</span>Dead band decides when instantaneous magnitude gets copied to magnitude. A <b>zero dead band of <span class="num">0</span> disables the zero threshold</b>; set it to <span class="num">2</span> and anything below 2 reads as zero. <b>Set the dead band too wide and magnitude simply stops updating.</b></div>
+        <ul class="pts">
+          <li>In existing PVC projects the <b>instantaneous magnitude</b> is often preferred, precisely so a badly configured dead band cannot hide the value.</li>
+          <li>Use measured-value types for floating point and integer types for integers — mixing them is how you get an integer where a float belonged.</li>
+          <li><b>Double-bit inputs</b> carry four states: no value, on, off, invalid. IEC 104 interprets these differently — do not assume they are the same thing.</li>
+          <li><b>SPC controls</b> cover pulse, latch-on, latch-off and related attributes. A latch command can appear as a pulse on the server side.</li>
+          <li>Feedback status can let command status stand in for a separate binary input.</li>
+          <li>Counters use object <span class="num">20</span>; frozen counters use <span class="num">21</span>.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 08 SERVER MAP -->
+<section class="slide" data-clock="08:29" data-short="Server mapping">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">08:29</span><span>serving data out</span></div>
+    <h2 class="title">Serving it back out</h2>
+    <div class="grid g2">
+      <div class="grid" style="gap:16px">
+        <ul class="pts">
+          <li>Server setup needs the server IP, DNP addresses that match the far side, and a configured <b>DNP server map</b>.</li>
+          <li><b>Point numbers must match between client and server.</b> Static and event-driven data use different object types and variations, and the event class and variation settings decide how a value is actually transmitted.</li>
+          <li>Client or server is not a label — it determines whether the device writes to register and point data or serves it.</li>
+          <li>The instruction manual shipped inside the software documents the standard data types, protocols and configuration concepts. It is the first place to look, not the last.</li>
+        </ul>
+        <div class="call"><span class="tag">Worked example from the session</span>Analog output object type <b><span class="num">42</span></b> — variation <span class="num">1</span> is a 32-bit integer, variation <span class="num">2</span> is a 16-bit integer, variation <span class="num">3</span> is single-precision floating point.</div>
+      </div>
+      <div class="grid" style="gap:14px">
+        <div class="tw">
+          <table>
+            <caption class="sr-only"></caption>
+            <thead><tr><th>Group</th><th>What it carries</th><th>Note</th></tr></thead>
+            <tbody>
+              <tr><td class="n">1 / 2</td><td>Binary input — static / event</td><td>Double-bit variants carry four states</td></tr>
+              <tr><td class="n">12</td><td>Binary output control (CROB)</td><td>Pulse, latch-on, latch-off</td></tr>
+              <tr><td class="n">20 / 21</td><td>Counter / frozen counter</td><td>Freeze is a separate object</td></tr>
+              <tr><td class="n">30 / 32</td><td>Analog input — static / event</td><td>Variation picks int vs float, flag, time</td></tr>
+              <tr><td class="n">40 / 41 / 42</td><td>Analog output status / command / event</td><td>42 var 1·2·3 = int32 · int16 · float32</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="outside"><span class="tag">Outside the room</span>The group numbering above is the standard DNP3 object library, unchanged across vendors — which is why a point list from an inverter vendor and one from a meter vendor can be read the same way. Group 42 is the analog output <b>event</b> object; its 1&#8202;/&#8202;2&#8202;/&#8202;3 variation split matches what was demonstrated in the session.<cite>DNP3 object library — cross-vendor device profile documents</cite></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 09 MODBUS -->
+<section class="slide" data-clock="08:39" data-short="Modbus registers">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">08:39</span><span>Modbus register mapping</span></div>
+    <h2 class="title">Two registers, one number</h2>
+    <p class="standfirst">Modbus drops the DNP addresses but adds its own arithmetic: a 32-bit value eats two 16-bit registers, and both sides have to agree on which half comes first.</p>
+    <div class="tool">
+      <div class="tool-h"><span class="lbl">Register layout · <b data-count>0 points</b></span><button class="reset" type="button" data-reset="mb">Clear map</button></div>
+      <div class="tool-b" data-tool="mb">
+        <div class="opts three" style="margin-bottom:14px">
+          <button class="opt" type="button" data-add="16"><span class="k">+ add</span><span class="v">16-bit integer</span><span class="d">One register</span></button>
+          <button class="opt" type="button" data-add="32"><span class="k">+ add</span><span class="v">32-bit float</span><span class="d">Two registers</span></button>
+          <button class="opt" type="button" data-add="bits"><span class="k">+ add</span><span class="v">MBBC bit field</span><span class="d">Bits 0–15 of one register</span></button>
+        </div>
+        <div class="regs" data-map></div>
+        <div class="readout">
+          <div class="ctl" style="margin:0"><label for="mb-order">Word order on the far side <output for="mb-order" id="mb-order-o">MSB first (big-endian)</output></label>
+            <div class="opts two"><button class="opt" type="button" data-order="msb" aria-pressed="true"><span class="v">MSB first</span></button><button class="opt" type="button" data-order="lsb"><span class="v">LSB first</span></button></div>
+          </div>
+          <p class="verdict" data-decode></p>
+        </div>
+      </div>
+    </div>
+    <div class="grid g2" style="margin-top:20px">
+      <ul class="pts">
+        <li>Port <span class="num">502</span> is the default. <b>Two anonymous Modbus servers cannot share a port</b> — give them explicit IP addresses or separate ports.</li>
+        <li>Maps cover coils, discrete inputs, holding registers and input registers; coils and holding registers do most of the work.</li>
+        <li>A shared mapping address can be reused across several RTU server devices.</li>
+      </ul>
+      <ul class="pts">
+        <li>Match signed against unsigned, integer against float, 16-bit against 32-bit, and MSB&#8202;/&#8202;LSB ordering — <b>on both sides</b>.</li>
+        <li><b>MBBC</b> exposes the individual bits of a register directly, so you never hand-roll a bit mask: one register gives you bit references <span class="num">0</span> through <span class="num">15</span>.</li>
+        <li>Client maps are built per client; server maps are built through the server mapping interface.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 10 C37.118 -->
+<section class="slide" data-clock="08:52" data-short="C37.118 & tags">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">08:52</span><span>C37.118 · Tag Processor · live data</span></div>
+    <h2 class="title">When 500 milliseconds is too slow</h2>
+    <div class="grid g23">
+      <div class="tool">
+        <div class="tool-h"><span class="lbl">Sample rate vs cycle time</span></div>
+        <div class="tool-b" data-tool="c37">
+          <div class="ctl"><label for="c-sps">Reporting rate <output for="c-sps" id="c-sps-o">60 samples/s</output></label>
+            <input type="range" id="c-sps" min="10" max="120" step="10" value="60"></div>
+          <div class="ctl"><label for="c-cyc">RTAC cycle time <output for="c-cyc" id="c-cyc-o">16 ms</output></label>
+            <input type="range" id="c-cyc" min="4" max="120" step="1" value="16"></div>
+          <div class="readout">
+            <div class="stats">
+              <div class="stat"><dt>Frame interval</dt><dd data-f>16.7 <small>ms</small></dd></div>
+              <div class="stat"><dt>Cycle needed</dt><dd data-need>≤ 16 <small>ms</small></dd></div>
+              <div class="stat" data-verdict-stat><dt>Verdict</dt><dd data-v>OK</dd></div>
+            </div>
+            <p class="verdict" data-msg></p>
+          </div>
+        </div>
+      </div>
+      <div class="grid" style="gap:14px;align-content:start">
+        <ul class="pts">
+          <li>C37.118 is used for metering and delivers data faster than the alternatives. PDC ID, station name, PMU ID, port, data rate and cycle time must be configured consistently on both ends.</li>
+          <li>At <span class="num">60</span> samples per second the RTAC cycle time has to be around <b><span class="num">15–16 ms</span></b>. A <span class="num">100 ms</span> cycle cannot support that rate — the box simply cannot keep up.</li>
+          <li><b>CMV</b> — complex measured values — give magnitude and angle. Angles support calculations such as power factor, after converting degrees to radians.</li>
+          <li>An RTAC can sit in the middle as a <b>C37.118 gateway</b>: take one client session, alias the tags, serve several devices downstream.</li>
+          <li><b>Tag Processor</b> maps source tags to destination tags of matching type; quality and timestamps come across automatically from MV or INS data.</li>
+          <li>Live data can be made viewable or forceable in the web portal — you stop having to go online to the RTAC just to look at a value.</li>
+        </ul>
+        <div class="outside"><span class="tag">Outside the room · why this matters on Day 3</span>An SEL-735 meter serves data at about <b>500 ms</b> over DNP3 or SEL protocol, but around <b>16.67 ms</b> over C37.118 — roughly a 5&#215; improvement in how fast a plant controller sees the point of interconnection. IEEE 2800 asks for a controller reaction time as low as <b>200 ms</b>, which a 500 ms meter update cannot meet no matter how the PID is tuned.<cite>Nor-Cal Controls, "IEEE Std 2800: Ensuring Grid Resilience with Inverter-Based Resources", Sep 2024</cite></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 11 OFFLINE -->
+<section class="slide" data-clock="09:03" data-short="Offline practice">
+  <div class="inner">
+    <div class="eyebrow"><span class="clock">09:03</span><span>practice · next session</span></div>
+    <h2 class="title">You do not need the hardware to practise</h2>
+    <div class="grid g2">
+      <div class="grid" style="gap:16px">
+        <div class="call rule"><span class="tag">Rule</span>Project configuration, cross-checking and error investigation all work <b>offline in the software</b>. Hardware is only needed to download the project or run it.</div>
+        <ul class="pts">
+          <li>Sample maps and project files are enough for offline practice — build the muscle memory before the RTAC is in front of you.</li>
+          <li>The proposed exercise: <b>a project from scratch</b> with a GridConnect meter and one or two points, plus an inverter with one or two points — then move onto an existing project.</li>
+          <li>A second exercise imports a <b>different inverter type</b> into an existing project and maps it for testing. That is Day 2, more or less exactly.</li>
+        </ul>
+      </div>
+      <div class="grid" style="gap:10px">
+        <h3>Action items from Day 1</h3>
+        <div class="actions">
+          <div class="act"><span class="who">Presenter</span><span class="what">Send sample maps and project files for offline practice</span></div>
+          <div class="act"><span class="who">Presenter</span><span class="what">Find the documentation and the right IT&#8202;/&#8202;OT contact for reaching the RTACs through the VPN and EDH</span></div>
+          <div class="act"><span class="who">Presenter</span><span class="what">Prepare the next session: device setup, project bindings, GridConnect mapping, error resolution, and a from-scratch example project</span></div>
+          <div class="act"><span class="who">Everyone</span><span class="what">Practise project configuration, library handling, mapping and cross-checking offline before downloading to hardware</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 12 QUIZ -->
+<section class="slide" data-short="Knowledge check">
+  <div class="inner">
+    <div class="eyebrow"><span>Knowledge check</span><span>six questions</span></div>
+    <h2 class="title">Six that cost time in the field</h2>
+    <div class="quiz" data-quiz>
+      <div class="q"><div class="qh"><span class="qn">01</span><span class="qt">TCP traffic is acknowledged, the link looks healthy, but the DNP3 device stays offline. First suspect?</span></div>
+        <div class="as">
+          <button class="a" type="button">A firewall between the two devices</button>
+          <button class="a" type="button" data-ok="1">Client and server DNP addresses are reversed or mismatched</button>
+          <button class="a" type="button">Poll period set too slow</button>
+        </div>
+        <p class="why">IP is being acknowledged, so the path exists — the failure is at the application layer. A firewall would stop the traffic outright.</p>
+      </div>
+      <div class="q"><div class="qh"><span class="qn">02</span><span class="qt">You are about to update firmware on a live RTAC. What has to happen first?</span></div>
+        <div class="as">
+          <button class="a" type="button">Reinitialise the retained variables</button>
+          <button class="a" type="button" data-ok="1">Download the project locally so it can be uploaded and activated afterwards</button>
+          <button class="a" type="button">Send only the IEC 61131-3 logic</button>
+        </div>
+        <p class="why">The update can erase the active project and leave the RTAC looking like a new device.</p>
+      </div>
+      <div class="q"><div class="qh"><span class="qn">03</span><span class="qt">An analog value has stopped updating even though the device is online. Most likely configuration cause?</span></div>
+        <div class="as">
+          <button class="a" type="button" data-ok="1">The dead band is set too wide, so magnitude never gets refreshed</button>
+          <button class="a" type="button">The point number is wrong</button>
+          <button class="a" type="button">The event buffer is too small</button>
+        </div>
+        <p class="why">Dead band controls when instantaneous magnitude is copied to magnitude. Too wide and the value freezes — which is why instantaneous magnitude is often preferred in existing PVC projects.</p>
+      </div>
+      <div class="q"><div class="qh"><span class="qn">04</span><span class="qt">A 32-bit float lives in Modbus holding registers 0 and 1. Where does the next value start?</span></div>
+        <div class="as">
+          <button class="a" type="button">Register 1</button>
+          <button class="a" type="button" data-ok="1">Register 2</button>
+          <button class="a" type="button">Register 3</button>
+        </div>
+        <p class="why">A 32-bit value occupies two 16-bit registers. After 0 and 1, the next value starts at 2 — the off-by-one here is a classic source of garbage readings.</p>
+      </div>
+      <div class="q"><div class="qh"><span class="qn">05</span><span class="qt">The meter reports at 60 samples per second over C37.118. What cycle time does the RTAC need?</span></div>
+        <div class="as">
+          <button class="a" type="button">100 ms</button>
+          <button class="a" type="button" data-ok="1">About 15–16 ms</button>
+          <button class="a" type="button">60 ms</button>
+        </div>
+        <p class="why">60 samples per second is a frame every 16.7 ms. A 100 ms cycle cannot support the rate.</p>
+      </div>
+      <div class="q"><div class="qh"><span class="qn">06</span><span class="qt">You need to force a value during commissioning. Which download?</span></div>
+        <div class="as">
+          <button class="a" type="button">Logic only — it avoids the reboot</button>
+          <button class="a" type="button" data-ok="1">The full project</button>
+          <button class="a" type="button">Either; forcing is independent of the download</button>
+        </div>
+        <p class="why">Sending only the IEC 61131-3 logic keeps the RTAC running without rebooting the whole project, but it takes forcing off the table.</p>
+      </div>
+    </div>
+    <div class="score"><span>Knowledge check</span><span data-score><b>0</b> / 6</span></div>
+  </div>
+</section>
+
+<!-- 13 CLOSE -->
+<section class="slide" data-short="Carry forward">
+  <div class="inner">
+    <div class="eyebrow"><span>End of Day 1</span></div>
+    <h2 class="title">What Day 1 buys you</h2>
+    <p class="standfirst">Everything above is about getting a number from a device into the RTAC and back out again, correctly and fast enough. Day 2 assumes all of it works and asks a different question: how do you build the project around it without breaking a plant that already runs?</p>
+    <div class="grid g2">
+      <div class="call rule"><span class="tag">You can now</span>Reach an RTAC, protect a project through a firmware update, install a library and its extension, argue about DNP3 addresses with evidence, lay out a Modbus map that decodes correctly, and pick a protocol that is fast enough for the control loop it feeds.</div>
+      <div class="call"><span class="tag">Next: Day 2 · 9 September</span><b>Template to Plant</b> — picking the right project to clone, swapping an inverter model without leaving broken cross-references behind, and the error-driven repair loop that gets you from 47 errors to zero.</div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="rail rail--bot">
+  <button class="rbtn" id="ovBtn" type="button">All slides <kbd>G</kbd></button>
+  <button class="rbtn" id="notesBtn" type="button" aria-pressed="false">Notes <kbd>N</kbd></button>
+  <span class="spacer"></span>
+  <span class="hint">← → to move</span>
+  <button class="rbtn" id="prev" type="button">←</button>
+  <button class="rbtn" id="next" type="button">→</button>
+</footer>
+
+<div class="ov" id="ov" hidden>
+  <div class="ov-h">
+    <h3>Getting the Point Online</h3>
+    <button class="rbtn" id="ovClose" type="button">Close <kbd>Esc</kbd></button>
+  </div>
+  <div class="ov-grid" id="ovGrid"></div>
+</div>
+
+<script>
+/* ===== deck core ===== */
+(function(){
+"use strict";
+var KEY = "deck:" + (document.body.dataset.deck || "x");
+var slides = [].slice.call(document.querySelectorAll(".slide"));
+var N = slides.length, cur = 0, seen = {};
+
+function store(k, v){ try{ localStorage.setItem(KEY + ":" + k, JSON.stringify(v)); }catch(e){} }
+function load(k, d){ try{ var v = localStorage.getItem(KEY + ":" + k); return v === null ? d : JSON.parse(v); }catch(e){ return d; } }
+
+seen = load("seen", {});
+
+/* ---- navigation ---- */
+var elCount = document.getElementById("count"),
+    elProg  = document.getElementById("prog"),
+    elPrev  = document.getElementById("prev"),
+    elNext  = document.getElementById("next");
+
+function go(i, push){
+  i = Math.max(0, Math.min(N - 1, i));
+  slides[cur].classList.remove("on");
+  cur = i;
+  slides[cur].classList.add("on");
+  seen[i] = 1; store("seen", seen); store("at", i);
+  if (elCount) elCount.innerHTML = "<b>" + String(i + 1).padStart(2, "0") + "</b> / " + String(N).padStart(2, "0");
+  if (elProg) elProg.style.width = ((i) / (N - 1) * 100) + "%";
+  if (elPrev) elPrev.disabled = i === 0;
+  if (elNext) elNext.disabled = i === N - 1;
+  if (push !== false && ("#" + (i + 1)) !== location.hash) history.replaceState(null, "", "#" + (i + 1));
+  window.scrollTo({ top: 0, behavior: "instant" in document.body.style ? "instant" : "auto" });
+  paintOverview();
+}
+if (elPrev) elPrev.onclick = function(){ go(cur - 1); };
+if (elNext) elNext.onclick = function(){ go(cur + 1); };
+
+document.addEventListener("keydown", function(e){
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+  var k = e.key;
+  if (k === "ArrowRight" || k === "PageDown" || k === " ") { e.preventDefault(); go(cur + 1); }
+  else if (k === "ArrowLeft" || k === "PageUp") { e.preventDefault(); go(cur - 1); }
+  else if (k === "Home") { e.preventDefault(); go(0); }
+  else if (k === "End") { e.preventDefault(); go(N - 1); }
+  else if (k === "g" || k === "G") { toggleOv(); }
+  else if (k === "n" || k === "N") { toggleNotes(); }
+  else if (k === "Escape") { closeOv(); }
+});
+
+/* touch */
+var tx = 0, ty = 0;
+document.addEventListener("touchstart", function(e){ tx = e.changedTouches[0].clientX; ty = e.changedTouches[0].clientY; }, {passive:true});
+document.addEventListener("touchend", function(e){
+  var dx = e.changedTouches[0].clientX - tx, dy = e.changedTouches[0].clientY - ty;
+  if (Math.abs(dx) > 64 && Math.abs(dx) > Math.abs(dy) * 1.8) go(cur + (dx < 0 ? 1 : -1));
+}, {passive:true});
+
+/* ---- overview ---- */
+var ov = document.getElementById("ov"), ovGrid = document.getElementById("ovGrid");
+function buildOverview(){
+  if (!ovGrid) return;
+  ovGrid.innerHTML = "";
+  slides.forEach(function(s, i){
+    var b = document.createElement("button");
+    b.className = "ov-card"; b.type = "button";
+    var clock = s.dataset.clock || "";
+    var t = s.dataset.short || (s.querySelector(".title, h1") || {}).textContent || ("Slide " + (i + 1));
+    b.innerHTML = '<span class="oi"><span>' + String(i + 1).padStart(2, "0") + '</span><span>' + clock + '</span></span>' +
+                  '<span class="ot"></span><span class="bar"></span>';
+    b.querySelector(".ot").textContent = t.trim();
+    b.onclick = function(){ closeOv(); go(i); };
+    ovGrid.appendChild(b);
+  });
+  paintOverview();
+}
+function paintOverview(){
+  if (!ovGrid) return;
+  [].forEach.call(ovGrid.children, function(c, i){
+    c.setAttribute("aria-current", i === cur ? "true" : "false");
+    c.dataset.seen = seen[i] ? "1" : "0";
+  });
+}
+function toggleOv(){ if (!ov) return; ov.hidden ? (ov.hidden = false) : closeOv(); }
+function closeOv(){ if (ov) ov.hidden = true; }
+var ovBtn = document.getElementById("ovBtn"), ovClose = document.getElementById("ovClose");
+if (ovBtn) ovBtn.onclick = toggleOv;
+if (ovClose) ovClose.onclick = closeOv;
+if (ov) ov.addEventListener("click", function(e){ if (e.target === ov) closeOv(); });
+
+/* ---- notes ---- */
+function toggleNotes(){
+  var on = document.body.dataset.notes === "1";
+  document.body.dataset.notes = on ? "0" : "1";
+  store("notes", !on);
+  var b = document.getElementById("notesBtn");
+  if (b) b.setAttribute("aria-pressed", String(!on));
+}
+var nb = document.getElementById("notesBtn");
+if (nb) nb.onclick = toggleNotes;
+document.body.dataset.notes = load("notes", false) ? "1" : "0";
+if (nb) nb.setAttribute("aria-pressed", document.body.dataset.notes);
+
+/* ---- checklists ---- */
+[].forEach.call(document.querySelectorAll("[data-chk]"), function(list){
+  var id = list.dataset.chk, saved = load("chk:" + id, {});
+  var boxes = [].slice.call(list.querySelectorAll("input[type=checkbox]"));
+  var bar = list.parentNode.querySelector(".chk-bar .fill");
+  var cnt = list.parentNode.querySelector(".chk-bar .n");
+  function paint(){
+    var done = boxes.filter(function(b){ return b.checked; }).length;
+    if (bar) bar.style.width = (done / boxes.length * 100) + "%";
+    if (cnt) cnt.textContent = done + " of " + boxes.length;
+  }
+  boxes.forEach(function(b, i){
+    b.checked = !!saved[i];
+    b.onchange = function(){ saved[i] = b.checked; store("chk:" + id, saved); paint(); };
+  });
+  paint();
+  var r = list.parentNode.querySelector("[data-chk-reset]");
+  if (r) r.onclick = function(){ boxes.forEach(function(b, i){ b.checked = false; saved[i] = false; }); store("chk:" + id, saved); paint(); };
+});
+
+/* ---- classify / sorter ---- */
+[].forEach.call(document.querySelectorAll("[data-sort]"), function(w){
+  var items = [].slice.call(w.querySelectorAll("[data-ans]"));
+  var out = w.querySelector("[data-sort-out]");
+  var done = 0, right = 0;
+  items.forEach(function(it){
+    [].forEach.call(it.querySelectorAll("button[data-pick]"), function(b){
+      b.onclick = function(){
+        if (it.dataset.done) return;
+        it.dataset.done = "1"; done++;
+        var ok = b.dataset.pick === it.dataset.ans;
+        if (ok) right++;
+        b.classList.add(ok ? "ok" : "no");
+        [].forEach.call(it.querySelectorAll("button[data-pick]"), function(x){
+          x.disabled = true;
+          if (!ok && x.dataset.pick === it.dataset.ans) x.classList.add("ok");
+        });
+        var why = it.querySelector(".why"); if (why) why.classList.add("on");
+        if (out) out.textContent = right + " of " + done + " right" + (done === items.length ? " — all sorted." : "");
+      };
+    });
+  });
+});
+
+/* ---- quiz ---- */
+[].forEach.call(document.querySelectorAll("[data-quiz]"), function(q){
+  var qs = [].slice.call(q.querySelectorAll(".q"));
+  var scoreEl = q.querySelector("[data-score]");
+  var right = 0, answered = 0;
+  qs.forEach(function(item){
+    var btns = [].slice.call(item.querySelectorAll(".a"));
+    btns.forEach(function(b){
+      b.onclick = function(){
+        if (item.dataset.done) return;
+        item.dataset.done = "1"; answered++;
+        var ok = b.dataset.ok === "1";
+        if (ok) right++;
+        b.dataset.r = ok ? "ok" : "no";
+        btns.forEach(function(x){ x.disabled = true; if (!ok && x.dataset.ok === "1") x.dataset.r = "ok"; });
+        var why = item.querySelector(".why"); if (why) why.classList.add("on");
+        if (scoreEl) scoreEl.innerHTML = "<b>" + right + "</b> / " + qs.length +
+          (answered === qs.length ? " &nbsp;·&nbsp; " + (right === qs.length ? "clean sweep" : right >= qs.length - 1 ? "solid" : "worth a re-read") : "");
+      };
+    });
+  });
+});
+
+/* ---- chart helper ---- */
+window.mkChart = function(opts){
+  var W = opts.w || 720, H = opts.h || 250;
+  var m = opts.m || { l: 52, r: 20, t: 26, b: 32 };
+  var xd = opts.x, yd = opts.y;
+  var iw = W - m.l - m.r, ih = H - m.t - m.b;
+  function X(v){ return m.l + (v - xd[0]) / (xd[1] - xd[0]) * iw; }
+  function Y(v){ return m.t + ih - (v - yd[0]) / (yd[1] - yd[0]) * ih; }
+  var s = '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + (opts.alt || "chart") + '">';
+  (opts.rects || []).forEach(function(r){
+    s += '<rect x="' + X(r.x0) + '" y="' + Y(r.y1) + '" width="' + Math.max(2, X(r.x1) - X(r.x0)) +
+         '" height="' + Math.max(2, Y(r.y0) - Y(r.y1)) + '" fill="' + r.fill + '" stroke="' + (r.stroke || "none") + '" stroke-width="1"></rect>';
+  });
+  (opts.bands || []).forEach(function(b){
+    s += '<rect x="' + X(xd[0]) + '" y="' + Y(b.to) + '" width="' + iw + '" height="' + Math.max(1, Y(b.from) - Y(b.to)) +
+         '" fill="' + b.fill + '"></rect>';
+    if (b.label) s += '<text x="' + (X(xd[1]) - 4) + '" y="' + (Y(b.to) - 4) + '" text-anchor="end">' + b.label + '</text>';
+  });
+  (opts.yTicks || []).forEach(function(t){
+    s += '<line class="grid" x1="' + m.l + '" y1="' + Y(t) + '" x2="' + (W - m.r) + '" y2="' + Y(t) + '"></line>' +
+         '<text x="' + (m.l - 8) + '" y="' + (Y(t) + 3.5) + '" text-anchor="end">' + (opts.yFmt ? opts.yFmt(t) : t) + '</text>';
+  });
+  (opts.xTicks || []).forEach(function(t){
+    s += '<text x="' + X(t) + '" y="' + (H - m.b + 15) + '" text-anchor="middle">' + (opts.xFmt ? opts.xFmt(t) : t) + '</text>';
+  });
+  s += '<line class="axis" x1="' + m.l + '" y1="' + (m.t + ih) + '" x2="' + (W - m.r) + '" y2="' + (m.t + ih) + '"></line>';
+  (opts.vlines || []).forEach(function(v){
+    s += '<line x1="' + X(v.at) + '" y1="' + m.t + '" x2="' + X(v.at) + '" y2="' + (m.t + ih) +
+         '" stroke="' + v.color + '" stroke-width="1.5" stroke-dasharray="3 3"></line>';
+    if (v.label) s += '<text x="' + (X(v.at) + 5) + '" y="' + (m.t + 11) + '" fill="' + v.color + '">' + v.label + '</text>';
+  });
+  (opts.series || []).forEach(function(se){
+    var d = se.pts.map(function(p, i){ return (i ? "L" : "M") + X(p[0]).toFixed(2) + " " + Y(p[1]).toFixed(2); }).join(" ");
+    if (se.fill) s += '<path d="' + d + ' L' + X(se.pts[se.pts.length - 1][0]).toFixed(2) + ' ' + Y(yd[0]) + ' L' + X(se.pts[0][0]).toFixed(2) + ' ' + Y(yd[0]) + ' Z" fill="' + se.fill + '"></path>';
+    s += '<path d="' + d + '" fill="none" stroke="' + se.color + '" stroke-width="' + (se.w || 2) +
+         '" stroke-linejoin="round" stroke-linecap="round"' + (se.dash ? ' stroke-dasharray="5 4"' : "") + '></path>';
+    if (se.end) {
+      var lp = se.pts[se.pts.length - 1];
+      s += '<circle cx="' + X(lp[0]).toFixed(2) + '" cy="' + Y(lp[1]).toFixed(2) + '" r="3.5" fill="' + se.color +
+           '" stroke="var(--surface)" stroke-width="2"></circle>';
+    }
+    if (se.label) {
+      var p0 = se.labelAt || se.pts[Math.floor(se.pts.length * 0.62)];
+      s += '<text x="' + (X(p0[0]) + 6) + '" y="' + (Y(p0[1]) - 7) + '" fill="' + se.color + '" style="font-weight:500">' + se.label + '</text>';
+    }
+  });
+  if (opts.yLabel) s += '<text x="' + (m.l - 8) + '" y="' + (m.t - 12) + '" text-anchor="end">' + opts.yLabel + '</text>';
+  if (opts.xLabel) s += '<text x="' + (W - m.r) + '" y="' + (H - 2) + '" text-anchor="end">' + opts.xLabel + '</text>';
+  return s + "</svg>";
+};
+window.penColor = function(){ return getComputedStyle(document.body).getPropertyValue("--pen").trim(); };
+window.tok = function(n){ return getComputedStyle(document.body).getPropertyValue(n).trim(); };
+
+/* ---- boot ---- */
+buildOverview();
+var start = 0;
+var h = parseInt((location.hash || "").slice(1), 10);
+if (h >= 1 && h <= N) start = h - 1; else start = Math.min(load("at", 0), N - 1);
+slides.forEach(function(s){ s.classList.remove("on"); });
+go(start, false);
+window.addEventListener("hashchange", function(){
+  var i = parseInt((location.hash || "").slice(1), 10);
+  if (i >= 1 && i <= N && i - 1 !== cur) go(i - 1, false);
+});
+if (window.claude && window.claude.hot) {
+  window.claude.hot.snapshot(function(){ return { at: cur }; });
+}
+window.deckGo = go;
+})();
+
+/* ===== shared cover timeline: three mornings on one time axis ===== */
+(function(){
+"use strict";
+var host = document.getElementById("timeline");
+if (!host) return;
+var DAYS = [
+  { d: 1, label: "Mon 8 Sep", t: "RTAC Configuration & Protocols",   s: 15.77, e: 140.05, dur: "2h 04m" },
+  { d: 2, label: "Tue 9 Sep", t: "Template Conversion & Inverters",  s: 10.50, e: 106.65, dur: "1h 36m" },
+  { d: 3, label: "Wed 10 Sep", t: "Grid Connect Control Logic & DDR", s: 14.60, e: 106.82, dur: "1h 32m" }
+];
+var me = parseInt(document.body.dataset.pen, 10);
+var W = 720, H = 132, L = 74, R = 16, T = 20, rowH = 26;
+var T0 = 0, T1 = 150; /* 06:50 -> 09:20 */
+function X(m){ return L + (m - T0) / (T1 - T0) * (W - L - R); }
+function hhmm(m){ var t = 410 + m; return String(Math.floor(t / 60)).padStart(2, "0") + ":" + String(Math.round(t % 60)).padStart(2, "0"); }
+
+/* clock ticks for THIS deck, read from the slides themselves */
+var ticks = [].slice.call(document.querySelectorAll(".slide[data-clock]")).map(function(s, i){
+  var p = (s.dataset.clock || "").split(":");
+  if (p.length !== 2) return null;
+  return { m: (+p[0]) * 60 + (+p[1]) - 410, i: [].indexOf.call(document.querySelectorAll(".slide"), s), label: s.dataset.short || "" };
+}).filter(Boolean);
+
+var s = '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="The three morning sessions on one time axis">';
+[0, 30, 60, 90, 120, 150].forEach(function(m){
+  s += '<line class="grid" x1="' + X(m) + '" y1="' + (T - 6) + '" x2="' + X(m) + '" y2="' + (T + rowH * 3 - 8) + '"></line>' +
+       '<text x="' + X(m) + '" y="' + (T + rowH * 3 + 8) + '" text-anchor="middle">' + hhmm(m) + '</text>';
+});
+DAYS.forEach(function(day, r){
+  var y = T + r * rowH, on = day.d === me;
+  var c = "var(--pen-" + day.d + ")";
+  s += '<text x="' + (L - 10) + '" y="' + (y + 4) + '" text-anchor="end" fill="' + (on ? c : "var(--faint)") + '"' +
+       (on ? ' style="font-weight:500"' : "") + '>' + day.label + '</text>';
+  s += '<rect x="' + X(day.s) + '" y="' + (y - 5) + '" width="' + (X(day.e) - X(day.s)) + '" height="10" rx="5" fill="' + c + '"' +
+       (on ? "" : ' opacity="0.28"') + '></rect>';
+  s += '<text x="' + (X(day.e) + 7) + '" y="' + (y + 4) + '" fill="var(--faint)">' + day.dur + '</text>';
+  if (on) ticks.forEach(function(tk){
+    if (tk.m < day.s - 1 || tk.m > day.e + 1) return;
+    s += '<line class="tk" data-i="' + tk.i + '" x1="' + X(tk.m) + '" y1="' + (y - 9) + '" x2="' + X(tk.m) + '" y2="' + (y + 9) +
+         '" stroke="var(--surface)" stroke-width="1.5"></line>';
+  });
+});
+s += "</svg>";
+host.innerHTML = s +
+  '<div class="trend-legend">' +
+    DAYS.map(function(d){ return '<span><i style="background:var(--pen-' + d.d + ');' + (d.d === me ? "" : "opacity:.35") + '"></i>' +
+      "Day " + d.d + " · " + d.t + "</span>"; }).join("") +
+  "</div>";
+})();
+
+/* ===== generic click-through flow / node detail ===== */
+window.wireFlow = function(name, content, initial){
+  var wrap = document.querySelector('[data-flow="' + name + '"]');
+  var out = document.querySelector('[data-flow-out="' + name + '"]');
+  if (!wrap || !out) return;
+  var nodes = [].slice.call(wrap.querySelectorAll(".node"));
+  function pick(k){
+    nodes.forEach(function(n){ n.setAttribute("aria-pressed", String(n.dataset.k === k)); });
+    out.innerHTML = content[k] || "";
+    if (name === "arc" && window.DECK_URLS) {
+      var d = +(k || "").replace("d", "");
+      if (d && d !== +document.body.dataset.deck && window.DECK_URLS[d]) {
+        out.insertAdjacentHTML("beforeend",
+          '<p style="margin-top:12px"><a href="' + window.DECK_URLS[d] + '" target="_blank" rel="noopener" style="font-family:var(--f-mono);font-size:12px;letter-spacing:.04em">Open the Day ' + d + ' deck &rarr;</a></p>');
+      }
+    }
+  }
+  nodes.forEach(function(n){ n.onclick = function(){ pick(n.dataset.k); }; });
+  pick(initial || nodes[0].dataset.k);
+};
+
+</script>
+<script>
+/* ---- slide 2: the arc ---- */
+wireFlow("arc", {
+  d1: '<h4>Day 1 — Comms and the RTAC <span class="unconfirmed" style="border-style:solid">you are here</span></h4>' +
+      '<p>Getting into the box, protecting the project, and making DNP3, Modbus and C37.118 carry correct values at a usable rate.</p>' +
+      '<ul><li>Ends by naming the next session: device setup, project bindings, GridConnect mapping, error resolution, and a project built from scratch.</li></ul>',
+  d2: '<h4>Day 2 — Project and inverters</h4>' +
+      '<p>Choosing the closest existing project, saving it as a new one, and converting it to a different inverter model without leaving broken cross-references behind.</p>' +
+      '<ul><li>Depends on Day 1 for: Modbus point lists, register layout, data types the RTAC will accept.</li>' +
+      '<li>Ends by naming Day 3: Grid Connect variables, the main program, how data enters and leaves the MPC.</li></ul>',
+  d3: '<h4>Day 3 — Control and recording</h4>' +
+      '<p>The control chain from setpoint source to individual inverter — bumpless transfer, PFR, limits, ramp, PID, clamping — and DDR for proving the response.</p>' +
+      '<ul><li>Depends on Day 1 for: how fast the POI meter can actually deliver data.</li>' +
+      '<li>Depends on Day 2 for: the data types and global structures the control blocks read and write.</li></ul>'
+}, "d1");
+
+/* ---- slide 4: which send ---- */
+(function(){
+  var t = document.querySelector('[data-tool="send"]'); if (!t) return;
+  var out = t.querySelector("[data-out]");
+  var ANS = {
+    yes: '<div class="call rule"><span class="tag">Send the full project</span>Forcing values requires a full project download. It reboots the project — plan for that.</div>',
+    no:  '<div class="call"><span class="tag">Send IEC 61131-3 logic only</span>The RTAC keeps running and the whole project does not reboot. The trade: <b>you cannot force values</b> afterwards. Advanced send settings can also exclude selected areas — Ethernet or reader settings — from the download.</div>'
+  };
+  [].forEach.call(t.querySelectorAll("[data-v]"), function(b){
+    b.onclick = function(){
+      [].forEach.call(t.querySelectorAll("[data-v]"), function(x){ x.setAttribute("aria-pressed", String(x === b)); });
+      out.hidden = false; out.innerHTML = ANS[b.dataset.v] +
+        '<p class="verdict">Either way: <b>cross-check first.</b> A save that looks clean is not a project that is clean.</p>';
+    };
+  });
+  var r = document.querySelector('[data-reset="send"]');
+  if (r) r.onclick = function(){ out.hidden = true; [].forEach.call(t.querySelectorAll("[data-v]"), function(x){ x.setAttribute("aria-pressed", "false"); }); };
+})();
+
+/* ---- slide 6: DNP3 decision tree ---- */
+(function(){
+  var t = document.querySelector('[data-tool="dnp"]'); if (!t) return;
+  var q = t.querySelector("[data-q]"), a = t.querySelector("[data-a]"), out = t.querySelector("[data-out]");
+  var TREE = {
+    start: { q: "Does the RTAC see <b>any</b> traffic from the device — pings, TCP handshakes, ACKs?",
+      opts: [ { v: "No traffic at all", go: "noip" }, { v: "Traffic is flowing and acknowledged", go: "app" } ] },
+    noip: { q: "Does the port show as open when you check it from the security tools?",
+      opts: [ { v: "Port is closed", end: "fw" }, { v: "Port is open, still nothing", end: "ipport" } ] },
+    app: { q: "Is more than one DNP3 client running on this RTAC?",
+      opts: [ { v: "Yes, several clients", end: "clientport" }, { v: "Just this one", end: "addr" } ] }
+  };
+  var END = {
+    fw: ['Firewall.', 'A port that will not show as open is almost always blocked upstream. This needs the <b>network team</b> — no amount of DNP3 configuration will open it.'],
+    ipport: ['Server IP or port mismatch.', 'For a DNP3 client, the <b>server IP and server port must match the remote server configuration</b> exactly. Check the far side rather than assuming your own settings are right.'],
+    clientport: ['Client IP port collision.', 'The client IP port identifies the local source of the connection, and <b>each DNP3 client needs its own</b>. RTAC Architect can increment them automatically. Use <code>netstat -an</code> or a capture to find what is already using the port, then change it.'],
+    addr: ['Reversed or mismatched DNP addresses.', 'This is the signature failure: <b>IP traffic acknowledged, application layer dead, device offline.</b> The DNP server address and the DNP client&#8202;/&#8202;master address must line up — a client address is commonly <span class="num">0</span> unless the system requires otherwise. Confirm what is actually on the wire in Wireshark\'s application-layer view; a server allowing anonymous connections still needs the addresses to agree.']
+  };
+  function step(k){
+    var n = TREE[k];
+    out.hidden = true; q.innerHTML = n.q; a.innerHTML = "";
+    n.opts.forEach(function(o){
+      var b = document.createElement("button");
+      b.className = "opt"; b.type = "button";
+      b.innerHTML = '<span class="v">' + o.v + "</span>";
+      b.onclick = function(){ o.end ? finish(o.end) : step(o.go); };
+      a.appendChild(b);
+    });
+  }
+  function finish(k){
+    q.innerHTML = "Most likely cause:"; a.innerHTML = "";
+    out.hidden = false;
+    out.innerHTML = '<div class="call trap"><span class="tag">' + END[k][0] + "</span>" + END[k][1] + "</div>";
+  }
+  step("start");
+  var r = document.querySelector('[data-reset="dnp"]'); if (r) r.onclick = function(){ step("start"); };
+})();
+
+/* ---- slide 7: variation picker ---- */
+(function(){
+  var t = document.querySelector('[data-tool="var"]'); if (!t) return;
+  var out = t.querySelector("[data-out]"), kind = null, ts = null;
+  var MAP = {
+    float: { g: "30 / 32", nm: "Analog input — measured value",
+      yes: "variation with flag (and time for events)", no: "variation without flag",
+      warn: "Pick an <b>integer</b> variation here and your float arrives truncated to a whole number." },
+    int: { g: "30 / 32", nm: "Analog input — integer",
+      yes: "16- or 32-bit with flag", no: "16- or 32-bit without flag",
+      warn: "Pick a measured-value type for integer data and you carry a float where the far side expects a count." },
+    bin: { g: "1 / 2", nm: "Binary input",
+      yes: "with flag; events (group 2) carry the time", no: "packed / with-status, no time",
+      warn: "Double-bit inputs are a different thing entirely — four states: no value, on, off, invalid. <b>IEC 104 reads them differently; do not treat them as identical to DNP3.</b>" },
+    cnt: { g: "20 / 21", nm: "Counter / frozen counter",
+      yes: "with flag; group 21 is the frozen value", no: "without flag",
+      warn: "Counter is object <span class=\"num\">20</span>, frozen counter is <span class=\"num\">21</span>. Reading the wrong one gives you a number that never moves." }
+  };
+  function paint(){
+    if (!kind || ts === null) return;
+    var m = MAP[kind];
+    out.hidden = false;
+    out.innerHTML =
+      '<div class="stats">' +
+        '<div class="stat"><dt>Object group</dt><dd>' + m.g + "</dd></div>" +
+        '<div class="stat"><dt>Type</dt><dd style="font-size:14px;line-height:1.35">' + m.nm + "</dd></div>" +
+      "</div>" +
+      '<p class="verdict">Use the <b>' + (ts === "1" ? m.yes : m.no) + "</b>. Static data uses the first group, events the second — and <b>point numbers have to match between client and server</b> either way.</p>" +
+      '<div class="call trap"><span class="tag">Wrong variation looks like</span>' + m.warn + "</div>";
+  }
+  [].forEach.call(t.querySelectorAll("[data-k] [data-v]"), function(b){
+    b.onclick = function(){ kind = b.dataset.v;
+      [].forEach.call(t.querySelectorAll("[data-k] [data-v]"), function(x){ x.setAttribute("aria-pressed", String(x === b)); }); paint(); };
+  });
+  [].forEach.call(t.querySelectorAll("[data-t] [data-v]"), function(b){
+    b.onclick = function(){ ts = b.dataset.v;
+      [].forEach.call(t.querySelectorAll("[data-t] [data-v]"), function(x){ x.setAttribute("aria-pressed", String(x === b)); }); paint(); };
+  });
+})();
+
+/* ---- slide 9: Modbus register map ---- */
+(function(){
+  var t = document.querySelector('[data-tool="mb"]'); if (!t) return;
+  var map = t.querySelector("[data-map]"), dec = t.querySelector("[data-decode]"),
+      cnt = document.querySelector("[data-count]"), order = "msb";
+  var pts = [ { k: "32", n: "P_kW" }, { k: "16", n: "Status" } ];
+  var NAMES = { "16": ["Status", "Mode", "Fault_Code", "Ramp_Rate"], "32": ["P_kW", "Q_kVAr", "V_ll", "Freq_Hz"], bits: ["Alarms", "Trips", "Flags"] };
+  function paint(){
+    var addr = 0, html = "";
+    pts.forEach(function(p, i){
+      if (p.k === "32") {
+        html += '<div class="reg" data-part="hi"><span class="a">' + addr + '</span><span class="l">' + p.n + '</span><span class="a">high word</span></div>';
+        html += '<div class="reg" data-part="lo"><span class="a">' + (addr + 1) + '</span><span class="l">' + p.n + '</span><span class="a">low word</span></div>';
+        addr += 2;
+      } else if (p.k === "bits") {
+        html += '<div class="reg" data-part="one"><span class="a">' + addr + '</span><span class="l">' + p.n + '</span><span class="a">bits 0–15</span></div>';
+        addr += 1;
+      } else {
+        html += '<div class="reg" data-part="one"><span class="a">' + addr + '</span><span class="l">' + p.n + '</span><span class="a">int16</span></div>';
+        addr += 1;
+      }
+    });
+    for (var f = 0; f < 4; f++) html += '<div class="reg"><span class="a">' + (addr + f) + '</span><span class="l">—</span><span class="a">free</span></div>';
+    map.innerHTML = html;
+    if (cnt) cnt.textContent = pts.length + (pts.length === 1 ? " point" : " points") + " · " + addr + " registers";
+    var first = pts[0];
+    if (first && first.k === "32") {
+      dec.innerHTML = order === "msb"
+        ? 'Far side reads <b>MSB first</b>: register 0 is the high word, register 1 the low word. <span class="num">0x447A 0000</span> decodes as <b class="num">1000.0</b>.'
+        : 'Far side reads <b>LSB first</b> while you wrote MSB first. The same two registers now decode as <span class="num">0x0000 447A</span> — about <b class="num">2.5&#215;10<sup>-41</sup></b> instead of <b class="num">1000.0</b>. No error is raised anywhere. <b>Wrong word order fails silently.</b>';
+    } else {
+      dec.innerHTML = "Add a 32-bit value to see what word order does to it.";
+    }
+  }
+  [].forEach.call(t.querySelectorAll("[data-add]"), function(b){
+    b.onclick = function(){
+      var k = b.dataset.add, used = pts.filter(function(p){ return p.k === k; }).length;
+      pts.push({ k: k, n: NAMES[k][used % NAMES[k].length] + (used >= NAMES[k].length ? "_" + used : "") });
+      paint();
+    };
+  });
+  [].forEach.call(t.querySelectorAll("[data-order]"), function(b){
+    b.onclick = function(){ order = b.dataset.order;
+      [].forEach.call(t.querySelectorAll("[data-order]"), function(x){ x.setAttribute("aria-pressed", String(x === b)); });
+      var o = document.getElementById("mb-order-o");
+      if (o) o.textContent = order === "msb" ? "MSB first (big-endian)" : "LSB first (word-swapped)";
+      paint(); };
+  });
+  var r = document.querySelector('[data-reset="mb"]'); if (r) r.onclick = function(){ pts = []; paint(); };
+  paint();
+})();
+
+/* ---- slide 10: C37.118 cycle time ---- */
+(function(){
+  var t = document.querySelector('[data-tool="c37"]'); if (!t) return;
+  var sps = document.getElementById("c-sps"), cyc = document.getElementById("c-cyc");
+  function paint(){
+    var s = +sps.value, c = +cyc.value, frame = 1000 / s, need = Math.floor(frame);
+    document.getElementById("c-sps-o").textContent = s + " samples/s";
+    document.getElementById("c-cyc-o").textContent = c + " ms";
+    t.querySelector("[data-f]").innerHTML = frame.toFixed(1) + ' <small>ms</small>';
+    t.querySelector("[data-need]").innerHTML = "≤ " + need + ' <small>ms</small>';
+    var ok = c <= frame;
+    var st = t.querySelector("[data-verdict-stat]");
+    st.dataset.s = ok ? "ok" : "bad";
+    t.querySelector("[data-v]").textContent = ok ? "Keeps up" : "Drops frames";
+    t.querySelector("[data-msg]").innerHTML = ok
+      ? "A <b>" + c + " ms</b> cycle against a frame every <b>" + frame.toFixed(1) + " ms</b> — the RTAC processes every frame. This is the configuration the session called for at 60 samples per second: roughly <b>15–16 ms</b>."
+      : "A <b>" + c + " ms</b> cycle cannot service a frame arriving every <b>" + frame.toFixed(1) + " ms</b>. The rate is not achieved regardless of what the meter is capable of — <b>a 100 ms cycle cannot support 60 samples per second.</b>";
+  }
+  sps.oninput = cyc.oninput = paint; paint();
+})();
+
+</script>
