@@ -1018,7 +1018,7 @@ window.mkChart = function(opts){
       s += '<text x="' + (X(p0[0]) + 6) + '" y="' + (Y(p0[1]) - 7) + '" fill="' + se.color + '" style="font-weight:500">' + se.label + '</text>';
     }
   });
-  if (opts.yLabel) s += '<text x="' + (m.l - 8) + '" y="' + (m.t - 12) + '" text-anchor="end">' + opts.yLabel + '</text>';
+  if (opts.yLabel) s += '<text x="' + m.l + '" y="' + (m.t - 12) + '">' + opts.yLabel + '</text>';
   if (opts.xLabel) s += '<text x="' + (W - m.r) + '" y="' + (H - 2) + '" text-anchor="end">' + opts.xLabel + '</text>';
   return s + "</svg>";
 };

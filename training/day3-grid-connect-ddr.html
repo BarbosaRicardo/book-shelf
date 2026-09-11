@@ -770,7 +770,7 @@ window.DECK_URLS={"1": "day1-rtac-protocols.html", "2": "day2-template-conversio
             <div class="ctl" style="margin:0"><label for="ddr-per">Sampling period <output for="ddr-per" id="ddr-per-o">20 ms</output></label>
               <input type="range" id="ddr-per" min="10" max="500" step="10" value="20"></div>
           </div>
-          <div class="readout"><pre style="margin:0;overflow-x:auto"><code data-ddr-out style="display:block;padding:12px;line-height:1.6;background:var(--sunk)"></code></pre></div>
+          <div class="readout"><pre style="margin:0;min-width:0"><code data-ddr-out style="display:block;overflow-x:auto;white-space:pre;padding:12px;line-height:1.6;background:var(--sunk)"></code></pre></div>
         </div>
       </div>
       <div class="grid" style="gap:14px;align-content:start">
@@ -1133,7 +1133,7 @@ window.mkChart = function(opts){
       s += '<text x="' + (X(p0[0]) + 6) + '" y="' + (Y(p0[1]) - 7) + '" fill="' + se.color + '" style="font-weight:500">' + se.label + '</text>';
     }
   });
-  if (opts.yLabel) s += '<text x="' + (m.l - 8) + '" y="' + (m.t - 12) + '" text-anchor="end">' + opts.yLabel + '</text>';
+  if (opts.yLabel) s += '<text x="' + m.l + '" y="' + (m.t - 12) + '">' + opts.yLabel + '</text>';
   if (opts.xLabel) s += '<text x="' + (W - m.r) + '" y="' + (H - 2) + '" text-anchor="end">' + opts.xLabel + '</text>';
   return s + "</svg>";
 };
