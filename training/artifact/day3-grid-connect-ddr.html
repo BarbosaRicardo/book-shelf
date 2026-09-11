@@ -1,24 +1,7 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>From Setpoint to Inverter &mdash; controls training</title>
-<meta name="description" content="The Grid Connect control chain end to end, the timing budget behind it, PID and clamping behaviour, and DDR for proving the plant responded.">
-<meta property="og:title" content="From Setpoint to Inverter">
-<meta property="og:description" content="The Grid Connect control chain end to end, the timing budget behind it, PID and clamping behaviour, and DDR for proving the plant responded.">
-<meta property="og:type" content="article">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23AE2E6E'/></svg>">
+<title>From Setpoint to Inverter</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap">
-<style>
-/* the document skeleton the Artifact host supplies; replicated for a plain web server */
-:root{color-scheme:light dark}
-html,body{margin:0}
-img{max-width:100%}
-[hidden]{display:none!important}
-</style>
 <style>
 /* ============ TOKENS ============ */
 :root{
@@ -336,20 +319,18 @@ body:not([data-notes="1"]) .notes{display:none}
 @media(max-width:520px){.act{flex-direction:column;gap:4px}.act .who{width:auto}}
 
 </style>
-</head>
-<body>
 <script>
 document.body.setAttribute("data-deck","3");
 document.body.setAttribute("data-pen","3");
-window.DECK_URLS={"1": "day1-rtac-protocols.html", "2": "day2-template-conversion.html", "3": "day3-grid-connect-ddr.html"};
+window.DECK_URLS={"1": "https://claude.ai/code/artifact/65d204b8-174d-4bad-990c-3ea81fd14555", "2": "https://claude.ai/code/artifact/b460dbde-c6da-402a-bc43-12db1d1b3a5b", "3": "https://claude.ai/code/artifact/ffc7b1ac-d8dd-4d61-805f-dd31c73dcf38"};
 </script>
 
 <header class="rail rail--top">
   <span class="rail-id"><b>From Setpoint to Inverter</b><span>Day 3 &middot; 10 Sep 2026</span></span>
   <span class="spacer"></span>
   <nav class="pens" aria-label="Other decks in this series">
-    <a class="pen-dot" data-p="1" href="day1-rtac-protocols.html"  title="Day 1 &mdash; RTAC Configuration &amp; Protocols">1</a>
-    <a class="pen-dot" data-p="2" href="day2-template-conversion.html"  title="Day 2 &mdash; Template Conversion &amp; Inverter Integration">2</a>
+    <a class="pen-dot" data-p="1" href="https://claude.ai/code/artifact/65d204b8-174d-4bad-990c-3ea81fd14555" target="_blank" rel="noopener"  title="Day 1 &mdash; RTAC Configuration &amp; Protocols">1</a>
+    <a class="pen-dot" data-p="2" href="https://claude.ai/code/artifact/b460dbde-c6da-402a-bc43-12db1d1b3a5b" target="_blank" rel="noopener"  title="Day 2 &mdash; Template Conversion &amp; Inverter Integration">2</a>
     <a class="pen-dot" data-p="3"  aria-current="page" title="Day 3 &mdash; Grid Connect Control Logic &amp; DDR">3</a>
   </nav>
   <span class="count" id="count">01 / 17</span>
@@ -904,7 +885,7 @@ window.DECK_URLS={"1": "day1-rtac-protocols.html", "2": "day2-template-conversio
 <footer class="rail rail--bot">
   <button class="rbtn" id="ovBtn" type="button">All slides <kbd>G</kbd></button>
   <button class="rbtn" id="notesBtn" type="button" aria-pressed="false">Notes <kbd>N</kbd></button>
-  <button class="rbtn" id="themeBtn" type="button" title="Switch between light and dark">Theme</button>
+  
   <span class="spacer"></span>
   <span class="hint">&larr; &rarr; to move</span>
   <button class="rbtn" id="prev" type="button">&larr;</button>
@@ -1535,23 +1516,4 @@ wireFlow("chain", {
 })();
 
 </script>
-<script>
-/* Standalone pages have no host theme control, so carry one. */
-(function(){
-  var K = "deck:theme", b = document.getElementById("themeBtn");
-  function apply(v){ v ? document.documentElement.setAttribute("data-theme", v)
-                       : document.documentElement.removeAttribute("data-theme"); }
-  try { apply(localStorage.getItem(K)); } catch (e) {}
-  if (!b) return;
-  b.onclick = function(){
-    var sysDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    var cur = document.documentElement.getAttribute("data-theme") || (sysDark ? "dark" : "light");
-    var next = cur === "dark" ? "light" : "dark";
-    apply(next);
-    try { localStorage.setItem(K, next); } catch (e) {}
-  };
-})();
-</script>
 
-</body>
-</html>
