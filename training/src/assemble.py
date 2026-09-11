@@ -14,7 +14,8 @@ B = pathlib.Path(__file__).parent                       # training/src/
 
 CSS = (B / "core.css").read_text()
 TIMELINE = (B / "timeline.js").read_text()
-JS = (B / "core.js").read_text() + "\n" + TIMELINE
+SIM = (B / "sim.js").read_text()
+JS = (B / "core.js").read_text() + "\n" + TIMELINE + "\n" + SIM
 INDEX_CSS = (B / "index.css").read_text()
 
 SITE = "https://barbosaricardo.github.io/book-shelf/training/"
@@ -120,7 +121,7 @@ PAGE = """<!DOCTYPE html>
 <link rel="stylesheet" href="{fonts}">
 <style>
 /* the document skeleton the Artifact host supplies; replicated for a plain web server */
-:root{{color-scheme:light dark}}
+:root{{color-scheme:dark}}
 html,body{{margin:0}}
 img{{max-width:100%}}
 [hidden]{{display:none!important}}
@@ -135,29 +136,12 @@ img{{max-width:100%}}
 </html>
 """
 
-FONTS = ("https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700"
-         "&family=IBM+Plex+Mono:wght@400;500"
-         "&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap")
+FONTS = ("https://fonts.googleapis.com/css2?family=Saira:wght@400;500;600;700"
+         "&family=IBM+Plex+Mono:wght@400;500;600&display=swap")
 
-THEME_BTN = '<button class="rbtn" id="themeBtn" type="button" title="Switch between light and dark">Theme</button>'
+THEME_BTN = ""   # the console commits to one visual world; there is nothing to toggle
 
-THEME_JS = """<script>
-/* Standalone pages have no host theme control, so carry one. */
-(function(){
-  var K = "deck:theme", b = document.getElementById("themeBtn");
-  function apply(v){ v ? document.documentElement.setAttribute("data-theme", v)
-                       : document.documentElement.removeAttribute("data-theme"); }
-  try { apply(localStorage.getItem(K)); } catch (e) {}
-  if (!b) return;
-  b.onclick = function(){
-    var sysDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    var cur = document.documentElement.getAttribute("data-theme") || (sysDark ? "dark" : "light");
-    var next = cur === "dark" ? "light" : "dark";
-    apply(next);
-    try { localStorage.setItem(K, next); } catch (e) {}
-  };
-})();
-</script>"""
+THEME_JS = ""
 
 FAVS = {1: "B87A12", 2: "0A76B0", 3: "AE2E6E"}
 
@@ -197,7 +181,7 @@ INDEX = """<!DOCTYPE html>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="{fonts}">
 <style>
-:root{{color-scheme:light dark}}
+:root{{color-scheme:dark}}
 html,body{{margin:0}}
 img{{max-width:100%}}
 [hidden]{{display:none!important}}

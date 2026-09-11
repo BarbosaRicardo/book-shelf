@@ -25,7 +25,7 @@
         <h2>Template to Plant</h2>
         <p>Nobody builds a plant project from an empty page. You find the closest one that already works, save it under a new name, and then chase every cross-reference the inverter swap just broke.</p>
         <ul class="tags"><li>Template selection</li><li>SunGrow 4400 &rarr; 3150U</li><li>Cross-reference repair</li><li>Custom data types</li></ul>
-        <span class="tools">5 tools &middot; 15 slides &mdash; template match scorer, the 47-errors-to-zero repair loop, array-bounds check, fault normaliser</span>
+        <span class="tools">5 tools &middot; 15 slides &mdash; template match scorer, the 624-errors-to-zero repair loop, array-bounds check, fault normaliser</span>
       </a>
     </li>
     <li class="deck" data-d="3">
@@ -35,7 +35,7 @@
         <h2>From Setpoint to Inverter</h2>
         <p>A number arrives from SCADA. Ninety minutes later it is a megawatt at the point of interconnection &mdash; through bumpless transfer, PFR, plant limits, a ramp, a PID, and fifteen inverters that each have an opinion.</p>
         <ul class="tags"><li>The control chain</li><li>Timing budget</li><li>PFR</li><li>Clamping</li><li>PID &amp; deadband</li><li>DDR</li></ul>
-        <span class="tools">6 tools &middot; 17 slides &mdash; clickable control chain, timing budget, clamp visualiser, Grid Connect PI vs SCLutils.PID, DDR config builder</span>
+        <span class="tools">6 tools &middot; 17 slides &mdash; clickable control chain, timing budget, a live plant you can stall an inverter on, Grid Connect PI vs SCLutils.PID, DDR config builder</span>
       </a>
     </li>
   </ol>
@@ -47,7 +47,7 @@
     </div>
     <div>
       <h3>What is from the room, and what is not</h3>
-      <p>The decks follow the sessions. Hatched <b>&ldquo;outside the room&rdquo;</b> panels carry sourced external material &mdash; DNP3 object groups, IEEE&nbsp;2800 performance targets, meter and inverter response rates &mdash; and name the source. Dashed <b>unconfirmed</b> chips mark what the sessions left open, and the simulated PID and clamp curves, which show the shape of a behaviour rather than any plant's numbers.</p>
+      <p>The decks follow the sessions. Panels headed <b>&ldquo;GridConnect instruction manual&rdquo;</b> quote SEL's own documentation &mdash; parameter names, units and defaults &mdash; and <b>&ldquo;outside the room&rdquo;</b> panels carry other sourced material, each naming its source. Dashed <b>unconfirmed</b> chips mark what the sessions left open. The plant simulation follows the manual's control path; it is not your plant's numbers.</p>
     </div>
     <div>
       <h3>Using them</h3>
@@ -56,7 +56,7 @@
   </section>
 
   <footer class="foot">
-    <span>Built from the session transcripts &middot; source in <code>training/src/</code></span>
-    <button class="rbtn" id="themeBtn" type="button" title="Switch between light and dark">Theme</button>
+    <span>Built from the session transcripts and the GridConnect instruction manual &middot; source in <code>training/src/</code></span>
+    <span>15 &times; 3,333 kW &middot; simulated</span>
   </footer>
 </div>

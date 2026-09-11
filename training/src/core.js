@@ -2,6 +2,8 @@
 (function(){
 "use strict";
 var KEY = "deck:" + (document.body.dataset.deck || "x");
+var subs = [];
+window.onSlideChange = function(fn){ subs.push(fn); };
 var slides = [].slice.call(document.querySelectorAll(".slide"));
 var N = slides.length, cur = 0, seen = {};
 
@@ -29,6 +31,7 @@ function go(i, push){
   if (push !== false && ("#" + (i + 1)) !== location.hash) history.replaceState(null, "", "#" + (i + 1));
   window.scrollTo({ top: 0, behavior: "instant" in document.body.style ? "instant" : "auto" });
   paintOverview();
+  subs.forEach(function(fn){ try { fn(i); } catch (e) {} });
 }
 if (elPrev) elPrev.onclick = function(){ go(cur - 1); };
 if (elNext) elNext.onclick = function(){ go(cur + 1); };

@@ -94,62 +94,83 @@ wireFlow("chain", {
   f.oninput = db.oninput = dr.oninput = paint; paint();
 })();
 
-/* ---- clamping ---- */
+/* ---- live plant mimic (slide 11) ---- */
 (function(){
-  var t = document.querySelector('[data-tool="clamp"]'); if (!t) return;
-  var d = document.getElementById("cl-delay"), th = document.getElementById("cl-thr");
-  var host = t.querySelector("[data-clamp-chart]");
-  var T = 60, SP0 = 20, SP1 = 80, STALL = 15;
-  function sp(x){ return SP0 + (SP1 - SP0) * x / T; }
+  var t = document.querySelector('[data-tool="mimic"]'); if (!t) return;
+  var sim = new Plant({ inverters: 15 });
+  sim.set("PSetpoint", 30000);
+  sim.preroll(150);
+  var trend = t.querySelector("[data-mimic-trend]"),
+      array = t.querySelector("[data-mimic-array]"),
+      msg   = t.querySelector("[data-mimic-msg]");
+  var lamps = {};
+  document.querySelectorAll("[data-lamp]").forEach(function(l){ lamps[l.dataset.lamp] = l; });
+
+  function fmt(kw){ return (kw / 1000).toFixed(1); }
   function paint(){
-    var delay = +d.value, thr = +th.value / 100;
-    document.getElementById("cl-delay-o").textContent = delay + " s";
-    document.getElementById("cl-thr-o").textContent = (+th.value) + " %";
-    var held = sp(STALL);
-    /* time at which output has fallen below (1 - thr) of setpoint */
-    var tBelow = T;
-    for (var x = STALL; x <= T; x += 0.1) { if (held < sp(x) * (1 - thr)) { tBelow = x; break; } }
-    var tRec = Math.min(tBelow + delay, T - 4);
-    var gap = sp(tRec) - held;
-    var over = Math.min(gap * 0.55, 18);
-    var spPts = [], outPts = [];
-    for (var i = 0; i <= T; i += 0.5) {
-      spPts.push([i, sp(i)]);
-      var y;
-      if (i <= STALL) y = sp(i) - 0.6;
-      else if (i <= tRec) y = held;
-      else if (i <= tRec + 3) y = held + (sp(tRec) + over - held) * (i - tRec) / 3;
-      else y = sp(i) + over * Math.exp(-(i - tRec - 3) / 3.2);
-      /* the clamped setpoint is reset to threshold% above current output, then ramps on */
-      outPts.push([i, y]);
-    }
-    host.innerHTML = mkChart({
-      w: 720, h: 240, x: [0, T], y: [0, 100],
-      xTicks: [0, 15, 30, 45, 60], yTicks: [0, 25, 50, 75, 100],
-      xLabel: "seconds", yLabel: "MW",
-      alt: "Plant setpoint continues ramping while the inverter output is clamped, then overshoots on recovery",
-      rects: gap > 1 ? [{ x0: tRec - 0.9, x1: tRec + 0.9, y0: held, y1: sp(tRec), fill: "var(--crit-wash)", stroke: "var(--crit)" }] : [],
-      vlines: [{ at: STALL, color: "var(--muted)", label: "output stalls" },
-               { at: tRec, color: "var(--crit)", label: "clamp recognised" }],
-      series: [
-        { pts: spPts, color: "var(--pen)", w: 2, label: "setpoint", labelAt: [46, sp(46)] },
-        { pts: outPts, color: "var(--ink-2)", w: 2, dash: true, end: true }
-      ]
-    });
-    t.querySelector("[data-cl-gap]").innerHTML = gap.toFixed(1) + ' <small>MW</small>';
-    var st = t.querySelector("[data-cl-stat]");
-    st.dataset.s = gap > 12 ? "bad" : gap < 6 ? "ok" : "";
-    t.querySelector("[data-cl-v]").textContent = gap > 12 ? "Step-like" : gap < 6 ? "Contained" : "Noticeable";
-    t.querySelector("[data-cl-msg]").innerHTML =
-      "Clamping starts when output drops to the configured percentage of setpoint <b>and stays there for the delay</b>. With a <b>" +
-      delay + " s</b> delay and a <b>" + (+th.value) + "%</b> threshold, the setpoint has run <b>" + gap.toFixed(1) +
-      " MW</b> ahead of the output by the time the clamp is recognised — at which point it is reset to <b>" + (+th.value) +
-      "% above current generation and ramps again</b>. " +
-      (gap > 12
-        ? "<b>This is the overshoot problem.</b> Delays of 30 seconds or a minute let the setpoint climb toward the LGI limit while the output sits still, and the inverter closes the whole gap in one step when the cloud passes."
-        : "The configuration used a <b>10% threshold with a 15-second delay</b>, and a separate <b>5% unclamp band</b> to release it, which keeps the gap in this range.");
+    trend.innerHTML = sim.trendSVG(560, 172, 90);
+    t.querySelector("[data-m-poi]").innerHTML = fmt(sim.poiP) + ' <small>MW</small>';
+    t.querySelector("[data-m-irr]").innerHTML = Math.round(sim.irradiance * 100) + ' <small>%</small>';
+    var err = sim.p.PSetpoint - sim.poiP;
+    var e = t.querySelector("[data-m-err]");
+    e.innerHTML = (err >= 0 ? "+" : "") + Math.round(err).toLocaleString() + ' <small>kW</small>';
+    e.parentNode.dataset.s = Math.abs(err) <= sim.p.PDeadband ? "ok" : Math.abs(err) > 4000 ? "bad" : "caution";
+    var clamped = sim.inv.filter(function(v){ return v.clamped; }).length;
+    var cl = t.querySelector("[data-m-clamped]");
+    cl.textContent = clamped;
+    cl.parentNode.dataset.s = clamped ? "bad" : "ok";
+
+    if (lamps.band) lamps.band.dataset.on = Math.abs(err) > sim.p.PDeadband ? "1" : "0";
+    if (lamps.clamp) lamps.clamp.dataset.on = clamped ? "1" : "0";
+
+    array.innerHTML = sim.inv.map(function(v){
+      var pct = Math.round(v.out / v.rating * 100);
+      var state = v.clamped ? "bad" : !v.responsive ? "caution" : "";
+      return '<div class="stat" style="padding:6px 5px;gap:2px' + (state === "bad" ? ";border-color:var(--alarm)" : state === "caution" ? ";border-color:var(--caution)" : "") + '">' +
+        '<dt style="font-size:8.5px">INV ' + String(v.id).padStart(2, "0") + "</dt>" +
+        '<dd style="font-size:12px' + (state === "bad" ? ";color:var(--alarm)" : "") + '">' + pct + '<small>%</small></dd>' +
+        '<span class="bargraph" style="height:3px"><i style="width:' + pct + '%"></i></span></div>';
+    }).join("");
+
+    var stuck = sim.inv.filter(function(v){ return !v.responsive; });
+    msg.innerHTML = clamped
+      ? "<b>Inverter " + sim.inv.filter(function(v){ return v.clamped; })[0].id +
+        " is held at 115% of what it is actually producing</b> — the adaptive power limit, capping it at <b>" +
+        Math.round(sim.inv.filter(function(v){ return v.clamped; })[0].adaptive) +
+        " kW</b>. Without that cap it would wind up against a setpoint it cannot meet, and dump the difference the moment its shading cleared."
+      : stuck.length
+      ? "<b>Inverter " + stuck[0].id + " has stopped following its setpoint.</b> The controller has not reacted yet — it waits <b>" +
+        sim.p.PLimitDelay + " s</b> before applying the adaptive limit."
+      : sim.irradiance < 0.98
+      ? "Irradiance is down to <b>" + Math.round(sim.irradiance * 100) + "%</b>. Every inverter is making less than its limit allows, so the POI falls with the sun — no controller action can recover power that is not there."
+      : "Plant is following setpoint inside the <b>" + sim.p.PDeadband + " kW</b> deadband. Stall an inverter or pass a cloud.";
   }
-  d.oninput = th.oninput = paint; paint();
+
+  var runner = new PlantRunner(sim, paint, 20);
+  document.getElementById("m-sp").oninput = function(){
+    sim.set("PSetpoint", +this.value);
+    document.getElementById("m-sp-o").textContent = (+this.value).toLocaleString() + " kW";
+  };
+  document.getElementById("m-delay").oninput = function(){
+    sim.set("PLimitDelay", +this.value);
+    document.getElementById("m-delay-o").textContent = this.value + " s" + (+this.value >= 120 ? "  (library default)" : "");
+  };
+  t.querySelector('[data-act="stall"]').onclick = function(){
+    var v = sim.inv[2], stalling = v.responsive;
+    /* shade this one inverter and stop it following its limit back up */
+    v.responsive = !stalling;
+    v.derate = stalling ? 0.35 : 1;
+    if (!stalling) { v.stuckSince = null; v.adaptive = null; v.clamped = false; }
+    this.setAttribute("aria-pressed", String(stalling));
+    this.querySelector(".v").textContent = stalling ? "Release inverter 3" : "Stall inverter 3";
+    this.querySelector(".d").textContent = stalling ? "restores output and control" : "loses output, stops following";
+  };
+  t.querySelector('[data-act="cloud"]').onclick = function(){ sim.passCloud(0.55, 14); };
+
+  /* only run while the slide is on screen */
+  var myIndex = [].indexOf.call(document.querySelectorAll(".slide"), t.closest(".slide"));
+  onSlideChange(function(i){ i === myIndex ? runner.start() : runner.stop(); });
+  paint();
 })();
 
 /* ---- PID: the two libraries, side by side ---- */

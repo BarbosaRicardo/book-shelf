@@ -232,7 +232,7 @@
       <div class="grid" style="gap:14px;align-content:start">
         <ul class="pts">
           <li><b>PFR calculates a real-power compensation from the POI frequency deviation</b> and applies the resulting delta to the MPC P setpoint. It does not replace the setpoint; it adjusts it.</li>
-          <li>Reactive-power control applies <b>voltage compensation and power-factor limits</b> — the example range given was <span class="num">0.95</span> to <span class="num">1.05</span>.</li>
+          <li>Reactive-power control applies <b>voltage compensation and power-factor limits</b>. The manual keeps these as two separate pairs: <code>PFLagLimit</code> <span class="num">0.95</span> and <code>PFLeadLimit</code> <span class="num">-0.95</span> for power factor, and <code>VLimitHigh</code> <span class="num">1.05</span> / <code>VLimitLow</code> <span class="num">0.95</span> for voltage. The <span class="num">0.95–1.05</span> quoted in the session is the <b>voltage</b> band.</li>
           <li>Q output is either constrained by those power-factor limits, or provided directly within the configured maximum and minimum Q limits. Which one applies is a configuration choice, and worth knowing before you tune anything.</li>
         </ul>
         <div class="call"><span class="tag">Note on the tool</span>Dead band and droop are shown at conventional values so the arithmetic is visible; <b>the session gave the mechanism, not these specific settings.</b> Use your project's own numbers.</div>
@@ -266,45 +266,67 @@
 <!-- 11 CLAMPING -->
 <section class="slide" data-clock="07:39" data-short="Status & clamping">
   <div class="inner">
-    <div class="eyebrow"><span class="clock">07:39</span><span>inverter status · clamping</span></div>
+    <div class="eyebrow"><span class="clock">07:39</span><span>inverter status · adaptive power limit</span></div>
     <h2 class="title">Clamping, and the overshoot it hides</h2>
-    <p class="standfirst">Drag the delay. Everything to the right of the recovery is the cost of waiting too long to notice an inverter stopped following.</p>
+    <p class="standfirst">A running plant. Stall an inverter and watch the controller notice, hold it, and then hand the whole gap back when the sun returns.</p>
+
     <div class="tool">
-      <div class="tool-h"><span class="lbl">Clamp behaviour</span><span class="lbl">Session configuration: <b>10% threshold · 15 s delay</b></span></div>
-      <div class="tool-b" data-tool="clamp">
-        <div class="grid g2" style="gap:18px;margin-bottom:14px">
-          <div class="ctl" style="margin:0"><label for="cl-delay">Clamp delay <output for="cl-delay" id="cl-delay-o">15 s</output></label>
-            <input type="range" id="cl-delay" min="2" max="60" step="1" value="15"></div>
-          <div class="ctl" style="margin:0"><label for="cl-thr">Clamping threshold <output for="cl-thr" id="cl-thr-o">10 %</output></label>
-            <input type="range" id="cl-thr" min="2" max="25" step="1" value="10"></div>
-        </div>
-        <div data-clamp-chart></div>
-        <div class="legend">
-          <span><i style="background:var(--pen)"></i>Plant setpoint</span>
-          <span><i class="dash"></i>Inverter output</span>
-          <span><i class="band"></i>Setpoint / output gap at recovery</span>
+      <div class="tool-h">
+        <span class="lbl">Maricopa 2A &middot; <b data-sim-mode>running</b></span>
+        <span class="lamprow">
+          <span class="lamp" data-lamp="enabled" data-on="1">Enabled</span>
+          <span class="lamp" data-lamp="band" data-s="caution">Out of band</span>
+          <span class="lamp" data-lamp="clamp" data-s="alarm">Adaptive limit</span>
+        </span>
+      </div>
+      <div class="tool-b" data-tool="mimic">
+        <div class="grid g23" style="gap:16px">
+          <div>
+            <div data-mimic-trend></div>
+            <div class="legend">
+              <span><i class="dash"></i>Plant power limit</span>
+              <span><i style="background:var(--pen)"></i>POI real power</span>
+            </div>
+          </div>
+          <div class="grid" style="gap:10px;align-content:start">
+            <div class="stats" style="grid-template-columns:1fr 1fr">
+              <div class="stat"><dt>POI real power</dt><dd data-m-poi>0 <small>MW</small></dd></div>
+              <div class="stat"><dt>Irradiance</dt><dd data-m-irr>100 <small>%</small></dd></div>
+            </div>
+            <div class="stats" style="grid-template-columns:1fr 1fr">
+              <div class="stat"><dt>Error vs setpoint</dt><dd data-m-err>0 <small>kW</small></dd></div>
+              <div class="stat"><dt>Inverters clamped</dt><dd data-m-clamped>0</dd></div>
+            </div>
+            <div class="ctl" style="margin:0"><label for="m-sp">PSetpoint <output for="m-sp" id="m-sp-o">30,000 kW</output></label>
+              <input type="range" id="m-sp" min="5000" max="50000" step="1000" value="30000"></div>
+            <div class="ctl" style="margin:0"><label for="m-delay">PLimitDelay <output for="m-delay" id="m-delay-o">15 s</output></label>
+              <input type="range" id="m-delay" min="5" max="120" step="5" value="15"></div>
+            <div class="opts two" style="gap:6px">
+              <button class="opt" type="button" data-act="stall"><span class="v">Stall inverter 3</span><span class="d">stops following its limit</span></button>
+              <button class="opt" type="button" data-act="cloud"><span class="v">Pass a cloud</span><span class="d">drops irradiance, then clears</span></button>
+            </div>
+          </div>
         </div>
         <div class="readout">
-          <div class="stats">
-            <div class="stat"><dt>Gap at recovery</dt><dd data-cl-gap>—</dd></div>
-            <div class="stat" data-cl-stat><dt>Recovery behaviour</dt><dd data-cl-v>—</dd></div>
-          </div>
-          <p class="verdict" data-cl-msg></p>
+          <h3>Inverter array &mdash; 15 &times; 3,333 kW</h3>
+          <div data-mimic-array style="display:grid;grid-template-columns:repeat(auto-fill,minmax(58px,1fr));gap:3px"></div>
+          <p class="verdict" data-mimic-msg></p>
         </div>
       </div>
     </div>
-    <div class="grid g2" style="margin-top:20px">
-      <ul class="pts">
-        <li>Inverter feedback covers P and Q values, limits, communication status, remote enable, fault status, offline state and <b>clamping state</b>.</li>
-        <li><b>Status updates are taken from the primary RTAC</b>, not the secondary.</li>
-      </ul>
-      <ul class="pts">
-        <li>Clamping begins when output drops to the configured percentage of setpoint <b>and stays there for the configured delay</b>.</li>
-        <li><b>The clamp does not freeze the setpoint — it moves it.</b> The setpoint is reset to the clamping percentage <b>above whatever the inverter is generating right now</b>, and then <b>starts ramping again</b>. Drop 10%, wait out the delay, drop another 10%, and it re-clamps 10% above the new output.</li>
-        <li>A separate <b>unclamp band</b> — <span class="num">5%</span> in this configuration — releases the clamp and lets the inverter take whatever it can. It can be made a variable.</li>
-        <li>The overshoot is worst <b>near the maximum LGI limit</b>: the setpoint has ramped up against the cap, and when the cloud clears the inverter closes the whole gap at once.</li>
-      </ul>
+
+    <div class="grid g2" style="margin-top:18px">
+      <div class="doc"><span class="tag">GridConnect instruction manual</span>The session calls it clamping; the library calls it the <b>adaptive power limit</b>. <b>&ldquo;If an inverter does not respond to the power set point, the master controller will limit the inverter power set point to 115 percent of the present power output of the inverter. This adaptive power limit reduces potential high-power excursions because of inverter wind up when the available power increases quickly because of cloud cover clearing.&rdquo;</b> The delay before it applies <b>should be at least twice the expected data update period</b> for the inverter power measurement, and Advanced mode needs inverter data <b>at least every 5 seconds</b>.<cite>GridConnect Instruction Manual, date code 20180927 — Advanced Power Limit Mode</cite></div>
+      <div class="grid" style="gap:12px;align-content:start">
+        <div class="call trap"><span class="tag">The default is not the answer</span><b><code>PLimitDelay</code> ships at <span class="num">120 s</span>.</b> The session's advice was the opposite direction entirely: 30 seconds or a minute is already too long, because the setpoint climbs toward the LGI limit while the output sits still. They ran <b>15 s</b>. Drag the delay above and watch the gap open.</div>
+        <ul class="pts">
+          <li>Inverter feedback covers P and Q, limits, comms status, remote enable, fault, offline and <b>clamping state</b>.</li>
+          <li><b>Status is taken from the primary RTAC</b>, never the secondary.</li>
+          <li>A separate <b>unclamp band</b> — <span class="num">5%</span> here — releases it and lets the inverter take what it can.</li>
+        </ul>
+      </div>
     </div>
+    <div class="notes"><span class="tag">Speaker note</span>The simulation is the manual's Simple power limit with the adaptive limit layered on: share the plant limit across available inverters, and hold any inverter that stops following to 115% of what it is actually making. Stall inverter 3 and leave the delay at 120 s to see why the default is not a setting anyone runs.</div>
   </div>
 </section>
 
@@ -343,6 +365,7 @@
       <div class="grid" style="gap:14px;align-content:start">
         <div class="call"><span class="tag">Why the library matters</span>A standard PI takes <span class="m">P-term = error × KP</span>. With KP at <span class="num">0.5</span> against an error of <span class="num">100%</span>, the output reaches <span class="num">50%</span> and stops — <b>on KP alone you can never arrive at the setpoint</b>. <b>Grid Connect instead takes <span class="m">P-term = previous P-term + (error × KP)</span></b>, so each calculation builds on the last and the output climbs all the way to 100%. <b><code>SCLutils.PID</code> — the internal SEL library behind the trim-mapping logic — is the standard form</b>: set KI to zero there and the output can never reach 100% response.</div>
         <div class="call rule"><span class="tag">What they actually settled on</span>KI <span class="num">0.01</span> with KP <span class="num">0.2</span> was tested and <b>gave no trouble</b>. <b>KP was the side making the problem</b>, so KI went to <span class="num">0</span> and <b>KP 0.4 was left as the only term</b> — which is only viable at all because of the accumulation above.</div>
+        <div class="doc"><span class="tag">And the library agrees</span>Every integral term in <code>fb_MasterPlantController</code> ships at <b>zero</b> — <code>PKi</code>, <code>QKi</code>, <code>VKi</code> and <code>PFKi</code> are all <b>default 0</b>, with every matching <code>Kp</code> <b>default 1</b>. Running with no integral term is the library's own starting position, not a workaround.<cite>GridConnect Instruction Manual &mdash; fb_MasterPlantController inputs</cite></div>
         <ul class="pts">
           <li>Start <b>KP around 0.3–0.4</b> and watch the shape. KP is the booster; KI provides the compensation, taking the damping out for a smoother response.</li>
           <li>Push KP too far and the output runs past the limit and rings. <b>Saturation also comes into the picture</b> where the loop is not managed properly.</li>
@@ -360,7 +383,8 @@
             <p style="margin-top:10px;font-size:13.5px;color:var(--muted);line-height:1.5">The rule of thumb from the Grid Connect manual: take <b style="color:var(--ink-2)">10% of maximum generation</b> — the plant on a bad day — apply the <b style="color:var(--ink-2)">clamping percentage</b> on top, and keep the deadband above the result. <span class="unconfirmed">worked through live; the manual screenshot was promised as a follow-up</span></p>
           </div>
         </div>
-        <div class="call trap"><span class="tag">DVDQ</span><b>DVDQ says: at your droop level, you deliver 100% of your Q.</b> A <span class="num">5%</span> droop means a 5% voltage change commands the full Q response. Set it to <span class="num">1%</span> and <b>a 1% voltage deviation already commands everything you have</b> — far too aggressive.<br><br>The ceiling is real, though: your Q is whatever the MVA rating leaves you, often only <span class="num">30–40%</span>, so the voltage change you can actually produce is bounded no matter what DVDQ asks for. Voltage control ramps toward a voltage setpoint normally — but <b>bypasses the ramp during a Volt-VAR event</b> to deliver direct Q compensation.</div>
+        <div class="doc"><span class="tag">dV_dQ &mdash; what the manual says</span><b>&ldquo;POI ratio of the expected change in voltage to a change in reactive power. Units are Volts/VAR. Default is 0.01.&rdquo;</b> The block also publishes a <code>ConditionedDVDQ</code> output, which is the value after it has checked the input is greater than zero — so you can see what the library actually accepted rather than what you typed.<cite>GridConnect Instruction Manual &mdash; fb_MasterPlantController</cite></div>
+        <div class="call trap"><span class="tag">The same thing, as the session framed it</span><b>At your droop level you deliver 100% of your Q.</b> A <span class="num">5%</span> droop means a 5% voltage change commands the full Q response; set it to <span class="num">1%</span> and <b>a 1% deviation already commands everything you have</b>. The ceiling is real either way — your Q is whatever the MVA rating leaves you, often <span class="num">30–40%</span> — so the voltage change you can actually produce is bounded no matter what dV_dQ asks for. Voltage control ramps toward its setpoint normally, but <b>bypasses the ramp during a Volt-VAR event</b>.</div>
       </div>
     </div>
   </div>
