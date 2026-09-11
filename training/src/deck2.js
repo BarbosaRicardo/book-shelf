@@ -11,7 +11,7 @@ wireFlow("arc", {
 /* ---- architecture ---- */
 wireFlow("arch", {
   ign: '<h4>Ignition server</h4><p>Receives PPC data and serves the operator interface. Every inverter you add needs its control and feedback points added here too.</p><ul><li>Varies per site: which devices report through it, and whether the site uses a concentrator or separate connections.</li></ul>',
-  rtu: '<h4>RTU redundancy</h4><p>Receive and transmit channels between a primary and a secondary RTU. <b>The primary sends a pulse to the secondary every 200 milliseconds.</b></p><ul><li>Redundancy logic blocks commands when an RTU is not primary — generally unchanged between projects, except that new inverter references must be added to it.</li></ul>',
+  rtu: '<h4>RTU redundancy</h4><p>Receive and transmit channels between a primary and a secondary RTU. <b>The primary sends a pulse to the secondary every 200 milliseconds.</b></p><ul><li>Redundancy logic blocks commands when an RTU is not primary — generally unchanged between projects, except that new inverter references must be added to it. It drives the same <b>disable control</b> device bit Day 1 showed sitting on the DNP3 device.</li></ul>',
   inv: '<h4>Inverters</h4><p>The largest source of variation between projects: count, brand, model, and the point list each one publishes.</p><ul><li>Each needs a global variable entry, a read block, a write block, server points, register allocation, and program logic.</li></ul>',
   mtr: '<h4>Primary and backup meters</h4><p>POI metering, with points mapped on both the read side and the project side.</p><ul><li>Day 3 adds the rest of this story: quality is checked primary-to-secondary, and bad quality can trigger a ramp-down or a hold at the last valid value.</li></ul>',
   sub: '<h4>Substation</h4><p>Connected through a concentrator on some sites, directly on others — along with QSC/QTD, the met station and Ignition.</p><ul><li>Which arrangement a template uses belongs in the inventory: it changes the device tree substantially.</li></ul>',
@@ -69,14 +69,14 @@ wireFlow("brk", {
 (function(){
   var t = document.querySelector('[data-tool="loop"]'); if (!t) return;
   var steps = [].slice.call(t.querySelectorAll("[data-loop-steps] .node"));
-  var ERRS = [47, 31, 12, 5, 1, 0];
+  var ERRS = [624, 310, 96, 24, 1, 0];
   var MSG = [
-    "Cross-check on the untouched clone: <b>47 cross-reference errors</b> from the inverter data type change. This is the work list.",
-    "First pass: the global variables and the inverter data type are consistent. <b>31 left</b> — mostly read and write blocks now pointing at registers that moved.",
-    "Second pass: read and write blocks remapped to the new point list. <b>12 left</b>, all inside programs and function blocks.",
-    "Third pass: programs and status logic updated. <b>5 left</b> — the Ignition server points for the changed inverter.",
-    "Fourth pass: server points mapped. <b>1 left</b> — a prior reference to <span class=\"num\">10</span> that has to become <span class=\"num\">09</span>. Small, real, and only findable this way.",
-    "<b>Zero errors.</b> Five passes, one change at a time, each one saved and cross-checked. There is no faster method that converges."
+    "Cross-check straight after renaming the data type from SunGrow 4400: <b>624 cross-reference errors</b>. That is the real number from the session — and the list caps out around <b>1,500</b>, so a bigger change can overflow what it will even show you.",
+    "First pass: global variables and the inverter data type are consistent again. <b>310 left</b> — mostly read and write blocks pointing at registers that moved.",
+    "Second pass: read and write blocks remapped against the new point list. <b>96 left</b>, inside programs and function blocks.",
+    "Third pass: programs, status and control logic updated. <b>24 left</b> — Ignition server points for the changed inverter.",
+    "Fourth pass: server points mapped. <b>1 left</b> — a name that still says <span class=\"num\">10</span> where the register is now <span class=\"num\">09</span>. Small, real, and only findable this way.",
+    "<b>Zero errors.</b> One change at a time, each saved and cross-checked. Tedious, and the only method that converges."
   ];
   var i = 0;
   function paint(){
@@ -98,15 +98,16 @@ wireFlow("brk", {
 /* ---- array bounds ---- */
 (function(){
   var t = document.querySelector('[data-tool="bounds"]'); if (!t) return;
-  var s = document.getElementById("b-idx"), msg = t.querySelector("[data-bmsg]");
+  var s = document.getElementById("b-idx"), L = document.getElementById("b-len"), msg = t.querySelector("[data-bmsg]");
   function paint(){
-    var v = +s.value, ok = v >= 1 && v <= 49;
+    var v = +s.value, len = +L.value, ok = v >= 1 && v <= len;
     document.getElementById("b-idx-o").textContent = v;
+    document.getElementById("b-len-o").textContent = len;
     msg.innerHTML = ok
-      ? 'Index <b class="num">' + v + '</b> is inside the declared range <span class="num">1–49</span>. It resolves.'
-      : '<b style="color:var(--crit)">Index ' + v + ' is outside the declared range 1–49.</b> The reference fails at cross-check — which is the only place you will see it before it fails on the plant.';
+      ? 'Index <b class="num">' + v + '</b> is inside an array of <span class="num">' + len + '</span> elements. It resolves.'
+      : '<b style="color:var(--crit)">Index ' + v + ' against an array of only ' + len + ' elements.</b> You get the error as soon as you paste it in — <b>there are not that many elements</b>. A number can look perfectly reasonable and still be past the end of what was declared.';
   }
-  s.oninput = paint; paint();
+  s.oninput = L.oninput = paint; paint();
 })();
 
 /* ---- evolution period ---- */

@@ -347,7 +347,7 @@ window.DECK_URLS={"1": "https://claude.ai/code/artifact/65d204b8-174d-4bad-990c-
     <div class="trend" id="timeline"></div>
     <div class="meta">
       <div><dt>Session length</dt><dd>1h 32m</dd></div>
-      <div><dt>Tuning example</dt><dd>KP 0.4 · KI 0.01</dd></div>
+      <div><dt>Settled on</dt><dd>KP 0.4 · KI 0</dd></div>
       <div><dt>Interactive tools</dt><dd>6</dd></div>
       <div><dt>Source</dt><dd>Session transcript</dd></div>
     </div>
@@ -640,7 +640,9 @@ window.DECK_URLS={"1": "https://claude.ai/code/artifact/65d204b8-174d-4bad-990c-
       </ul>
       <ul class="pts">
         <li>Clamping begins when output drops to the configured percentage of setpoint <b>and stays there for the configured delay</b>.</li>
-        <li><b>A clamped setpoint keeps ramping upward — it is not frozen.</b> That is precisely why a long delay is expensive.</li>
+        <li><b>The clamp does not freeze the setpoint — it moves it.</b> The setpoint is reset to the clamping percentage <b>above whatever the inverter is generating right now</b>, and then <b>starts ramping again</b>. Drop 10%, wait out the delay, drop another 10%, and it re-clamps 10% above the new output.</li>
+        <li>A separate <b>unclamp band</b> — <span class="num">5%</span> in this configuration — releases the clamp and lets the inverter take whatever it can. It can be made a variable.</li>
+        <li>The overshoot is worst <b>near the maximum LGI limit</b>: the setpoint has ramped up against the cap, and when the cloud clears the inverter closes the whole gap at once.</li>
       </ul>
     </div>
   </div>
@@ -679,10 +681,11 @@ window.DECK_URLS={"1": "https://claude.ai/code/artifact/65d204b8-174d-4bad-990c-
         </div>
       </div>
       <div class="grid" style="gap:14px;align-content:start">
-        <div class="call"><span class="tag">Why the library matters</span><b>Grid Connect's PI accumulates the previous P-term with the new error &#215; KP term</b>, so the output can reach 100% even when KI is zero. <b>The <code>SCLutils.PID</code> library used in the existing trim-mapping logic cannot do that</b> — with KI at zero it never gets there. Same tuning numbers, different outcome, depending on which block you are in.</div>
+        <div class="call"><span class="tag">Why the library matters</span>A standard PI takes <span class="m">P-term = error × KP</span>. With KP at <span class="num">0.5</span> against an error of <span class="num">100%</span>, the output reaches <span class="num">50%</span> and stops — <b>on KP alone you can never arrive at the setpoint</b>. <b>Grid Connect instead takes <span class="m">P-term = previous P-term + (error × KP)</span></b>, so each calculation builds on the last and the output climbs all the way to 100%. <b><code>SCLutils.PID</code> — the internal SEL library behind the trim-mapping logic — is the standard form</b>: set KI to zero there and the output can never reach 100% response.</div>
+        <div class="call rule"><span class="tag">What they actually settled on</span>KI <span class="num">0.01</span> with KP <span class="num">0.2</span> was tested and <b>gave no trouble</b>. <b>KP was the side making the problem</b>, so KI went to <span class="num">0</span> and <b>KP 0.4 was left as the only term</b> — which is only viable at all because of the accumulation above.</div>
         <ul class="pts">
-          <li>Start <b>KP around 0.3–0.4</b>. KP is the booster; KI provides the compensation and the smoother response.</li>
-          <li>The test configuration was <b>KP 0.4, KI 0.01</b> — and <b>excessive KP was identified as the more significant problem</b>, not KI.</li>
+          <li>Start <b>KP around 0.3–0.4</b> and watch the shape. KP is the booster; KI provides the compensation, taking the damping out for a smoother response.</li>
+          <li>Push KP too far and the output runs past the limit and rings. <b>Saturation also comes into the picture</b> where the loop is not managed properly.</li>
         </ul>
         <div class="tool">
           <div class="tool-h"><span class="lbl">Deadband, accounting for clamping</span></div>
@@ -694,9 +697,10 @@ window.DECK_URLS={"1": "https://claude.ai/code/artifact/65d204b8-174d-4bad-990c-
                 <input type="range" id="db-cl" min="1" max="20" step="1" value="5"></div>
             </div>
             <p class="verdict" data-db-msg style="margin-top:12px"></p>
+            <p style="margin-top:10px;font-size:13.5px;color:var(--muted);line-height:1.5">The rule of thumb from the Grid Connect manual: take <b style="color:var(--ink-2)">10% of maximum generation</b> — the plant on a bad day — apply the <b style="color:var(--ink-2)">clamping percentage</b> on top, and keep the deadband above the result. <span class="unconfirmed">worked through live; the manual screenshot was promised as a follow-up</span></p>
           </div>
         </div>
-        <div class="call trap"><span class="tag">DVDQ</span><b>DVDQ is the relationship between a voltage change and the Q response.</b> Set it too aggressively and a small voltage deviation commands maximum Q. Voltage control ramps toward a voltage setpoint normally — but <b>bypasses the ramp during a Volt-VAR event</b> to deliver direct Q compensation.</div>
+        <div class="call trap"><span class="tag">DVDQ</span><b>DVDQ says: at your droop level, you deliver 100% of your Q.</b> A <span class="num">5%</span> droop means a 5% voltage change commands the full Q response. Set it to <span class="num">1%</span> and <b>a 1% voltage deviation already commands everything you have</b> — far too aggressive.<br><br>The ceiling is real, though: your Q is whatever the MVA rating leaves you, often only <span class="num">30–40%</span>, so the voltage change you can actually produce is bounded no matter what DVDQ asks for. Voltage control ramps toward a voltage setpoint normally — but <b>bypasses the ramp during a Volt-VAR event</b> to deliver direct Q compensation.</div>
       </div>
     </div>
   </div>
@@ -805,13 +809,13 @@ window.DECK_URLS={"1": "https://claude.ai/code/artifact/65d204b8-174d-4bad-990c-
         </div>
         <p class="why">And the PID needs at least 3–4× the ramp rate, 5× preferred. Both ratios come off the ramp time.</p>
       </div>
-      <div class="q"><div class="qh"><span class="qn">02</span><span class="qt">KI is set to zero. Which block can still drive the output to 100%?</span></div>
+      <div class="q"><div class="qh"><span class="qn">02</span><span class="qt">The project runs KI at zero with KP 0.4. Why is that viable here but not in the trim-mapping logic?</span></div>
         <div class="as">
-          <button class="a" type="button">Both, if KP is high enough</button>
-          <button class="a" type="button" data-ok="1">Grid Connect's PI — it accumulates the previous P-term with the new error × KP term</button>
-          <button class="a" type="button">SCLutils.PID</button>
+          <button class="a" type="button">It isn't — KI should never be zero</button>
+          <button class="a" type="button" data-ok="1">Grid Connect accumulates the previous P-term with the new error × KP term, so it still reaches 100%. <code>SCLutils.PID</code> uses the standard form and stalls short of the setpoint</button>
+          <button class="a" type="button">Because 0.4 is a high enough KP to close the error on its own</button>
         </div>
-        <p class="why">SCLutils.PID, used in the existing trim-mapping logic, cannot reach 100% response with KI at zero. Grid Connect's accumulation behaviour can.</p>
+        <p class="why">A standard PI gives P-term = error × KP, so KP 0.5 against a 100% error reaches 50% and stops. Grid Connect builds each calculation on the last. Same numbers, different block, different outcome.</p>
       </div>
       <div class="q"><div class="qh"><span class="qn">03</span><span class="qt">Operating at 56 MW with 5% clamping. Roughly what deadband?</span></div>
         <div class="as">
@@ -829,13 +833,13 @@ window.DECK_URLS={"1": "https://claude.ai/code/artifact/65d204b8-174d-4bad-990c-
         </div>
         <p class="why">Trace and restore the HMI or RTAC command. A restart on its own does not fix it — it is what caused it.</p>
       </div>
-      <div class="q"><div class="qh"><span class="qn">05</span><span class="qt">Why is a 30-second clamp delay worse than 15?</span></div>
+      <div class="q"><div class="qh"><span class="qn">05</span><span class="qt">Output has just been clamped. What does the setpoint do next?</span></div>
         <div class="as">
-          <button class="a" type="button">The setpoint freezes for 30 seconds instead of 15</button>
-          <button class="a" type="button" data-ok="1">The setpoint keeps ramping while the output does not, so the gap grows — and the inverter overshoots or steps when it recovers</button>
-          <button class="a" type="button">It has no effect on the response, only on alarming</button>
+          <button class="a" type="button">Holds at the clamped value until the inverter recovers</button>
+          <button class="a" type="button" data-ok="1">Resets to the clamping percentage above current generation, then ramps again — and re-clamps if output falls further behind</button>
+          <button class="a" type="button">Ramps down to meet the output</button>
         </div>
-        <p class="why">A clamped setpoint continues ramping upward. The longer you wait to recognise the clamp, the larger the setpoint/output gap that has to be closed at once.</p>
+        <p class="why">The clamp moves the setpoint, it does not freeze it. That is why a 30-second or one-minute delay is expensive: the setpoint climbs toward the LGI limit while the output sits still, and the whole gap gets closed in one step when the cloud passes.</p>
       </div>
       <div class="q"><div class="qh"><span class="qn">06</span><span class="qt">You need to see what setpoint inverter 3 was actually sent. Where do you look?</span></div>
         <div class="as">
@@ -1339,6 +1343,7 @@ wireFlow("chain", {
       else if (i <= tRec) y = held;
       else if (i <= tRec + 3) y = held + (sp(tRec) + over - held) * (i - tRec) / 3;
       else y = sp(i) + over * Math.exp(-(i - tRec - 3) / 3.2);
+      /* the clamped setpoint is reset to threshold% above current output, then ramps on */
       outPts.push([i, y]);
     }
     host.innerHTML = mkChart({
@@ -1361,10 +1366,11 @@ wireFlow("chain", {
     t.querySelector("[data-cl-msg]").innerHTML =
       "Clamping starts when output drops to the configured percentage of setpoint <b>and stays there for the delay</b>. With a <b>" +
       delay + " s</b> delay and a <b>" + (+th.value) + "%</b> threshold, the setpoint has run <b>" + gap.toFixed(1) +
-      " MW</b> ahead of the output by the time the clamp is recognised. " +
+      " MW</b> ahead of the output by the time the clamp is recognised — at which point it is reset to <b>" + (+th.value) +
+      "% above current generation and ramps again</b>. " +
       (gap > 12
-        ? "<b>That is the overshoot problem from the session</b> — excessive delays such as 30 seconds or a minute produce a large gap and a step-like response when the inverter recovers."
-        : "The session's configuration used a <b>10% threshold and a 15-second delay</b>, which keeps the gap in this range.");
+        ? "<b>This is the overshoot problem.</b> Delays of 30 seconds or a minute let the setpoint climb toward the LGI limit while the output sits still, and the inverter closes the whole gap in one step when the cloud passes."
+        : "The configuration used a <b>10% threshold with a 15-second delay</b>, and a separate <b>5% unclamp band</b> to release it, which keeps the gap in this range.");
   }
   d.oninput = th.oninput = paint; paint();
 })();
@@ -1426,10 +1432,11 @@ wireFlow("chain", {
     ss.innerHTML = bFinal.toFixed(0) + ' <small>% of setpoint</small>';
     ss.parentNode.dataset.s = bFinal > 95 ? "ok" : "bad";
     var msg;
-    if (KI === 0) msg = "<b>KI is zero.</b> Grid Connect's PI still climbs to 100% because it accumulates the previous P-term with the new error &#215; KP term. <b><code>SCLutils.PID</code> plateaus at " + bFinal.toFixed(0) + "%</b> and stays there — the same tuning numbers, a different outcome, decided entirely by which block you are in.";
-    else if (over > 20) msg = "<b>KP is too high.</b> This is the session's finding: excessive KP was identified as the more significant problem. The loop is boosted into overshoot faster than the integral can settle it — and on a real plant that arrives at the POI as a step.";
-    else if (KP < 0.25) msg = "KP is below the suggested starting range. <b>Start around 0.3–0.4</b> — KP is the booster; KI provides the compensation and the smoother response.";
-    else msg = "Around the configuration tested in the session — <b>KP 0.4, KI 0.01</b>. KP is the booster; KI does the compensating.";
+    if (KI === 0 && Math.abs(KP - 0.4) < 0.001) msg = "<b>This is the configuration they settled on.</b> KI at zero, KP 0.4 alone — viable only because Grid Connect accumulates the previous P-term with the new error &#215; KP term. <b><code>SCLutils.PID</code> plateaus at " + bFinal.toFixed(0) + "%</b> and stays there. Same numbers, different block, different outcome.";
+    else if (KI === 0) msg = "<b>KI is zero.</b> Grid Connect still climbs to 100% through its accumulation; <b><code>SCLutils.PID</code> plateaus at " + bFinal.toFixed(0) + "%</b> — on the standard form, P-term = error &#215; KP can never close the last of the error.";
+    else if (over > 20) msg = "<b>KP is too high.</b> This is exactly what they ran into: <b>KP was the side making the problem</b>, which is why it was KI that went to zero and KP that was tuned. The loop is boosted into overshoot faster than anything can settle it — at the POI that arrives as a step.";
+    else if (KP < 0.25) msg = "KP is below the suggested starting range. <b>Start around 0.3–0.4</b> and watch the shape. <b>KI 0.01 with KP 0.2 was tested and gave no trouble</b> — the trouble was always on the KP side.";
+    else msg = "KP is in the suggested <b>0.3–0.4</b> starting range. KP is the booster; KI provides the compensation and takes the damping out.";
     t.querySelector("[data-pid-msg]").innerHTML = msg +
       ' <span class="unconfirmed">illustrative first-order plant with 350 ms of loop delay — the shape and the library difference, not your plant\'s numbers</span>';
   }
@@ -1450,14 +1457,17 @@ wireFlow("chain", {
   var mw = document.getElementById("db-mw"), cl = document.getElementById("db-cl");
   function paint(){
     var m = +mw.value, c = +cl.value;
-    var band = m * c / 100, deadband = band * 100;  /* MW -> kW, 10% of the clamping band */
+    /* the manual's rule of thumb: 10% of max generation, then the clamping % on top.
+       56 MW at 5% -> 5.6 MW x 5% = 280 kW -> round up to ~300 kW, as worked through in the session. */
+    var lowOutput = m * 0.10, deadband = lowOutput * c / 100 * 1000;  /* MW -> kW */
     document.getElementById("db-mw-o").textContent = m + " MW";
     document.getElementById("db-cl-o").textContent = c + " %";
     var rounded = Math.ceil(deadband / 50) * 50;
     t.querySelector("[data-db-msg]").innerHTML =
-      "<b>" + m + " MW</b> at <b>" + c + "%</b> clamping is a clamping band of <b class=\"num\">" + band.toFixed(2) +
-      " MW</b>. Ten percent of that is <b class=\"num\">" + Math.round(deadband) + " kW</b> — round up to about <b class=\"num\">" +
-      rounded + " kW</b>. <b>Deadband has to account for clamping</b>, which is how the session arrived at ~280 kW and a suggested 300 kW for a 56 MW plant at 5%.";
+      "Ten percent of a <b>" + m + " MW</b> plant is <b class=\"num\">" + lowOutput.toFixed(1) +
+      " MW</b> — the plant on a bad day. At <b>" + c + "%</b> clamping that leaves <b class=\"num\">" + Math.round(deadband) +
+      " kW</b>, so the deadband wants to be above it — about <b class=\"num\">" + rounded +
+      " kW</b>. <b>Deadband has to account for clamping</b>: this is the arithmetic that gave ~280 kW, and a suggested 300 kW, for a 56 MW plant at 5%.";
   }
   mw.oninput = cl.oninput = paint; paint();
 })();

@@ -103,7 +103,8 @@
         <ul class="pts">
           <li>A project with the <b>same inverter type</b> beats one with a completely different inverter, even if other things match.</li>
           <li>A <b>hybrid project is the better base for another hybrid project</b> — battery and storage configuration is expensive to add and cheap to inherit.</li>
-          <li>Reuse the project with the largest matching device set. Meter-only changes are easy; control-architecture changes are not.</li>
+          <li>Reuse the project with the largest matching device set. <b>A meter-only change is far preferable to an inverter change</b> — the inverter is the thing you want to change last.</li>
+          <li>SunGrow to SunGrow is survivable. <b>SunGrow to an LG or a GE is a mess</b> — a different point list, different information coming back, and a lot of time.</li>
         </ul>
       </div>
       <div class="tool">
@@ -208,6 +209,7 @@
         <li>Match <b>register numbers and data-point names</b> to the target inverter's point list. That document, not the old project, is the authority.</li>
         <li>Register numbers may not be mapped directly — but the naming convention normally mirrors the register number, which is what makes a mismatch visible.</li>
         <li><b>Copy and paste accelerates repeated mappings.</b> On a first conversion, do it manually and one at a time anyway; you are still learning where this particular vendor differs.</li>
+        <li>The trick that makes it bearable: <b>double-click a reference and everything up to the dot is selected</b>. Copy that, and <code>Ctrl+H</code> replaces just that portion and leaves the rest alone.</li>
       </ul>
       <div class="grid" style="gap:14px">
         <div class="call"><span class="tag">Carried from Day 1</span>Everything about signed vs unsigned, 16-bit vs 32-bit, and word order applies here unchanged. A point list that reads correctly in the vendor document still decodes to nonsense if the map disagrees about the byte order.</div>
@@ -239,16 +241,18 @@
         </div>
       </div>
       <div class="grid" style="gap:14px;align-content:start">
-        <div class="call"><span class="tag">Register allocation, from the session</span>The new inverter took register <b><span class="num">116</span></b> — not because 116 was next, but because <b>there was a gap in the existing layout</b>. Read the map before you assume the end of it.</div>
+        <div class="call"><span class="tag">Register allocation, from the session</span>The new inverter took register <b><span class="num">116</span></b> — not because 116 was next, but because <b>there was a gap in the existing layout</b>. Read the map before you assume the end of it. Local/remote status came off holding register <span class="num">1510</span>; the Ignition server points went in as a fresh block at start <span class="num">450</span>, quantity <span class="num">227</span>.</div>
         <div class="tool">
           <div class="tool-h"><span class="lbl">Array bounds check</span></div>
           <div class="tool-b" data-tool="bounds">
-            <div class="ctl" style="margin-bottom:12px"><label for="b-idx">Array index you are referencing <output for="b-idx" id="b-idx-o">46</output></label>
+            <div class="ctl" style="margin-bottom:12px"><label for="b-idx">Index you reference <output for="b-idx" id="b-idx-o">46</output></label>
               <input type="range" id="b-idx" min="1" max="60" step="1" value="46"></div>
+            <div class="ctl" style="margin-bottom:12px"><label for="b-len">Elements the array actually declares <output for="b-len" id="b-len-o">40</output></label>
+              <input type="range" id="b-len" min="10" max="60" step="1" value="40"></div>
             <p class="verdict" data-bmsg></p>
           </div>
         </div>
-        <div class="call trap"><span class="tag">The failure from the session</span>Referencing register <span class="num">46</span> failed because the available array range was <span class="num">1–49</span> — <b>an in-range-looking number outside the array the code actually declared.</b> Validate bounds, not plausibility.</div>
+        <div class="call trap"><span class="tag">The failure from the session</span>Typing <span class="num">46</span> into a reference threw an error <b>the moment it was copied in</b> — the array behind it does not have that many elements. The tool catches it at once and tells you there are not that many elements; it does not wait for a download. <span class="unconfirmed">the exact declared range is unclear in the recording</span></div>
       </div>
     </div>
   </div>
@@ -275,7 +279,7 @@
             <p class="why">Unchanged between projects — the inputs change, the arithmetic does not.</p></div>
           <div data-ans="same"><p style="font-size:15px;margin-bottom:8px">Redundancy logic that blocks commands when the RTU is not primary</p>
             <div class="opts two"><button class="opt" type="button" data-pick="chg"><span class="v">Changes</span></button><button class="opt" type="button" data-pick="same"><span class="v">Stays</span></button></div>
-            <p class="why">Generally unchanged — <b>except that the new inverter's references have to be added to it</b>. The logic stays; its coverage grows.</p></div>
+            <p class="why">Generally unchanged — <b>except that the new inverter's references have to be added to it</b>. The logic stays; its coverage grows. Read it the other way round when debugging: <b>if the RTAC is primary and its control-disable bit is true, something is wrong in the code</b> — no commands are reaching the inverters.</p></div>
           <div data-ans="chg"><p style="font-size:15px;margin-bottom:8px">Module counts and model-specific control logic</p>
             <div class="opts two"><button class="opt" type="button" data-pick="chg"><span class="v">Changes</span></button><button class="opt" type="button" data-pick="same"><span class="v">Stays</span></button></div>
             <p class="why">Inverter-specific by definition. And if the control type is <b>fundamentally different</b>, expect to write a new control implementation rather than adapt this one.</p></div>
@@ -297,6 +301,8 @@
       <div class="grid" style="gap:16px">
         <ul class="pts">
           <li><b>LGI and tuning settings</b> vary per project: plant rating, Q rating, evolution period, Q high and low limits, jetband changes, P-limit delay.</li>
+          <li><b>The P-limit delay is the clamp wait</b> — how long the plant holds before clamping. Day 3 shows what a badly chosen value does to the response; it is declared here.</li>
+          <li><b>The P-limit delay is the clamp wait</b> — how many seconds the plant holds before it clamps. Day 3 shows what a badly chosen value does to the response; it is set here.</li>
           <li><b>Declare them at project level and pass them to Grid Connect automatically</b> — settings scattered across blocks are the ones that get missed on the next conversion.</li>
           <li>Manual tuning is still needed when the modelled behaviour and the real plant disagree. The model is a starting point, not an answer.</li>
           <li>Add the required <b>POI meter points and map them on both the read side and the project side</b>. Add met station data when the site has one.</li>
@@ -376,6 +382,7 @@
         <ul class="pts">
           <li>Custom data types define <b>reusable structures</b> holding inverter variables — on/off status, control mode, faults, setpoints.</li>
           <li>They let you <b>pass an entire structure into a function block</b> instead of declaring every variable by hand, which is where the object-oriented value is.</li>
+          <li>Not everything shaped like a function block needs to be one. <b>The inverter read and write blocks take no meaningful inputs or outputs</b> — they only assign — so they could be plain programs. Day 3 makes the same observation about the IBR read logic.</li>
           <li><b>Global variables</b> read and write across programs and function blocks; <b>local variables</b> stay in their defining scope unless exposed as inputs or outputs.</li>
           <li>The project uses global structures to connect the inverter side to the Grid Connect side.</li>
           <li><b>Global retained variables carry memory-related risk</b> — understand it before extending the pattern.</li>
@@ -417,13 +424,13 @@
         </div>
         <p class="why">Replace All is a fine tool once you know the scope. On a first conversion you do not, and you have traded a known error list for an unknown one.</p>
       </div>
-      <div class="q"><div class="qh"><span class="qn">04</span><span class="qt">Referencing array index 46 throws an error. The array range is 1–49. What went wrong?</span></div>
+      <div class="q"><div class="qh"><span class="qn">04</span><span class="qt">You paste index 46 into a reference and get an error immediately. What does it mean?</span></div>
         <div class="as">
-          <button class="a" type="button">46 is out of range</button>
-          <button class="a" type="button" data-ok="1">46 is inside the declared range, so the fault is elsewhere in the reference — bounds have to be validated, not assumed from a plausible-looking number</button>
-          <button class="a" type="button">Arrays are always zero-indexed</button>
+          <button class="a" type="button">The register does not exist on the inverter</button>
+          <button class="a" type="button" data-ok="1">The array behind that reference does not declare that many elements — a plausible-looking index is still past the end</button>
+          <button class="a" type="button">The project needs saving before references resolve</button>
         </div>
-        <p class="why">This is the trap: a number that looks reasonable is not the same as a number the declared array actually accepts. Validate the bounds the code declares.</p>
+        <p class="why">The tool tells you there are not that many elements as soon as the reference is pasted. It is the cheapest error in this whole process to find — provided you read it rather than clicking past it.</p>
       </div>
       <div class="q"><div class="qh"><span class="qn">05</span><span class="qt">Which of these normally changes when you convert a template to a new site?</span></div>
         <div class="as">

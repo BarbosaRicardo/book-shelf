@@ -120,6 +120,7 @@ wireFlow("chain", {
       else if (i <= tRec) y = held;
       else if (i <= tRec + 3) y = held + (sp(tRec) + over - held) * (i - tRec) / 3;
       else y = sp(i) + over * Math.exp(-(i - tRec - 3) / 3.2);
+      /* the clamped setpoint is reset to threshold% above current output, then ramps on */
       outPts.push([i, y]);
     }
     host.innerHTML = mkChart({
@@ -142,10 +143,11 @@ wireFlow("chain", {
     t.querySelector("[data-cl-msg]").innerHTML =
       "Clamping starts when output drops to the configured percentage of setpoint <b>and stays there for the delay</b>. With a <b>" +
       delay + " s</b> delay and a <b>" + (+th.value) + "%</b> threshold, the setpoint has run <b>" + gap.toFixed(1) +
-      " MW</b> ahead of the output by the time the clamp is recognised. " +
+      " MW</b> ahead of the output by the time the clamp is recognised — at which point it is reset to <b>" + (+th.value) +
+      "% above current generation and ramps again</b>. " +
       (gap > 12
-        ? "<b>That is the overshoot problem from the session</b> — excessive delays such as 30 seconds or a minute produce a large gap and a step-like response when the inverter recovers."
-        : "The session's configuration used a <b>10% threshold and a 15-second delay</b>, which keeps the gap in this range.");
+        ? "<b>This is the overshoot problem.</b> Delays of 30 seconds or a minute let the setpoint climb toward the LGI limit while the output sits still, and the inverter closes the whole gap in one step when the cloud passes."
+        : "The configuration used a <b>10% threshold with a 15-second delay</b>, and a separate <b>5% unclamp band</b> to release it, which keeps the gap in this range.");
   }
   d.oninput = th.oninput = paint; paint();
 })();
@@ -207,10 +209,11 @@ wireFlow("chain", {
     ss.innerHTML = bFinal.toFixed(0) + ' <small>% of setpoint</small>';
     ss.parentNode.dataset.s = bFinal > 95 ? "ok" : "bad";
     var msg;
-    if (KI === 0) msg = "<b>KI is zero.</b> Grid Connect's PI still climbs to 100% because it accumulates the previous P-term with the new error &#215; KP term. <b><code>SCLutils.PID</code> plateaus at " + bFinal.toFixed(0) + "%</b> and stays there — the same tuning numbers, a different outcome, decided entirely by which block you are in.";
-    else if (over > 20) msg = "<b>KP is too high.</b> This is the session's finding: excessive KP was identified as the more significant problem. The loop is boosted into overshoot faster than the integral can settle it — and on a real plant that arrives at the POI as a step.";
-    else if (KP < 0.25) msg = "KP is below the suggested starting range. <b>Start around 0.3–0.4</b> — KP is the booster; KI provides the compensation and the smoother response.";
-    else msg = "Around the configuration tested in the session — <b>KP 0.4, KI 0.01</b>. KP is the booster; KI does the compensating.";
+    if (KI === 0 && Math.abs(KP - 0.4) < 0.001) msg = "<b>This is the configuration they settled on.</b> KI at zero, KP 0.4 alone — viable only because Grid Connect accumulates the previous P-term with the new error &#215; KP term. <b><code>SCLutils.PID</code> plateaus at " + bFinal.toFixed(0) + "%</b> and stays there. Same numbers, different block, different outcome.";
+    else if (KI === 0) msg = "<b>KI is zero.</b> Grid Connect still climbs to 100% through its accumulation; <b><code>SCLutils.PID</code> plateaus at " + bFinal.toFixed(0) + "%</b> — on the standard form, P-term = error &#215; KP can never close the last of the error.";
+    else if (over > 20) msg = "<b>KP is too high.</b> This is exactly what they ran into: <b>KP was the side making the problem</b>, which is why it was KI that went to zero and KP that was tuned. The loop is boosted into overshoot faster than anything can settle it — at the POI that arrives as a step.";
+    else if (KP < 0.25) msg = "KP is below the suggested starting range. <b>Start around 0.3–0.4</b> and watch the shape. <b>KI 0.01 with KP 0.2 was tested and gave no trouble</b> — the trouble was always on the KP side.";
+    else msg = "KP is in the suggested <b>0.3–0.4</b> starting range. KP is the booster; KI provides the compensation and takes the damping out.";
     t.querySelector("[data-pid-msg]").innerHTML = msg +
       ' <span class="unconfirmed">illustrative first-order plant with 350 ms of loop delay — the shape and the library difference, not your plant\'s numbers</span>';
   }
@@ -231,14 +234,17 @@ wireFlow("chain", {
   var mw = document.getElementById("db-mw"), cl = document.getElementById("db-cl");
   function paint(){
     var m = +mw.value, c = +cl.value;
-    var band = m * c / 100, deadband = band * 100;  /* MW -> kW, 10% of the clamping band */
+    /* the manual's rule of thumb: 10% of max generation, then the clamping % on top.
+       56 MW at 5% -> 5.6 MW x 5% = 280 kW -> round up to ~300 kW, as worked through in the session. */
+    var lowOutput = m * 0.10, deadband = lowOutput * c / 100 * 1000;  /* MW -> kW */
     document.getElementById("db-mw-o").textContent = m + " MW";
     document.getElementById("db-cl-o").textContent = c + " %";
     var rounded = Math.ceil(deadband / 50) * 50;
     t.querySelector("[data-db-msg]").innerHTML =
-      "<b>" + m + " MW</b> at <b>" + c + "%</b> clamping is a clamping band of <b class=\"num\">" + band.toFixed(2) +
-      " MW</b>. Ten percent of that is <b class=\"num\">" + Math.round(deadband) + " kW</b> — round up to about <b class=\"num\">" +
-      rounded + " kW</b>. <b>Deadband has to account for clamping</b>, which is how the session arrived at ~280 kW and a suggested 300 kW for a 56 MW plant at 5%.";
+      "Ten percent of a <b>" + m + " MW</b> plant is <b class=\"num\">" + lowOutput.toFixed(1) +
+      " MW</b> — the plant on a bad day. At <b>" + c + "%</b> clamping that leaves <b class=\"num\">" + Math.round(deadband) +
+      " kW</b>, so the deadband wants to be above it — about <b class=\"num\">" + rounded +
+      " kW</b>. <b>Deadband has to account for clamping</b>: this is the arithmetic that gave ~280 kW, and a suggested 300 kW, for a 56 MW plant at 5%.";
   }
   mw.oninput = cl.oninput = paint; paint();
 })();

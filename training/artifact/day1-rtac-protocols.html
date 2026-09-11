@@ -390,6 +390,7 @@ window.DECK_URLS={"1": "https://claude.ai/code/artifact/65d204b8-174d-4bad-990c-
           <li>Reach the SCL <b>WebPatrol</b> interface at <code>https://</code> + the RTAC IP. First login sets a password; after that it is username and password.</li>
           <li><b>Device Management</b> is where license files go — uploaded through the firmware upload workflow even though a licence is not firmware. It appears under <b>License Features</b> after roughly <span class="num">3 minutes</span>.</li>
           <li>Check IP settings, and configure <b>IP bonding</b> where the site needs it.</li>
+          <li>Licences for Grid Connect, DDR and the rest are <b>requested from SEL</b> and arrive as a file you upload the same way.</li>
           <li>Security tools will ping a device and check its ports. <b>A port that does not show as open is usually a firewall</b>, not a device fault — that is a network-team ticket.</li>
           <li>For packet capture, use <b>Connected IEDs</b> to isolate one device. The Utilities capture pulls traffic from everywhere and buries the thing you are looking for.</li>
         </ul>
@@ -425,6 +426,7 @@ window.DECK_URLS={"1": "https://claude.ai/code/artifact/65d204b8-174d-4bad-990c-
           <li><b>Send</b> downloads to the RTAC after you supply the port and credentials.</li>
           <li>Reinitialising retained variables writes zeroes and rewrites the retained values.</li>
           <li>Advanced send settings let you exclude selected areas — Ethernet settings, reader settings — from the download.</li>
+          <li><b>Avoid a <code>V0</code> firmware release.</b> <code>R155 V0</code> is the first build of the R155 series and carries the most bugs; take <code>V1</code> or later where one exists.</li>
         </ul>
         <div class="call trap"><span class="tag">Symptom → cause</span>Repeated <b>"reconnecting"</b> messages followed by the project failing, while cross-check reports zero errors and zero warnings, points at a <b>watchdog or a reference problem</b> — not at the network.</div>
       </div>
@@ -500,15 +502,21 @@ window.DECK_URLS={"1": "https://claude.ai/code/artifact/65d204b8-174d-4bad-990c-
         </div>
       </div>
       <ul class="pts">
-        <li>For a client, the <b>server IP and server port must match the remote server</b>. The client address is commonly zero unless the system demands otherwise.</li>
+        <li>For a client, the <b>server IP and server port must match the remote server</b> — a server listening on <span class="num">20001</span> means you put 20001 here. The client address is commonly zero unless the system demands otherwise.</li>
+        <li><b>Coming from Ignition?</b> What Ignition calls the <b>destination address</b> is the DNP server address here. In T1S you only specify the server when acting as a client; the RTAC makes you set both sides, and <b>will not negotiate them for you</b>.</li>
         <li><b>Reverse the client and server DNP addresses</b> and you get the worst failure mode there is: IP traffic acknowledged, application layer dead, device offline.</li>
         <li>The client IP port identifies the local source of the connection. Multiple DNP3 clients get different ports — RTAC Architect can increment them for you. Use <code>netstat -an</code> or a capture to see what is already taken.</li>
         <li>A server can allow anonymous connections, but the DNP addresses still have to line up. Wireshark's application-layer view will show you the addresses actually on the wire.</li>
         <li>DST and UTC offset can be handled globally; with the global setting off, configure them per device.</li>
-        <li>Integrity polling, class 1&#8202;/&#8202;2&#8202;/&#8202;3 polling, poll timeout and poll period follow bandwidth and device response time. <b>Custom requests</b> give you faster polling on just the points that need it.</li>
+        <li><b>The server decides which class a value goes out on — you only choose how often to ask.</b> As a client you cannot pick what lands in class 1, 2 or 3.</li>
+        <li>Integrity poll at <span class="num">0</span> disables it; a few minutes is common, to stop every value arriving all the time and flooding the link.</li>
+        <li>Class 1&#8202;/&#8202;2&#8202;/&#8202;3 at <span class="num">100 ms</span> is as aggressive as it goes; <span class="num">500 ms</span> to a minute is what people actually run. <b>The pattern under bandwidth constraint:</b> leave the class poll slow — five seconds, say — and add a <b>custom request</b> for just the analog values you need at 500 ms.</li>
+        <li><b>Poll timeout is a diagnostic.</b> Set it to 500 ms against a device that answers once a second and the failure count climbs steadily — that climb is the setting, not the device.</li>
         <li>A larger event buffer preserves events across a connection loss — rarely changed from the default.</li>
       </ul>
     </div>
+    <div class="call" style="margin-top:20px"><span class="tag">The bits the device gives you back</span><b>Offline</b> true means no connection. <b>Send</b>, <b>receive</b>, <b>failure</b> and <b>success</b> counts tell you whether messages are passing and where they stop. And <b>control disable</b>: when this RTAC is not primary it goes true, which is how commands are held back on the secondary — <b>so if it is true while you are primary, the fault is in the code, not the link.</b> Day 2 wires it into the redundancy logic; Day 3 shows the heartbeat that drives it.</div>
+    <div class="call rule" style="margin-top:14px"><span class="tag">These bits are usable in logic</span>Device tags can be read straight from structured text at attribute level — <span class="m">if offline then assign bad quality</span>, and so on. You do not need a separate mapping to act on a device's own status.</div>
     <div class="notes"><span class="tag">Speaker note</span>The reversed-address case is worth dwelling on. Everyone's instinct on "device offline" is to blame the network, and the network is provably fine — that is what makes it expensive.</div>
   </div>
 </section>
@@ -541,11 +549,12 @@ window.DECK_URLS={"1": "https://claude.ai/code/artifact/65d204b8-174d-4bad-990c-
         </div>
       </div>
       <div class="grid" style="gap:14px;align-content:start">
-        <div class="call trap"><span class="tag">Dead band</span>Dead band decides when instantaneous magnitude gets copied to magnitude. A <b>zero dead band of <span class="num">0</span> disables the zero threshold</b>; set it to <span class="num">2</span> and anything below 2 reads as zero. <b>Set the dead band too wide and magnitude simply stops updating.</b></div>
+        <div class="call trap"><span class="tag">Dead band</span>Dead band decides when instantaneous magnitude gets copied to magnitude. A <b>zero dead band of <span class="num">0</span> disables the zero threshold</b>; set it to <span class="num">2</span> and anything below 2 reads as zero. <b>Set the dead band too wide and magnitude simply stops updating</b> — a dead band of <span class="num">100</span> against a raw range of 0–100 means magnitude never changes at all.</div>
+        <div class="call rule"><span class="tag">Do not type these by hand</span>The point list grid is <b>Excel-ready</b>. Copy the whole thing out, build the names and numbers with ordinary spreadsheet formulas, and paste it back. Clicking and backspacing through a few hundred points is how the mistakes get in.</div>
         <ul class="pts">
           <li>In existing PVC projects the <b>instantaneous magnitude</b> is often preferred, precisely so a badly configured dead band cannot hide the value.</li>
           <li>Use measured-value types for floating point and integer types for integers — mixing them is how you get an integer where a float belonged.</li>
-          <li><b>Double-bit inputs</b> carry four states: no value, on, off, invalid. IEC 104 interprets these differently — do not assume they are the same thing.</li>
+          <li><b>Double-bit inputs</b> carry four states across two bits: <span class="m">00</span> no value, <span class="m">01</span> on, <span class="m">10</span> off, <span class="m">11</span> invalid. <b>IEC 60870-5-104 keeps 00 and 11 but reverses on and off.</b> Read a 104 device as if it were DNP3 and every status is inverted.</li>
           <li><b>SPC controls</b> cover pulse, latch-on, latch-off and related attributes. A latch command can appear as a pulse on the server side.</li>
           <li>Feedback status can let command status stand in for a separate binary input.</li>
           <li>Counters use object <span class="num">20</span>; frozen counters use <span class="num">21</span>.</li>
@@ -654,10 +663,11 @@ window.DECK_URLS={"1": "https://claude.ai/code/artifact/65d204b8-174d-4bad-990c-
       <div class="grid" style="gap:14px;align-content:start">
         <ul class="pts">
           <li>C37.118 is used for metering and delivers data faster than the alternatives. PDC ID, station name, PMU ID, port, data rate and cycle time must be configured consistently on both ends.</li>
-          <li>At <span class="num">60</span> samples per second the RTAC cycle time has to be around <b><span class="num">15–16 ms</span></b>. A <span class="num">100 ms</span> cycle cannot support that rate — the box simply cannot keep up.</li>
+          <li><b>Two settings, not one.</b> The data rate lives in the <b>system tags</b>; the <b>cycle time</b> is separate. Change only one and 60 samples per second will not work.</li>
+          <li>At <span class="num">60</span> samples per second the RTAC cycle time has to be around <b><span class="num">15–16 ms</span></b>. At <span class="num">100 ms</span> the data arrives every 16 ms and the box simply never looks at most of it.</li>
           <li><b>CMV</b> — complex measured values — give magnitude and angle. Angles support calculations such as power factor, after converting degrees to radians.</li>
-          <li>An RTAC can sit in the middle as a <b>C37.118 gateway</b>: take one client session, alias the tags, serve several devices downstream.</li>
-          <li><b>Tag Processor</b> maps source tags to destination tags of matching type; quality and timestamps come across automatically from MV or INS data.</li>
+          <li>An RTAC can sit in the middle as a <b>C37.118 gateway</b>: take one client session, alias the tags, serve several devices downstream. <b>The real case:</b> one meter, its only spare PMU session already in use, and two PPCs that both needed the data — an RTAC in between took the single session and served both.</li>
+          <li><b>Tag Processor</b> maps source tags to destination tags of matching type — <b>source on the right, destination on the left</b>. With MV or INS data the quality and timestamp come across on their own; override the quality only if you want to compute it.</li>
           <li>Live data can be made viewable or forceable in the web portal — you stop having to go online to the RTAC just to look at a value.</li>
         </ul>
         <div class="outside"><span class="tag">Outside the room · why this matters on Day 3</span>An SEL-735 meter serves data at about <b>500 ms</b> over DNP3 or SEL protocol, but around <b>16.67 ms</b> over C37.118 — roughly a 5&#215; improvement in how fast a plant controller sees the point of interconnection. IEEE 2800 asks for a controller reaction time as low as <b>200 ms</b>, which a 500 ms meter update cannot meet no matter how the PID is tuned.<cite>Nor-Cal Controls, "IEEE Std 2800: Ensuring Grid Resilience with Inverter-Based Resources", Sep 2024</cite></div>
