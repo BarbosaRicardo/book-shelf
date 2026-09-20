@@ -24,3 +24,10 @@ The site publishes at `https://<user>.github.io/<repo>/` within a minute or two.
   personal tool; if load time ever matters, port to Vite and build a bundle.
 - Seeded prices and Goodreads ratings are rough estimates, meant to be edited.
 - `.nojekyll` keeps Pages from running the file through Jekyll.
+
+## Also in this repo
+
+- [`training/`](training/) — three interactive decks from the 8–10 September 2026
+  morning controls sessions.
+- [`study/`](study/) — a 24-week sprint track that builds a comm-loss root-cause
+  engine out of books in the catalogue.

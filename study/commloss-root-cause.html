@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Comm Loss Root Cause Engine — Sprint Track</title>
+<meta name="description" content="Twelve two-week sprints that build a probabilistic comm-loss root-cause engine while covering the ground a graduate probabilistic-modeling and reinforcement-learning sequence assumes.">
+<meta property="og:title" content="Comm Loss Root Cause Engine — Sprint Track">
+<meta property="og:description" content="Twelve two-week sprints: represent, localize, decide, act under ignorance. Derivations, build targets, reading, and a definition of done for each.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%231F5F8B'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:ital,wght@0,400;0,500;1,400&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F1F4F3; --surface:#FFFFFF; --sunk:#E7ECEB;
+  --ink:#16242A; --body:#2C3B40; --muted:#61757A; --rule:#D2DBDA;
+  --m1:#1F5F8B; --m2:#2A7A69; --m3:#8A6620; --m4:#7A3B52;
+  --up:#2F7A55; --down:#A83A3A;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#10191C; --surface:#18252A; --sunk:#132025;
+    --ink:#E6EDEC; --body:#C2D0D0; --muted:#8699A0; --rule:#2B3B41;
+    --m1:#5FA8D8; --m2:#5FBCA5; --m3:#D2A54B; --m4:#C78099;
+    --up:#5FBC87; --down:#D97B7B;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#10191C; --surface:#18252A; --sunk:#132025;
+  --ink:#E6EDEC; --body:#C2D0D0; --muted:#8699A0; --rule:#2B3B41;
+  --m1:#5FA8D8; --m2:#5FBCA5; --m3:#D2A54B; --m4:#C78099;
+  --up:#5FBC87; --down:#D97B7B;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:60px}
+body{
+  margin:0;background:var(--paper);color:var(--body);
+  font-family:"IBM Plex Sans",system-ui,sans-serif;font-size:16px;line-height:1.55;
+  -webkit-text-size-adjust:100%;
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+:focus-visible{outline:2px solid var(--m1);outline-offset:2px}
+
+/* ---------- masthead ---------- */
+header{
+  position:sticky;top:0;z-index:20;
+  background:var(--paper);border-bottom:1px solid var(--rule);
+}
+.mast{max-width:900px;margin:0 auto;padding:12px 18px 10px;display:flex;align-items:center;gap:14px}
+.mast h1{
+  font-family:"IBM Plex Serif",Georgia,serif;font-weight:500;font-size:17px;
+  margin:0;color:var(--ink);line-height:1.25;letter-spacing:-.01em;flex:1;
+}
+.mast h1 span{display:block;font-family:"IBM Plex Mono",monospace;font-size:10px;
+  color:var(--muted);letter-spacing:.09em;margin-top:2px}
+.tally{font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--ink);white-space:nowrap}
+.tally b{color:var(--m1)}
+.gauge{height:3px;background:var(--sunk)}
+.gauge i{display:block;height:100%;background:var(--m1);width:0;transition:width .25s}
+
+main{max-width:900px;margin:0 auto;padding:26px 18px 80px}
+
+/* ---------- intro ---------- */
+.lede{font-family:"IBM Plex Serif",Georgia,serif;font-size:19px;line-height:1.5;color:var(--ink);margin:0 0 18px;max-width:34em}
+.intro p{max-width:36em;margin:0 0 14px}
+.target{background:var(--surface);border:1px solid var(--rule);border-left:3px solid var(--m1);padding:16px 18px;margin:22px 0 34px}
+.target h2{font-size:14px;margin:0 0 10px;color:var(--ink);font-weight:600}
+.target ol{margin:0;padding-left:20px}
+.target li{margin-bottom:7px}
+.target li:last-child{margin-bottom:0}
+.target b{color:var(--ink);font-weight:600}
+
+.rules{border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);padding:16px 0;margin:0 0 36px}
+.rules h2{font-size:13px;margin:0 0 10px;color:var(--muted);font-weight:600;letter-spacing:.02em}
+.rules ul{margin:0;padding-left:20px}
+.rules li{margin-bottom:6px}
+
+/* ---------- milestone ---------- */
+.ms{margin:44px 0 0}
+.ms-head{display:flex;align-items:baseline;gap:12px;padding-bottom:10px;border-bottom:2px solid var(--mc)}
+.ms-num{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--mc);font-weight:500}
+.ms-head h2{font-family:"IBM Plex Serif",Georgia,serif;font-size:26px;font-weight:500;
+  margin:0;color:var(--ink);letter-spacing:-.015em;flex:1}
+.ms-q{color:var(--muted);font-size:15px;font-style:italic;font-family:"IBM Plex Serif",serif;
+  margin:10px 0 0;max-width:34em}
+.ms-ship{font-size:14px;color:var(--body);margin:6px 0 0}
+.ms-ship b{color:var(--mc)}
+
+/* ---------- sprint ---------- */
+.sp{display:flex;gap:16px;margin:26px 0}
+.rail{flex:0 0 34px;display:flex;flex-direction:column;align-items:center;padding-top:3px}
+.node{width:30px;height:30px;border-radius:50%;border:2px solid var(--mc);
+  display:flex;align-items:center;justify-content:center;background:var(--paper);
+  font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--mc);flex:0 0 auto}
+.node.full{background:var(--mc);color:var(--paper)}
+.wire{flex:1;width:2px;background:var(--rule);margin-top:6px;min-height:18px}
+.card{flex:1;background:var(--surface);border:1px solid var(--rule);padding:16px 18px;min-width:0}
+.card h3{font-size:18px;margin:0;color:var(--ink);font-weight:600;line-height:1.3}
+.wk{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--muted);letter-spacing:.06em;margin-top:3px}
+.goal{font-family:"IBM Plex Serif",Georgia,serif;font-size:16px;color:var(--body);margin:12px 0 0;max-width:36em}
+
+.block{margin-top:14px}
+.block h4{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.11em;
+  color:var(--mc);margin:0 0 4px;font-weight:500}
+.block p{margin:0;font-size:15px;max-width:36em}
+
+details.refs{margin-top:16px;border-top:1px solid var(--rule);padding-top:12px}
+details.refs summary{cursor:pointer;font-size:13.5px;color:var(--mc);font-weight:500;list-style:none}
+details.refs summary::-webkit-details-marker{display:none}
+details.refs summary::before{content:"▸ ";font-size:11px}
+details.refs[open] summary::before{content:"▾ "}
+.refgrp{margin-top:12px}
+.refgrp h5{font-size:11px;letter-spacing:.06em;color:var(--muted);margin:0 0 6px;font-weight:600}
+.refgrp ul{margin:0;padding-left:18px}
+.refgrp li{font-size:14px;margin-bottom:5px;line-height:1.45}
+.own{color:var(--ink);font-weight:500}
+.refgrp a{color:var(--m1)}
+.note{font-size:13px;color:var(--muted);font-style:italic}
+
+.plan{margin-top:16px;border-top:1px solid var(--rule);padding-top:12px}
+.plan h4{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.11em;
+  color:var(--mc);margin:0 0 9px;font-weight:500}
+.day{display:flex;gap:12px;margin-bottom:8px;font-size:14.5px;line-height:1.45}
+.day:last-child{margin-bottom:0}
+.day b{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--muted);
+  flex:0 0 62px;padding-top:3px;font-weight:500;letter-spacing:.02em}
+.day span{flex:1;min-width:0}
+.day.spike b{color:var(--down)}
+
+.out{margin-top:16px;border:1px solid var(--rule);border-left:3px solid var(--mc);padding:12px 14px}
+.out h4{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.11em;
+  color:var(--mc);margin:0 0 8px;font-weight:500}
+.out ul{margin:0;padding-left:18px}
+.out li{font-size:14.5px;margin-bottom:5px;line-height:1.45}
+.out code{font-family:"IBM Plex Mono",monospace;font-size:13px;
+  background:var(--sunk);padding:1px 5px;color:var(--ink)}
+
+.dod{margin-top:16px;background:var(--sunk);padding:12px 14px}
+.dod h4{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.11em;
+  color:var(--muted);margin:0 0 8px;font-weight:500}
+.chk{display:flex;align-items:flex-start;gap:9px;margin-bottom:6px;font-size:14.5px;cursor:pointer}
+.chk:last-of-type{margin-bottom:0}
+.chk input{margin:3px 0 0;flex:0 0 auto;accent-color:var(--mc);width:15px;height:15px}
+.chk span{flex:1}
+.chk input:checked + span{color:var(--muted);text-decoration:line-through}
+textarea{width:100%;margin-top:10px;background:var(--surface);color:var(--body);
+  border:1px solid var(--rule);padding:8px 10px;font:inherit;font-size:14px;
+  resize:vertical;min-height:38px}
+.demo{margin-top:12px;font-size:14px;color:var(--body);border-left:2px solid var(--mc);padding-left:12px}
+.demo b{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.11em;
+  color:var(--mc);display:block;margin-bottom:3px;font-weight:500}
+
+/* ---------- appendix ---------- */
+.apx{margin-top:56px;border-top:2px solid var(--rule);padding-top:26px}
+.apx h2{font-family:"IBM Plex Serif",Georgia,serif;font-size:24px;font-weight:500;color:var(--ink);margin:0 0 6px}
+.apx h3{font-size:15px;color:var(--ink);margin:24px 0 8px;font-weight:600}
+.apx ul{padding-left:20px;margin:0}
+.apx li{font-size:14.5px;margin-bottom:7px;line-height:1.45}
+.apx a{color:var(--m1)}
+.apx p{max-width:36em;font-size:15px}
+
+footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--rule);
+  display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+button.act{background:none;border:1px solid var(--rule);color:var(--body);
+  padding:7px 13px;font:inherit;font-size:13.5px;cursor:pointer}
+button.act:hover{border-color:var(--m1);color:var(--m1)}
+.saved{font-size:13px;color:var(--muted)}
+
+@media(max-width:560px){
+  .mast h1{font-size:15px}
+  .ms-head h2{font-size:22px}
+  .sp{gap:10px}
+  .rail{flex:0 0 26px}
+  .node{width:26px;height:26px;font-size:11.5px}
+  .card{padding:14px}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="mast">
+    <h1>Comm Loss Root Cause Engine<span>12 SPRINTS · 24 WEEKS</span></h1>
+    <div class="tally"><b id="done">0</b>/<span id="total">0</span></div>
+  </div>
+  <div class="gauge"><i id="gauge"></i></div>
+</header>
+
+<main>
+  <p class="lede">A site just went dark. Where is the break, how sure are we, and what should we do next?</p>
+
+  <div class="intro">
+    <p>Twelve two-week sprints that build one system while covering the ground two graduate courses will assume you already know. Probabilistic modeling first, reinforcement learning on top of it — because RL is decision-making layered over probabilistic models, and learning them in that order means the second half costs less.</p>
+  </div>
+
+  <div class="target">
+    <h2>What exists at week 24</h2>
+    <ol>
+      <li><b>A posterior over break location</b> across the comms path — device, RTAC, switch, site router, modem, carrier, WAN, firewall, poller, front-end. A distribution, not a guess.</li>
+      <li><b>A recommended next action</b> with expected cost: run a probe, remote-reboot, wait, or roll a truck — weighted by that site's drive time and downtime cost.</li>
+      <li><b>A value-of-information table</b> ranking what to probe or instrument next, in expected outage minutes avoided.</li>
+    </ol>
+  </div>
+
+  <div class="rules">
+    <h2>Sprint rules</h2>
+    <ul>
+      <li><b>Ten working days, not fourteen.</b> The last four are write-up and slack.</li>
+      <li><b>The uncertain part goes in days 1–3</b>, while you can still change plan.</li>
+      <li><b>Every inference routine gets checked</b> against an exact answer computed another way.</li>
+      <li><b>Derivation is part of done.</b> Some sprints spend four days on a proof that produces no code. Those are the ones that pay off in the exam.</li>
+      <li><b>Five-minute demo</b>, or it won't survive a busy month.</li>
+    </ul>
+  </div>
+
+  <div id="track"></div>
+
+  <section class="apx">
+    <h2>Standing references</h2>
+    <p>Sources that apply across the whole track rather than to a single sprint.</p>
+
+    <h3>Closest prior art — read these early</h3>
+    <ul>
+      <li>Steinder &amp; Sethi, “A survey of fault localization techniques in computer networks,” <i>Science of Computer Programming</i> 53(2), 2004. The canonical survey of exactly your problem. Start here.</li>
+      <li>Bahl et al., “Towards Highly Reliable Enterprise Network Services via Inference of Multi-Level Dependencies” (Sherlock), <i>SIGCOMM</i> 2007. Bayesian inference over a dependency graph to localize faults — the paper closest to what you're building.</li>
+      <li>Kandula, Mahajan et al., “Detailed Diagnosis in Enterprise Networks,” <i>SIGCOMM</i> 2009.</li>
+    </ul>
+
+    <h3>Alarm management standards</h3>
+    <ul>
+      <li>EEMUA 191, <i>Alarm Systems: A Guide to Design, Management and Procurement</i>. The operator-load numbers that justify the whole project.</li>
+      <li>ISA-18.2 / IEC 62682, <i>Management of Alarm Systems for the Process Industries</i>.</li>
+      <li>Izadi et al., “An introduction to alarm analysis and design,” IFAC. Good entry to the alarm-flood literature.</li>
+    </ul>
+
+    <h3>Books worth buying that you don't own</h3>
+    <ul>
+      <li>Darwiche, <i>Modeling and Reasoning with Bayesian Networks</i> (2009). Clearer than Koller on inference algorithms specifically; the better desk reference for Sprints 3–5.</li>
+      <li>Puterman, <i>Markov Decision Processes</i> (1994). The rigorous treatment behind Sutton &amp; Barto ch. 4.</li>
+      <li>Wasserman, <i>All of Statistics</i>. Compact and fast; fills gaps in Sprint 2 better than a full stats text.</li>
+      <li>Murphy, <i>Probabilistic Machine Learning: Advanced Topics</i> (2023). Free PDF from the author. Current coverage of variational methods.</li>
+    </ul>
+
+    <h3>Platform track — run in parallel, not as sprints</h3>
+    <p>RTAC and Ignition are procedural competence, not derivation work, and mixing them into the sprint cadence breaks both. Run them continuously underneath at a few hours a week. Two places they touch the sprints directly:</p>
+    <ul>
+      <li><b>Sprint 1</b> should emit records shaped like your real stack — RTAC event log format, Ignition tag-change and alarm-journal rows, actual quality codes and timestamp formats. Generic events mean swapping in real logs later is a rewrite.</li>
+      <li><b>Sprint 3's observation model</b> is exactly your platforms' semantics: what Ignition tag quality means, how RTAC surfaces poll failure, how a DNP3 timeout differs from a Modbus one. Get these wrong and the math can't save the inference.</li>
+    </ul>
+
+    <h3>On the reading load</h3>
+    <p>Koller &amp; Friedman is 1,280 pages and you are not reading it cover to cover. Read the chapters named in each sprint and move on. Same for Bishop. The papers are short and mostly more useful than the textbook chapters for implementation detail — Rabiner in particular will get you further on Sprint 6 than Bishop ch. 13 will.</p>
+  </section>
+
+  <footer>
+    <button class="act" id="exp">Export progress</button>
+    <button class="act" id="imp">Import</button>
+    <button class="act" id="rst">Reset</button>
+    <input type="file" id="file" accept="application/json" style="display:none">
+    <span class="saved" id="msg">Progress saves in this browser only.</span>
+  </footer>
+</main>
+
+<script>
+const MILESTONES = [
+  {n:1, key:'m1', title:'Represent',
+   q:'Can I model the comms path and my uncertainty about it?',
+   ship:'a labeled incident generator and a working exact-inference engine'},
+  {n:2, key:'m2', title:'Localize',
+   q:'Can I find the break from ambiguous evidence?',
+   ship:'localization that works at fleet scale and survives flapping links'},
+  {n:3, key:'m3', title:'Decide',
+   q:'Given a model, what should we actually do?',
+   ship:'the value-of-information table and an optimal diagnostic policy'},
+  {n:4, key:'m4', title:'Act under ignorance',
+   q:'Can I still decide well when state is hidden and the model is wrong?',
+   ship:'the packaged system and the paper'}
+];
+
+const SPRINTS = [
+{ id:1, ms:0, weeks:'Weeks 1–2', title:'The simulator',
+  goal:'No real log tells you where the break actually was. Build the world first, so every later sprint has ground truth to be measured against.',
+  derive:'Write the joint distribution over link states and observations, factorized by topology. State explicitly the conditional independence you assume — a device is unreachable if its parent link is down, independent of everything upstream given that. You test this in Sprint 4.',
+  build:'A generative model of a fleet: N sites, each with device layer, RTAC, switch, router, carrier link, feeding a poller and front-end. Inject hard failures, flapping links, carrier-wide outages, poller restarts, firewall changes, site power loss. Emit the observable stream plus hidden ground truth.',
+  done:'A thousand labeled incidents whose scenario mix looks right to you as someone who sat the desk. If the flap frequency feels wrong, fix the generator — not your intuition.',
+  demo:null,
+  owned:['Koller &amp; Friedman ch. 3 — the Bayesian network representation','Mathematics for Machine Learning ch. 6 — probability and distributions','Kochenderfer, Algorithms for Decision Making ch. 2 — representation'],
+  ext:['Law, <i>Simulation Modeling and Analysis</i> — chapters on random variate generation and validating a simulator against reality','EEMUA 191 — realistic alarm rates and operator load figures','Your own RTAC and Ignition log formats. This is the sprint where the platform track pays off.'],
+  checks:['Derivation written by hand','Simulator runs, faults inject','1,000 labeled incidents generated','Write-up: scenario mix and why it is realistic'] },
+
+{ id:2, ms:0, weeks:'Weeks 3–4', title:'Parameters and calibration',
+  goal:'Estimate the failure and detection-delay parameters your models will depend on, and find out which ones the data can actually identify.',
+  derive:'MLE for time-to-failure and detection-delay distributions. Then MAP with a conjugate prior, and a clear statement of what the prior buys you when a link has failed twice in two years.',
+  build:'Estimate the simulator&rsquo;s own parameters from data it produced. Bootstrap confidence intervals. Vary prior strength and watch the estimate move.',
+  done:'Known parameters recovered inside their intervals, plus a statement of which parameters are well-identified from observation and which are not.',
+  demo:null,
+  owned:['Gupta, Guttman &amp; Jayalath — point estimation and sampling distributions','Mathematics for Machine Learning ch. 6','Spiegelhalter, The Art of Statistics — for how to talk about this to non-statisticians','Poor, Signal Detection and Estimation ch. 4 — estimation theory, more rigorous'],
+  ext:['Wasserman, <i>All of Statistics</i> ch. 9 — compact and fast','Gelman et al., <i>Bayesian Data Analysis</i> ch. 2–3 — conjugate priors done properly','Efron &amp; Tibshirani, <i>An Introduction to the Bootstrap</i>'],
+  checks:['MLE and MAP derived','Estimator implemented with bootstrap CIs','Parameters recovered from simulator','Write-up: identifiability findings'] },
+
+{ id:3, ms:0, weeks:'Weeks 5–6', title:'The topology as a Bayesian network',
+  goal:'Turn the comms diagram into a model that answers questions, and get exact inference working before you approximate anything.',
+  derive:'The chain rule factorization for your topology. Work variable elimination by hand through a five-node subgraph, tracking factors at each step. Separately, prove with d-separation that two sites&rsquo; reachability is conditionally independent given carrier state.',
+  build:'A variable elimination engine from scratch. Apply to a single snapshot for a posterior over break location. Compare cost against brute-force enumeration as fleet size grows.',
+  done:'VE matches enumeration exactly on small networks, with a cost curve showing where they diverge. Report how much elimination ordering mattered.',
+  demo:'“Three sites are dark. Here is the probability it&rsquo;s the carrier versus three coincidences.”',
+  owned:['Koller &amp; Friedman ch. 3 and ch. 9 — representation and variable elimination','Bishop ch. 8.1–8.2 — graphical models and conditional independence','Russell &amp; Norvig ch. 13–14 — the gentler first pass if Koller is heavy going'],
+  ext:['Zhang &amp; Poole, “A simple approach to Bayesian network computations,” 1994 — the original VE paper, short and readable','Darwiche, <i>Modeling and Reasoning with Bayesian Networks</i> ch. 6 — clearer on elimination orderings than Koller','Pearl, <i>Probabilistic Reasoning in Intelligent Systems</i> (1988) — where all of this came from'],
+  checks:['Factorization and d-separation proof written','VE engine implemented from scratch','Validated against enumeration','Write-up: ordering sensitivity and cost curve'] },
+
+{ id:4, ms:1, weeks:'Weeks 7–8', title:'Does the topology tell the truth?',
+  goal:'Learn the structure from data and compare it to the topology you drew. The disagreements are the finding.',
+  derive:'d-separation properly. Then state a specific conditional independence your topology implies, and design a numerical test for it.',
+  build:'Score-based structure search over incident data. Compare the learned graph against your documented topology, edge by edge.',
+  done:'Every disagreement explained. Learned structure will find edges your diagram lacks — each is bad data, a hidden confounder (shared power, shared backhaul, a forgotten upstream device), or a real gap in the documentation. In a live fleet the third case is common and genuinely valuable.',
+  demo:'“The model says these two sites fail together. The diagram says they are independent. Here is why the diagram is wrong.”',
+  owned:['Koller &amp; Friedman ch. 3.3 and ch. 18 — independencies and structure learning','Bishop ch. 8.2'],
+  ext:['Chickering, “Optimal Structure Identification with Greedy Search,” <i>JMLR</i> 3, 2002 — the GES algorithm','Spirtes, Glymour &amp; Scheines, <i>Causation, Prediction, and Search</i> (2nd ed.) — full text free from CMU','Pearl, <i>Causality</i> ch. 2 — for what a learned edge does and does not license you to claim'],
+  checks:['d-separation proof and numerical test','Structure search implemented','Learned vs documented topology compared','Write-up: every disagreement explained'] },
+
+{ id:5, ms:1, weeks:'Weeks 9–10', title:'Inference at fleet scale',
+  goal:'Exact inference dies somewhere between ten and a few hundred sites. Find where, and pick what replaces it.',
+  derive:'The Gibbs update rule for your network. Then the variational lower bound, and what mean-field costs you when variables are strongly coupled — which, in a shared-carrier fleet, they are.',
+  build:'Gibbs sampling and a mean-field approximation, both on networks where Sprint 3 gives exact answers. Plot error against compute for each.',
+  done:'A stated fleet size at which exact inference stops being viable, and evidence for which approximation degrades more gracefully past it.',
+  demo:null,
+  owned:['Koller &amp; Friedman ch. 12 — particle-based approximate inference','Bishop ch. 10 (variational) and ch. 11 (sampling)','Probabilistic Graphical Models ch. 11 — belief propagation as an alternative worth trying'],
+  ext:['Blei, Kucukelbir &amp; McAuliffe, “Variational Inference: A Review for Statisticians,” <a href="https://arxiv.org/abs/1601.00670">arXiv:1601.00670</a> — the clearest modern introduction','Murphy, <i>Probabilistic Machine Learning: Advanced Topics</i> (2023), ch. 10 — free PDF from the author','Neal, “Probabilistic Inference Using Markov Chain Monte Carlo Methods,” 1993 — on mixing and convergence diagnostics'],
+  checks:['Gibbs update and ELBO derived','Both samplers implemented','Error-vs-compute curves against exact','Write-up: scale limit and recommendation'] },
+
+{ id:6, ms:1, weeks:'Weeks 11–12', title:'Flapping, and the temporal model',
+  goal:'Handle the case a static model gets wrong: a link that drops for forty seconds every few minutes.',
+  derive:'Forward-backward from scratch, then Viterbi. Note carefully where each is doing dynamic programming — you need to recognise this again in Sprint 8.',
+  build:'An HMM over link state (up / degraded / flapping / down) driven by the observable stream. Forward-backward, Viterbi, and Baum-Welch, all written yourself.',
+  done:'Flap episodes recovered against simulator ground truth, beating a staleness-threshold baseline on both precision and recall. Mislabels reported and explained.',
+  demo:'“This link has been intermittently down for six hours. The threshold alarm fired twice. The model caught nineteen episodes.”',
+  owned:['Koller &amp; Friedman ch. 6 — template-based and temporal models','Bishop ch. 13 — sequential data, HMMs, and the forward-backward derivation','Poor, Signal Detection and Estimation — for the detection-theory framing of the same problem'],
+  ext:['Rabiner, “A Tutorial on Hidden Markov Models and Selected Applications in Speech Recognition,” <i>Proc. IEEE</i> 77(2), 1989. <b>The single most useful reference in this sprint</b> — will get you further than the textbook chapters.','Murphy, <i>Machine Learning: A Probabilistic Perspective</i> ch. 17 — clean pseudocode for the scaled forward-backward that avoids numerical underflow','Ghahramani, “An Introduction to Hidden Markov Models and Bayesian Networks,” 2001 — connects this sprint back to Sprint 3'],
+  checks:['Forward-backward and Viterbi derived','HMM implemented including Baum-Welch','Beats threshold baseline on labeled flaps','Write-up: failure cases analysed'] },
+
+{ id:7, ms:2, weeks:'Weeks 13–14', title:'Cost, utility, and what to probe next',
+  goal:'The sprint to keep for work. It produces the artifact a manager can act on.',
+  derive:'Expected utility. Then the value of perfect information, and what VOI collapses to when a decision does not depend on the uncertain variable.',
+  build:'An influence diagram for the real decision. Costs: truck roll by site (drive times differ), downtime by site (capacity differs), false dispatch, and operator-minutes per probe. Compute the optimal policy and the VOI of each available diagnostic.',
+  done:'A ranked table — which probe to run first and what it is worth. Then the harder question: what would it be worth annually to add a signal you do not currently have?',
+  demo:'“Pinging the site router before dispatch saves an estimated N truck rolls a year.”',
+  owned:['Kochenderfer, Algorithms for Decision Making ch. 5–6 — decision networks and simple decisions','Koller &amp; Friedman ch. 23 — structured decision problems','Kahneman, Thinking Fast and Slow — on where stated utilities and revealed behaviour diverge, which matters when you elicit costs from operators'],
+  ext:['Howard, “Information Value Theory,” <i>IEEE Trans. Systems Science and Cybernetics</i> 2(1), 1966 — the origin of VOI, still the clearest statement','Howard &amp; Matheson, “Influence Diagrams,” 1984 (reprinted <i>Decision Analysis</i> 2005)','Shachter, “Evaluating Influence Diagrams,” <i>Operations Research</i> 34(6), 1986 — the algorithm you will implement'],
+  checks:['Expected utility and VOI derived','Influence diagram built with real cost model','VOI table produced and ranked','Write-up: instrumentation recommendation in dollars'] },
+
+{ id:8, ms:2, weeks:'Weeks 15–16', title:'The diagnostic sequence as an MDP',
+  goal:'Sprint 7 optimises one decision. This optimises the sequence — and contains the hinge of the entire track.',
+  derive:'Bellman expectation and optimality equations. Work carefully through the policy iteration convergence proof.',
+  build:'State is what you currently know; actions are probes, remote reboots, waiting, dispatching; reward is negative cost. Policy iteration and value iteration, solved exactly.',
+  done:'The optimal policy beats Sprint 7&rsquo;s greedy-VOI policy, and you can name the specific cases where greedy goes wrong.',
+  demo:'“Greedy says ping first. The sequential policy says check the carrier first, because of what it tells you about the other four sites.”',
+  owned:['Sutton &amp; Barto ch. 3–4 — finite MDPs and dynamic programming','Kochenderfer, Algorithms for Decision Making ch. 7 — exact solution methods','Introduction to Algorithms ch. 14 — dynamic programming, if the DP framing needs reinforcing'],
+  ext:['Puterman, <i>Markov Decision Processes</i> ch. 6 — the rigorous version of Sutton &amp; Barto ch. 4','Bertsekas, <i>Dynamic Programming and Optimal Control</i> vol. 1 ch. 1–2','Bellman, “A Markovian Decision Process,” 1957 — six pages, worth reading once'],
+  checks:['Bellman equations and convergence proof','Policy and value iteration implemented','Beats greedy-VOI baseline','Write-up: <b>the correspondence between forward-backward and value iteration, term by term</b>'] },
+
+{ id:9, ms:2, weeks:'Weeks 17–18', title:'Learning without the model',
+  goal:'Drop the assumption that you know transition probabilities, and measure what that costs.',
+  derive:'TD(0) as a stochastic approximation to the Bellman backup. Then the bias-variance tradeoff between Monte Carlo and TD.',
+  build:'Monte Carlo, TD(0), n-step TD, Sarsa, and Q-learning on the Sprint 8 problem, where the exact answer is already known. Five seeds minimum, variance bands on every curve.',
+  done:'A statement of which method reaches within 5% of optimal at which sample budget, and whether the bias-variance story you derived shows up in the plots.',
+  demo:null,
+  owned:['Sutton &amp; Barto ch. 5–7 — Monte Carlo, TD, n-step','Grokking Deep Reinforcement Learning ch. 4–5 — for implementation detail when stuck','Kochenderfer ch. 16 — model-free methods'],
+  ext:['Sutton, “Learning to Predict by the Methods of Temporal Differences,” <i>Machine Learning</i> 3, 1988 — the original TD paper','Watkins &amp; Dayan, “Q-learning,” <i>Machine Learning</i> 8, 1992 — four pages including the convergence proof','Singh &amp; Sutton, “Reinforcement Learning with Replacing Eligibility Traces,” 1996'],
+  checks:['TD as stochastic approximation derived','Five algorithms implemented','Multi-seed study with variance reported','Write-up: sample-efficiency comparison'] },
+
+{ id:10, ms:3, weeks:'Weeks 19–20', title:'Scale, approximation, and divergence',
+  goal:'Two hundred sites blows up the tabular state space. Function approximation becomes necessary — and dangerous.',
+  derive:'The semi-gradient TD update and why it is not a true gradient. Then the deadly triad, with each leg&rsquo;s contribution stated separately.',
+  build:'Linear function approximation over fleet features, then a DQN. Then deliberately reproduce a divergence — Baird&rsquo;s counterexample is the standard one.',
+  done:'The divergence explained mechanically, with each DQN stabilization trick mapped to the specific leg of the triad it addresses.',
+  demo:'“Here is the same algorithm diverging. Here is which of the three ingredients I removed to stop it.”',
+  owned:['Sutton &amp; Barto ch. 9–11 — especially ch. 11 on off-policy divergence','Deep Reinforcement Learning Hands-On (Lapan) ch. 6–8 — DQN implementation detail','Deep Learning (Goodfellow) ch. 8 — optimization, for why the training dynamics misbehave'],
+  ext:['Mnih et al., “Human-level control through deep reinforcement learning,” <i>Nature</i> 518, 2015 — the DQN paper','Baird, “Residual Algorithms: Reinforcement Learning with Function Approximation,” ICML 1995 — the counterexample','van Hasselt, Guez &amp; Silver, “Deep RL with Double Q-learning,” <a href="https://arxiv.org/abs/1509.06461">arXiv:1509.06461</a>','Tsitsiklis &amp; Van Roy, “An Analysis of Temporal-Difference Learning with Function Approximation,” 1997 — the theory behind the triad'],
+  checks:['Semi-gradient update and triad derived','Linear FA and DQN implemented','Divergence reproduced deliberately','Write-up: each fix mapped to each triad leg'] },
+
+{ id:11, ms:3, weeks:'Weeks 21–22', title:'Policy gradients',
+  goal:'Move from value-based to policy-based methods, and quantify what each variance-reduction step actually buys.',
+  derive:'The policy gradient theorem in full, showing where the state-distribution term drops out. Then the variance-reduction argument for baselines.',
+  build:'REINFORCE, REINFORCE with baseline, actor-critic, and PPO — same problem, same evaluation protocol throughout.',
+  done:'Variance reduction quantified at each step, with a statement of whether theory predicted the magnitude you observed.',
+  demo:null,
+  owned:['Sutton &amp; Barto ch. 13 — policy gradient methods','Grokking Deep RL ch. 11–12','Deep RL Hands-On ch. 11–15','Algorithms for Optimization (Kochenderfer &amp; Wheeler) ch. 5 — first-order methods'],
+  ext:['Sutton, McAllester, Singh &amp; Mansour, “Policy Gradient Methods for RL with Function Approximation,” NIPS 2000 — the theorem','Schulman et al., “Proximal Policy Optimization Algorithms,” <a href="https://arxiv.org/abs/1707.06347">arXiv:1707.06347</a>','Schulman et al., “High-Dimensional Continuous Control Using Generalized Advantage Estimation,” <a href="https://arxiv.org/abs/1506.02438">arXiv:1506.02438</a>','Engstrom et al., “Implementation Matters in Deep RL,” <a href="https://arxiv.org/abs/2005.12729">arXiv:2005.12729</a> — read before you conclude your PPO is broken'],
+  checks:['Policy gradient theorem derived in full','Four algorithms implemented','Variance reduction measured at each step','Write-up: theory vs observed magnitude'] },
+
+{ id:12, ms:3, weeks:'Weeks 23–24', title:'Belief-state control, and the write-up',
+  goal:'Close the loop. The policy stops being told the state and starts receiving the belief from Milestone 2.',
+  derive:'The belief-state update, and why a POMDP over beliefs is an MDP.',
+  build:'Wire Sprint 6&rsquo;s belief tracker into Sprint 11&rsquo;s policy. Evaluate against two baselines: the exact-state policy from Sprint 8 (an upper bound you cannot reach) and a static rule-based policy (what a control center runs today).',
+  done:'Full pipeline runs end to end from raw event stream to recommended action, with held-out evaluation. Package has a documented API and a config file so it can be pointed at a different fleet.',
+  demo:'The whole system, on one incident, start to finish.',
+  owned:['Kochenderfer, Algorithms for Decision Making part IV — POMDPs, belief updates, and approximate solutions','Sutton &amp; Barto ch. 17.1','Koller &amp; Friedman ch. 6 — the belief update is the filtering you already built'],
+  ext:['Kaelbling, Littman &amp; Cassandra, “Planning and Acting in Partially Observable Stochastic Domains,” <i>Artificial Intelligence</i> 101, 1998 — the foundational POMDP paper','Silver &amp; Veness, “Monte-Carlo Planning in Large POMDPs,” NIPS 2010 — POMCP, if exact belief-space solutions prove intractable','Bahl et al., Sherlock (SIGCOMM 2007) — revisit now; you will read it very differently than you did in week 1'],
+  checks:['Belief update derived','End-to-end pipeline running','Evaluated against both baselines','Paper written: 8–12 pages including limitations'] }
+];
+
+/* ---------- day plans and output specs ---------- */
+const DETAIL = {
+1:{plan:[
+  ['Day 1','spike','<b>De-risk the log format.</b> Emit one RTAC-shaped event and one Ignition tag-change row, then parse them back. If the shapes are wrong, every sprint after this inherits the error.'],
+  ['Days 2–3','','Koller &amp; Friedman ch. 3.1–3.2, roughly 40 pages. Mathematics for ML ch. 6.1–6.5. Skim Law on simulator validation — you want the section on face validity, not the whole book.'],
+  ['Days 4–5','','Derive the factorization. Write the independence assumption as a sentence a colleague could disagree with.'],
+  ['Days 6–8','','Build: topology config loader, fault injector, event emitter, ground-truth labeler.'],
+  ['Day 9','','Generate 1,000 incidents. Check alarm-per-incident rates against EEMUA 191 figures and against your own memory of the desk.'],
+  ['Day 10','','Write-up.']],
+ out:['<code>topology.yaml</code> — a fleet of at least 20 sites with realistic heterogeneity',
+  '<code>sim.py</code> — generates labeled incidents from a config',
+  '<code>incidents.parquet</code> — 1,000 incidents with hidden ground truth',
+  'One plot: fault-type distribution and alarms-per-incident histogram',
+  '3-page write-up arguing the scenario mix is realistic']},
+
+2:{plan:[
+  ['Day 1','spike','Fit a single parameter crudely on 100 incidents, end to end. Confirms the data pipeline before you invest in the statistics.'],
+  ['Days 2–3','','Gupta et al. on point estimation and sampling distributions. Mathematics for ML ch. 6.6. Wasserman ch. 9 if you picked it up.'],
+  ['Days 4–5','','Derive MLE for exponential time-to-failure and geometric detection delay. Then MAP with a Gamma prior, and what it buys you at n = 2.'],
+  ['Days 6–7','','Implement estimators plus bootstrap intervals.'],
+  ['Day 8','','Identifiability study. Which parameters simply cannot be recovered from what you observe?'],
+  ['Day 9','','Recovery check across sample sizes.'],
+  ['Day 10','','Write-up.']],
+ out:['<code>estimate.py</code> — MLE and MAP estimators with bootstrap CIs',
+  'Recovery plot: estimate against truth with intervals, across n',
+  'Prior-sensitivity plot',
+  'Table: which parameters are identifiable and which are not',
+  '3-page write-up']},
+
+3:{plan:[
+  ['Day 1','spike','Brute-force enumerate the posterior on a six-node network. This becomes your oracle for the rest of the track — everything gets checked against it.'],
+  ['Days 2–4','','Koller ch. 3 in full, ch. 9.1–9.3. Bishop 8.1–8.2. Zhang &amp; Poole is eight pages and worth reading before you write any code.'],
+  ['Days 5–6','','Derive the chain rule for your topology. Hand-run VE on five nodes. Write the d-separation proof.'],
+  ['Days 7–8','','Implement the VE engine: factor class, product, marginalize, eliminate.'],
+  ['Day 9','','Validate against enumeration. Compare elimination orderings — min-fill, min-degree, random.'],
+  ['Day 10','','Write-up and build the demo script.']],
+ out:['<code>bn.py</code> — factor arithmetic and variable elimination, written from scratch',
+  '<code>test_bn.py</code> — asserts VE equals enumeration on 20+ random networks',
+  'Cost curve: runtime against fleet size, VE vs enumeration, log scale',
+  'Ordering comparison table',
+  '4-page write-up plus a runnable 5-minute demo']},
+
+4:{plan:[
+  ['Day 1','spike','Score one candidate graph. Get scoring right before you build search on top of it.'],
+  ['Days 2–3','','Koller ch. 3.3 and 18.1–18.4. Chickering 2002 for the search algorithm.'],
+  ['Days 4–5','','Derive d-separation. Design the numerical independence test you will actually run.'],
+  ['Days 6–8','','Implement score-based search: BIC or BDeu scoring with greedy hill-climbing, or GES if you want the stronger guarantee.'],
+  ['Day 9','','Compare learned against true topology at edge level. Then investigate every disagreement by hand.'],
+  ['Day 10','','Write-up.']],
+ out:['<code>learn_structure.py</code> — scoring plus search',
+  'Edge-level confusion matrix against the documented topology',
+  'Annotated diff: each disagreement classified as data artifact, hidden confounder, or documentation gap',
+  '4-page write-up — the classification is the deliverable, not the algorithm']},
+
+5:{plan:[
+  ['Day 1','spike','Run Gibbs on the six-node oracle network. Does it converge to the posterior you already know?'],
+  ['Days 2–3','','Koller ch. 12.1–12.3. Bishop 11.2–11.3 and 10.1. Blei et al. for the variational half.'],
+  ['Days 4–5','','Derive the Gibbs update for your model. Then the ELBO, and what mean-field costs under strong coupling.'],
+  ['Days 6–8','','Implement both, with convergence diagnostics — trace plots and a split-chain statistic.'],
+  ['Day 9','','Error-against-compute sweep across at least three fleet sizes.'],
+  ['Day 10','','Write-up with a recommendation.']],
+ out:['<code>inference_approx.py</code> — Gibbs and mean-field under one interface',
+  'Error-vs-compute plot for both methods at three or more fleet sizes',
+  'Convergence diagnostics for the sampler',
+  'A stated crossover size where exact inference stops being viable, with justification',
+  '4-page write-up']},
+
+6:{plan:[
+  ['Day 1','spike','Forward pass only. Check it sums to one, and check it against a three-step example you computed by hand.'],
+  ['Days 2–3','','Rabiner, all of it. Then Bishop 13.1–13.2. Rabiner will get you further than the textbook here.'],
+  ['Days 4–5','','Derive forward-backward and Viterbi. Work through the scaling factors properly — this is where implementations silently break.'],
+  ['Days 6–8','','Implement forward-backward, Viterbi, and Baum-Welch, all scaled.'],
+  ['Day 9','','Evaluate against a staleness-threshold baseline: precision, recall, F1 on flap episodes.'],
+  ['Day 10','','Write-up and demo.']],
+ out:['<code>hmm.py</code> — scaled, stable over 10,000-step sequences',
+  'Test against the hand-computed example',
+  'Precision-recall curve against the threshold baseline',
+  'Confusion matrix over the four link states',
+  '4-page write-up including failure analysis']},
+
+7:{plan:[
+  ['Day 1','spike','<b>Write the cost model first.</b> Real drive times, hourly downtime cost, loaded labor rate. If you cannot get real numbers, write down the assumption and its source. The whole sprint is worthless with invented costs.'],
+  ['Days 2–3','','Kochenderfer ch. 5–6. Howard 1966 — short and still the clearest statement of VOI. Shachter 1986 for the evaluation algorithm.'],
+  ['Days 4–5','','Derive expected utility and VOI. Prove the degenerate case where VOI is zero.'],
+  ['Days 6–7','','Build the influence diagram and solver.'],
+  ['Day 8','','Compute VOI for every probe, broken out by incident type.'],
+  ['Day 9','','Extrapolate annual value for one signal you do not currently instrument.'],
+  ['Day 10','','Two write-ups: one for a manager, one for the record.']],
+ out:['<code>decision.py</code> — influence diagram evaluation',
+  '<code>cost_model.yaml</code> — every number either sourced or flagged as assumed',
+  'Ranked VOI table, per incident type',
+  'One-page memo: instrumentation recommendation with a dollar figure',
+  '4-page technical write-up']},
+
+8:{plan:[
+  ['Day 1','spike','Three states, two actions. Solve by hand and by code. They must agree before you scale up.'],
+  ['Days 2–3','','Sutton &amp; Barto ch. 3–4. Kochenderfer ch. 7. Puterman 6.1–6.3 if you have it.'],
+  ['Days 4–6','','Derive the Bellman equations. Work through the policy iteration convergence proof until you could reproduce its structure from memory.'],
+  ['Days 7–8','','Implement policy iteration and value iteration on the diagnostic MDP.'],
+  ['Day 9','','Compare against Sprint 7&rsquo;s greedy policy. Find and characterize the cases where greedy goes wrong.'],
+  ['Day 10','','Write-up — including the correspondence section, which is the point of the sprint.']],
+ out:['<code>mdp.py</code> — policy iteration and value iteration from scratch',
+  'Optimal policy table',
+  'Expected-cost comparison: sequential vs greedy vs current rule-based practice',
+  'At least three worked cases where greedy is wrong, each explained',
+  '<b>5-page write-up, of which at least one page derives the correspondence between forward-backward and value iteration, term by term</b>']},
+
+9:{plan:[
+  ['Day 1','spike','Q-learning on the three-state toy. Does it converge to the optimum you already computed?'],
+  ['Days 2–3','','Sutton &amp; Barto ch. 5–7. Sutton 1988 and Watkins &amp; Dayan 1992 — both short, both worth the hour.'],
+  ['Days 4–5','','Derive TD(0) as stochastic approximation to the Bellman backup. Then the bias-variance argument.'],
+  ['Days 6–8','','Implement Monte Carlo, TD(0), n-step TD, Sarsa, and Q-learning behind a single interface.'],
+  ['Day 9','','Sweep: five methods, five seeds, several sample budgets. Variance bands on everything.'],
+  ['Day 10','','Write it as an empirical study, not a tutorial.']],
+ out:['<code>rl_tabular.py</code> — all five algorithms, one interface',
+  'Learning curves with variance bands, five seeds minimum',
+  'Table: samples required to reach 95% of optimal, per method',
+  '5-page write-up answering whether the bias-variance theory showed up in the data']},
+
+10:{plan:[
+  ['Day 1','spike','Linear function approximation on the small MDP. Does it recover the tabular answer? If not, stop and find out why now.'],
+  ['Days 2–4','','Sutton &amp; Barto ch. 9–11, with ch. 11 read slowly. Baird 1995 for the counterexample. Mnih 2015 for DQN.'],
+  ['Days 5–6','','Derive the semi-gradient update and why it is not a gradient. Write out the deadly triad with each leg separated.'],
+  ['Days 7–8','','Implement linear FA, then DQN over fleet features.'],
+  ['Day 9','','Reproduce Baird&rsquo;s divergence. Then ablate each leg of the triad and record which removal stabilizes it.'],
+  ['Day 10','','Write-up.']],
+ out:['<code>rl_approx.py</code> — linear FA and DQN',
+  'Divergence plot showing weights exploding, plus the ablation that stops it',
+  'DQN learning curve on the full fleet',
+  'Table mapping each DQN stabilization trick to the triad leg it addresses',
+  '5-page write-up']},
+
+11:{plan:[
+  ['Day 1','spike','REINFORCE on the toy problem. Check the gradient numerically against finite differences before trusting anything.'],
+  ['Days 2–4','','Sutton &amp; Barto ch. 13. Sutton et al. 2000 for the theorem. Schulman 2017 for PPO. Engstrom et al. before you conclude your implementation is broken.'],
+  ['Days 5–6','','Derive the policy gradient theorem in full, showing where the state-distribution term drops out. Then the baseline variance argument.'],
+  ['Days 7–8','','Implement REINFORCE, REINFORCE with baseline, actor-critic, PPO — same problem, same protocol.'],
+  ['Day 9','','Measure actual gradient variance at each stage.'],
+  ['Day 10','','Write-up.']],
+ out:['<code>rl_pg.py</code> — four methods, shared evaluation harness',
+  'Passing numerical gradient check',
+  'Gradient-variance plot across all four methods',
+  'Performance comparison, five seeds',
+  '5-page write-up: predicted variance reduction against observed']},
+
+12:{plan:[
+  ['Day 1','spike','Wire the belief tracker output into the policy input. Just make the shapes match — integration bugs are the classic capstone killer.'],
+  ['Days 2–3','','Kochenderfer part IV. Kaelbling, Littman &amp; Cassandra 1998. Re-read Sherlock — it will look like a different paper now.'],
+  ['Days 4–5','','Derive the belief update and the argument that a POMDP over beliefs is an MDP.'],
+  ['Days 6–8','','Integrate end to end. Package the repo: API, config, test suite, README.'],
+  ['Day 9','','Held-out evaluation against both baselines.'],
+  ['Days 10–14','','The paper. This sprint legitimately uses the full two weeks — do not compress the write-up.']],
+ out:['<code>commloss/</code> — installable package with a documented API',
+  'Site config file, so it can be pointed at a different fleet',
+  'Test suite with every inference routine validated against an exact answer',
+  'Held-out results against the exact-state upper bound and the rule-based baseline',
+  '8–12 page paper, limitations section included',
+  'README a colleague can follow without asking you questions']}
+};
+
+/* ---------- state ---------- */
+const KEY='commloss.v1';
+let S={};
+try{ S=JSON.parse(localStorage.getItem(KEY)||'{}'); }catch(e){ S={}; }
+function save(){
+  try{ localStorage.setItem(KEY,JSON.stringify(S)); }
+  catch(e){ document.getElementById('msg').textContent='Could not save — storage unavailable.'; }
+}
+const TOTAL=SPRINTS.reduce((n,s)=>n+s.checks.length,0);
+
+/* ---------- render ---------- */
+const track=document.getElementById('track');
+
+MILESTONES.forEach((m,mi)=>{
+  const sec=document.createElement('section');
+  sec.className='ms';
+  sec.style.setProperty('--mc','var(--'+m.key+')');
+  sec.innerHTML=`
+    <div class="ms-head">
+      <span class="ms-num">MILESTONE ${m.n}</span>
+      <h2>${m.title}</h2>
+    </div>
+    <p class="ms-q">${m.q}</p>
+    <p class="ms-ship">Ships: <b>${m.ship}</b></p>`;
+
+  SPRINTS.filter(s=>s.ms===mi).forEach((s,idx,arr)=>{
+    const wrap=document.createElement('div');
+    wrap.className='sp';
+    wrap.innerHTML=`
+      <div class="rail">
+        <div class="node" id="node${s.id}">${s.id}</div>
+        ${idx<arr.length-1?'<div class="wire"></div>':''}
+      </div>
+      <div class="card">
+        <h3>${s.title}</h3>
+        <div class="wk">${s.weeks.toUpperCase()}</div>
+        <p class="goal">${s.goal}</p>
+
+        <div class="block"><h4>DERIVE</h4><p>${s.derive}</p></div>
+        <div class="block"><h4>BUILD</h4><p>${s.build}</p></div>
+        <div class="block"><h4>DONE WHEN</h4><p>${s.done}</p></div>
+        ${s.demo?`<div class="demo"><b>FIVE-MINUTE DEMO</b>${s.demo}</div>`:''}
+
+        <div class="plan">
+          <h4>TEN WORKING DAYS</h4>
+          ${(DETAIL[s.id]?.plan||[]).map(d=>`
+            <div class="day ${d[1]}"><b>${d[0]}</b><span>${d[2]}</span></div>`).join('')}
+        </div>
+
+        <div class="out">
+          <h4>WHAT EXISTS AT THE END</h4>
+          <ul>${(DETAIL[s.id]?.out||[]).map(o=>`<li>${o}</li>`).join('')}</ul>
+        </div>
+
+        <details class="refs">
+          <summary>Reading — ${s.owned.length} from your shelf, ${s.ext.length} external</summary>
+          <div class="refgrp">
+            <h5>ON YOUR SHELF</h5>
+            <ul>${s.owned.map(r=>`<li class="own">${r}</li>`).join('')}</ul>
+          </div>
+          <div class="refgrp">
+            <h5>GO FIND THESE</h5>
+            <ul>${s.ext.map(r=>`<li>${r}</li>`).join('')}</ul>
+          </div>
+        </details>
+
+        <div class="dod">
+          <h4>DEFINITION OF DONE</h4>
+          ${s.checks.map((c,i)=>`
+            <label class="chk">
+              <input type="checkbox" data-s="${s.id}" data-i="${i}">
+              <span>${c}</span>
+            </label>`).join('')}
+          <textarea data-note="${s.id}" placeholder="Notes, blockers, what surprised you…"></textarea>
+        </div>
+      </div>`;
+    sec.appendChild(wrap);
+  });
+  track.appendChild(sec);
+});
+
+/* ---------- wire up ---------- */
+document.querySelectorAll('.chk input').forEach(box=>{
+  const k='s'+box.dataset.s+'c'+box.dataset.i;
+  box.checked=!!S[k];
+  box.addEventListener('change',()=>{ S[k]=box.checked; save(); refresh(); });
+});
+document.querySelectorAll('textarea[data-note]').forEach(t=>{
+  const k='n'+t.dataset.note;
+  t.value=S[k]||'';
+  t.addEventListener('input',()=>{ S[k]=t.value; save(); });
+});
+
+document.getElementById('total').textContent=TOTAL;
+
+function refresh(){
+  let total=0;
+  SPRINTS.forEach(s=>{
+    let n=0;
+    s.checks.forEach((_,i)=>{ if(S['s'+s.id+'c'+i]) n++; });
+    total+=n;
+    const node=document.getElementById('node'+s.id);
+    node.classList.toggle('full', n===s.checks.length);
+  });
+  document.getElementById('done').textContent=total;
+  document.getElementById('gauge').style.width=(total/TOTAL*100)+'%';
+}
+refresh();
+
+/* ---------- export / import / reset ---------- */
+document.getElementById('exp').onclick=()=>{
+  const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='commloss-progress-'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(a); a.click(); a.remove();
+};
+document.getElementById('imp').onclick=()=>document.getElementById('file').click();
+document.getElementById('file').onchange=e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      S=Object.assign(S,JSON.parse(r.result)); save();
+      document.querySelectorAll('.chk input').forEach(b=>b.checked=!!S['s'+b.dataset.s+'c'+b.dataset.i]);
+      document.querySelectorAll('textarea[data-note]').forEach(t=>t.value=S['n'+t.dataset.note]||'');
+      refresh();
+      document.getElementById('msg').textContent='Progress imported.';
+    }catch(err){ document.getElementById('msg').textContent='That file is not a progress export.'; }
+  };
+  r.readAsText(f);
+};
+document.getElementById('rst').onclick=()=>{
+  if(!confirm('Clear all progress and notes?')) return;
+  S={}; save();
+  document.querySelectorAll('.chk input').forEach(b=>b.checked=false);
+  document.querySelectorAll('textarea[data-note]').forEach(t=>t.value='');
+  refresh();
+  document.getElementById('msg').textContent='Progress cleared.';
+};
+</script>
+</body>
+</html>
