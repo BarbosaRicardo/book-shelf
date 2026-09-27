@@ -24,3 +24,7 @@ The site publishes at `https://<user>.github.io/<repo>/` within a minute or two.
   personal tool; if load time ever matters, port to Vite and build a bundle.
 - Seeded prices and Goodreads ratings are rough estimates, meant to be edited.
 - `.nojekyll` keeps Pages from running the file through Jekyll.
+
+## Reading plan
+
+[`shelf-to-skill/`](shelf-to-skill/) holds the study plan for the physical bookcase: books by track, weekly rhythm, a 12-month roadmap and the calendar schedule. Once Pages deploys, the plan page is at `/shelf-to-skill/plan/`.
