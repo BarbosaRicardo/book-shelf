@@ -16,7 +16,7 @@ Nobody reads 145 books cover to cover. Each book gets a role:
 | Read | 45 | Cover to cover, 30 minutes a night |
 | Reference | 75 | Open the chapter a project needs |
 
-## Weekly rhythm (about 9.5 hours, Pacific time)
+## Weekly rhythm (about 9.5 hours)
 
 | When | What |
 |---|---|
@@ -26,7 +26,6 @@ Nobody reads 145 books cover to cover. Each book gets a role:
 | Sun–Fri 9:30–10 pm | Light reading |
 | Sun 5–5:30 pm | Weekly review |
 
-Japanese (Genki) and a math book rotate in an existing Saturday 8–10 am block.
 
 ## Roadmap
 
