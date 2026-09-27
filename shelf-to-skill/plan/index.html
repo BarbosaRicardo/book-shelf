@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Shelf to Skill</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#F4F5F7; --paper:#FFFFFF; --ink:#18202C; --muted:#5A6474; --line:#DCE0E6;
+  --accent:#2B5C8A; --accent-soft:#E3ECF5;
+  --t-ml:#2B5C8A; --t-rl:#4A6FA5; --t-cv:#6A86B8; --t-alg:#7A5C2E; --t-math:#8B6B3A;
+  --t-sec:#8A3B3B; --t-sys:#4F6B4A; --t-prog:#5E7F5A; --t-energy:#A07A1E;
+  --t-people:#6B4E7A; --t-self:#846193; --t-ideas:#5A5A6E; --t-fic:#3F6E73; --t-lang:#B0553A; --t-faith:#6E6E5A;
+  --serif:"Newsreader",Georgia,serif; --sans:"IBM Plex Sans",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  color-scheme:dark; --bg:#12161D; --paper:#1A2029; --ink:#E6E9EE; --muted:#9AA4B3; --line:#2C3440;
+  --accent:#8DB6DE; --accent-soft:#1F2C3B;
+}}
+:root[data-theme="dark"]{
+  color-scheme:dark; --bg:#12161D; --paper:#1A2029; --ink:#E6E9EE; --muted:#9AA4B3; --line:#2C3440;
+  --accent:#8DB6DE; --accent-soft:#1F2C3B;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.6 var(--sans);padding-inline:16px;padding-block:32px 64px}
+.wrap{max-width:1040px;margin:0 auto;display:flex;flex-direction:column;gap:48px}
+h1,h2,h3{font-family:var(--serif);font-weight:600;text-wrap:balance;margin:0;line-height:1.2}
+h1{font-size:clamp(34px,6vw,52px)}
+h2{font-size:28px}
+h3{font-size:18px}
+p{margin:0;max-width:68ch}
+.eyebrow{font:500 12px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+section{display:flex;flex-direction:column;gap:18px}
+.lede{font-size:17px;color:var(--muted)}
+.shelf{display:flex;height:120px;gap:2px;align-items:flex-end;border-bottom:6px solid var(--muted);padding-inline:4px;overflow:hidden}
+.spine{flex:1 1 auto;border-radius:2px 2px 0 0;min-width:4px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;border-radius:2px;display:inline-block}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.stat{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:2px}
+.stat b{font:500 28px/1.1 var(--mono);font-variant-numeric:tabular-nums}
+.stat small{color:var(--muted);font-size:13px}
+.tiers{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.tier{border-top:3px solid var(--accent);background:var(--paper);padding:14px 16px;border-radius:0 0 8px 8px;display:flex;flex-direction:column;gap:6px}
+.tier p{color:var(--muted);font-size:14px}
+.tracks{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.track{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.track header{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.track .n{font:500 12px var(--mono);color:var(--muted)}
+.track .sw{display:block;height:4px;border-radius:2px}
+.track ul{margin:0;padding:0;list-style:none;font-size:13.5px;display:flex;flex-direction:column;gap:3px}
+.track li{display:flex;gap:6px}
+.tag{font:500 10.5px/1.7 var(--mono);padding:0 5px;border-radius:3px;flex:none;height:18px}
+.tag.w{background:var(--accent);color:var(--paper)}
+.tag.r{border:1px solid var(--muted);color:var(--muted)}
+.tag.f{background:var(--accent-soft);color:var(--accent)}
+.key{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--muted)}
+.key span{display:inline-flex;gap:6px;align-items:center}
+.tablewrap{overflow-x:auto;background:var(--paper);border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:620px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:500 12px var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+tr:last-child td{border-bottom:0}
+td.t{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.lane{display:inline-block;font:500 11px/1.8 var(--mono);padding:0 7px;border-radius:10px;color:#fff}
+.quarters{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.q{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;font-size:13.5px}
+.q .when{font:500 12px var(--mono);color:var(--accent)}
+.q dl{margin:0;display:flex;flex-direction:column;gap:6px}
+.q dt{font:500 11px var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.q dd{margin:0}
+.ideas{display:grid;grid-template-columns:repeat(2,1fr);gap:12px 28px}
+.idea{display:flex;flex-direction:column;gap:4px;padding-block:10px;border-top:1px solid var(--line)}
+.idea p{color:var(--muted);font-size:14px}
+.money{display:flex;flex-direction:column;gap:0}
+.m{display:grid;grid-template-columns:180px 1fr 110px;gap:16px;padding-block:14px;border-top:1px solid var(--line);align-items:start}
+.m h3{font-size:17px}
+.m p{font-size:14px;color:var(--muted)}
+.m .fit{font:500 12px var(--mono);color:var(--accent);text-align:right}
+.note{background:var(--accent-soft);border-radius:8px;padding:14px 16px;font-size:14px}
+@media (max-width:820px){.tracks{grid-template-columns:repeat(2,1fr)}.quarters{grid-template-columns:repeat(2,1fr)}.stats{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:560px){.tracks,.quarters,.tiers,.ideas{grid-template-columns:1fr}.m{grid-template-columns:1fr;gap:4px}.m .fit{text-align:left}}
+</style>
+
+<div class="wrap">
+<header style="display:flex;flex-direction:column;gap:14px">
+  <span class="eyebrow">Ricky's main bookcase · plan starts Mon Sep 28, 2026</span>
+  <h1>Shelf to Skill</h1>
+  <p class="lede">About 145 books, sorted into tracks, with a weekly rhythm that runs three lanes at once: one deep technical book with exercises, one light book at night, and a Saturday build session that turns reading into something you can show.</p>
+  <div class="shelf" id="shelf" aria-label="Books per track, drawn as spines"></div>
+  <div class="legend" id="legend"></div>
+</header>
+
+<section>
+  <span class="eyebrow">The honest math</span>
+  <h2>You won't read all 145, and you shouldn't try</h2>
+  <p>At about 11 hours a week you finish roughly 3 to 4 heavy textbooks worked properly and 20 to 25 lighter books a year. That makes this a three to four year shelf. The trick is deciding up front how each book gets used.</p>
+  <div class="stats">
+    <div class="stat"><b>~12</b><small>Work through, with exercises and code</small></div>
+    <div class="stat"><b>~45</b><small>Read cover to cover</small></div>
+    <div class="stat"><b>~75</b><small>Reference: pull chapters when a project needs them</small></div>
+    <div class="stat"><b>~11 h</b><small>Per week in the default rhythm</small></div>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">Tracks</span>
+  <h2>Your shelf, grouped</h2>
+  <div class="key">
+    <span><span class="tag w">WORK</span>work through with exercises</span>
+    <span><span class="tag f">READ</span>read cover to cover</span>
+    <span><span class="tag r">REF</span>reference, dip in as needed</span>
+  </div>
+  <div class="tracks" id="tracks"></div>
+</section>
+
+<section>
+  <span class="eyebrow">Weekly rhythm</span>
+  <h2>The default week</h2>
+  <p>Times are placeholders until you tell me your real schedule. The deep lane is one book at a time, the light lane alternates nonfiction and fiction, and nothing starts until the current one is done or deliberately dropped.</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th>When</th><th>Lane</th><th>What happens</th><th>Hours / wk</th></tr></thead>
+    <tbody>
+      <tr><td class="t">Mon–Wed 7:30–8:30 pm</td><td><span class="lane" style="background:var(--t-ml)">Deep</span></td><td>Current spine book. Read one section, then do its exercises or type out its code. Notes go in one place.</td><td class="t">3.0</td></tr>
+      <tr><td class="t">Thu 7:30–8:30 pm</td><td><span class="lane" style="background:var(--t-alg)">Algorithms</span></td><td>Two or three problems from the current algorithms book. Keeps interview skills warm without derailing the spine.</td><td class="t">1.0</td></tr>
+      <tr><td class="t">Sat 9:00–11:30 am</td><td><span class="lane" style="background:var(--t-sys)">Build</span></td><td>Apply the week's reading to a small project and write a short post about it. This is where the money ideas start.</td><td class="t">2.5</td></tr>
+      <tr><td class="t">Sun–Fri 9:30–10:00 pm</td><td><span class="lane" style="background:var(--t-self)">Light</span></td><td>30 minutes of the current nonfiction or novel. No screens, no notes beyond a highlight.</td><td class="t">3.0</td></tr>
+      <tr><td class="t">Mon/Wed/Fri 7:30–7:50 am</td><td><span class="lane" style="background:var(--t-lang)">Language</span></td><td>Genki I lesson plus flashcards. One language at a time; Integrated Chinese waits until Genki II is done.</td><td class="t">1.0</td></tr>
+      <tr><td class="t">Sun 5:00–5:30 pm</td><td><span class="lane" style="background:var(--t-ideas)">Review</span></td><td>Check pace, file notes, pick next week's Saturday project.</td><td class="t">0.5</td></tr>
+    </tbody>
+  </table></div>
+  <p style="color:var(--muted);font-size:14px">Lighter option at about 6 hours: drop Thursday, shorten Saturday to 1.5 hours, and make the night read 20 minutes.</p>
+</section>
+
+<section>
+  <span class="eyebrow">Next 12 months</span>
+  <h2>Roadmap in 12-week blocks</h2>
+  <div class="quarters">
+    <div class="q"><span class="when">Sep 28 – Dec 20, 2026</span><h3>ML foundations</h3><dl>
+      <dt>Deep</dt><dd>Mathematics for Machine Learning (linear algebra, calculus, probability chapters), then Raschka's ML with PyTorch and Scikit-Learn</dd>
+      <dt>Algorithms</dt><dd>Grokking Algorithms</dd>
+      <dt>Light</dt><dd>Atomic Habits, The War of Art, Why Machines Learn, Neuromancer</dd>
+      <dt>Build</dt><dd>Three end-to-end scikit-learn projects on public data</dd></dl></div>
+    <div class="q"><span class="when">Dec 28 – Mar 21, 2027</span><h3>Deep learning and NLP</h3><dl>
+      <dt>Deep</dt><dd>Understanding Deep Learning (Prince), then NLP with Transformers</dd>
+      <dt>Algorithms</dt><dd>Algorithms Illuminated, part 1</dd>
+      <dt>Light</dt><dd>Thinking, Fast and Slow, Influence, Range, Lonesome Dove</dd>
+      <dt>Build</dt><dd>Fine-tune a small transformer on your own dataset</dd></dl></div>
+    <div class="q"><span class="when">Mar 29 – Jun 20, 2027</span><h3>ML in production</h3><dl>
+      <dt>Deep</dt><dd>Designing Machine Learning Systems, then the AWS ML study guide with Data Science on AWS as backup</dd>
+      <dt>Algorithms</dt><dd>Cracking the Coding Interview, System Design Interview</dd>
+      <dt>Light</dt><dd>The Laws of Human Nature, Superintelligence, The Stand</dd>
+      <dt>Build</dt><dd>Deploy one model behind an API; sit the AWS ML exam</dd></dl></div>
+    <div class="q"><span class="when">Jun 28 – Sep 19, 2027</span><h3>Your pick</h3><dl>
+      <dt>Options</dt><dd>Reinforcement learning (Grokking Deep RL, then Sutton and Barto), security (Counter Hack Reloaded, Practical Packet Analysis, Ghidra), or ML for energy (Solar Farms, the BESS Book, Power System Operation)</dd>
+      <dt>Light</dt><dd>The Courage to Be Disliked, The Sovereign Individual, Brothers Karamazov</dd></dl></div>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">Getting the most out of each book</span>
+  <h2>Habits that make it stick</h2>
+  <div class="ideas">
+    <div class="idea"><h3>One book, one artifact</h3><p>Every technical book ends with something public: a repo, a notebook, or a post. It forces you to finish and it becomes your portfolio.</p></div>
+    <div class="idea"><h3>Exercises over highlights</h3><p>For the spine books, the exercises are the reading. If a chapter has none, rebuild its main example from memory.</p></div>
+    <div class="idea"><h3>Pair math with its use</h3><p>Read the matching Lay or Rosen chapter only when the ML book needs it. The math books become support, not a second queue.</p></div>
+    <div class="idea"><h3>Flashcards for math and language</h3><p>Ten minutes of spaced repetition a day keeps formulas and kanji from fading between blocks.</p></div>
+    <div class="idea"><h3>Teach it back</h3><p>After each block, explain the main ideas in a 10-minute recording or a one-page summary. Gaps show up fast.</p></div>
+    <div class="idea"><h3>Rearrange the shelf by track</h3><p>Give the current books their own "now" shelf at eye level. Move finished books to a "done" row so progress is visible.</p></div>
+    <div class="idea"><h3>Let certs set deadlines</h3><p>Network+, AWS Cloud Practitioner and AWS ML are already on your shelf. An exam date is the best pace setter there is.</p></div>
+    <div class="idea"><h3>Clear the duplicates</h3><p>CLRS 3rd edition, Lay 3rd edition and Python Machine Learning 3rd edition are superseded by newer copies you own.</p></div>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">Stretch goal</span>
+  <h2>Ways to make money from this</h2>
+  <div class="money">
+    <div class="m"><h3>ML for energy</h3><p>Your shelf has a rare mix: ML, IoT, PLC programming, solar farms, battery storage and power systems. Solar output forecasting, battery dispatch and equipment anomaly detection are paid problems with few people who speak both languages. Strongest long-term angle.</p><span class="fit">Consulting / job</span></div>
+    <div class="m"><h3>Learn in public</h3><p>A newsletter or YouTube series working through these textbooks, with your own code and explanations. Builds an audience that later pays through sponsors, paid tiers or courses.</p><span class="fit">Audience</span></div>
+    <div class="m"><h3>Certifications</h3><p>Network+, AWS Cloud Practitioner and AWS ML Specialty each raise your rate for jobs and freelance work, and the study guides are already here.</p><span class="fit">Income bump</span></div>
+    <div class="m"><h3>Tutoring</h3><p>Algorithms, discrete math, statistics and interview prep are steady demand on tutoring sites, and teaching them doubles as review.</p><span class="fit">Fast cash</span></div>
+    <div class="m"><h3>Digital products</h3><p>Your own Anki decks, project notebooks or interview-prep guides sold on Gumroad. Keep everything original: summaries and code you wrote, never copied pages or exercise solutions.</p><span class="fit">Passive</span></div>
+    <div class="m"><h3>Security work</h3><p>After the security track, bug bounties and small pentest jobs pay directly for the skills in Counter Hack, Ghidra and packet analysis.</p><span class="fit">Project-based</span></div>
+    <div class="m"><h3>Better selling</h3><p>Influence, Objections and The Persuasion Code don't pay on their own, but they make every freelance pitch above land more often.</p><span class="fit">Multiplier</span></div>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">End game, chosen Sep 27</span>
+  <h2>A new job in ML for energy</h2>
+  <p>Every block ends with something a hiring manager can see. Saturday build sessions use real solar, battery or grid data.</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Block</th><th>Proof by the end</th></tr></thead>
+    <tbody>
+      <tr><td class="t">Sep 28 – Dec 20</td><td>Three public ML projects on energy data, each with a short write-up</td></tr>
+      <tr><td class="t">Dec 28 – Mar 21</td><td>A solar output forecasting model and about a dozen published posts</td></tr>
+      <tr><td class="t">Mar 29 – Jun 20</td><td>The model deployed as a live service; AWS ML certification passed; interview prep from Cracking the Coding Interview and System Design Interview</td></tr>
+      <tr><td class="t">Jun 28 – Sep 19</td><td>Applications and interviews for energy or ML roles, with the portfolio as the centerpiece</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <span class="eyebrow">Calendar</span>
+  <div class="note">Block 1 is on your Google Calendar: deep study Mon–Wed 7:30 pm, algorithms Thu 7:30 pm, build Sat 10:30 am, light reading Sun–Fri 9:30 pm, review Sun 5 pm, through Dec 20 (Pacific time).</div>
+</section>
+</div>
+
+<script>
+const T=[
+ ["ML and AI core","--t-ml",[["w","Mathematics for Machine Learning (Deisenroth)"],["w","ML with PyTorch and Scikit-Learn (Raschka)"],["w","Understanding Deep Learning (Prince)"],["w","NLP with Transformers"],["w","Designing ML Systems (Huyen)"],["f","Why Machines Learn"],["r","Hands-On ML (Géron)"],["r","Deep Learning with Python (Chollet)"],["r","Deep Learning (Goodfellow)"],["r","Deep Learning (Glassner)"],["r","Pattern Recognition and ML (Bishop)"],["r","AI: A Modern Approach"],["r","Artificial Intelligence (Poole)"],["r","Probabilistic Graphical Models"],["r","A Mathematical Theory of Evidence"],["r","Alpaydin, Marsland, Watt, Fenner, Esposito, Prosise"],["r","Python Machine Learning 3e (superseded)"]]],
+ ["RL and decisions","--t-rl",[["w","Grokking Deep RL"],["w","Reinforcement Learning (Sutton, Barto)"],["r","Deep RL Hands-On (Lapan)"],["r","Algorithms for Decision Making"],["r","Algorithms for Optimization"]]],
+ ["Computer vision","--t-cv",[["w","Practical ML for Computer Vision"],["r","Learning OpenCV 4"],["r","Computer Vision (Szeliski)"]]],
+ ["Algorithms and interviews","--t-alg",[["w","Grokking Algorithms"],["w","Algorithms Illuminated 1 and 2"],["w","Cracking the Coding Interview"],["f","System Design Interview"],["f","Ace the Data Science Interview"],["f","Software Engineering at Google"],["f","Once Upon an Algorithm"],["r","CLRS 4e and 3e"],["r","Levitin, Wengrow, Algorithmic Thinking, For Dummies"]]],
+ ["Math and physics","--t-math",[["f","The Art of Statistics"],["f","The Ten Equations That Rule the World"],["r","Linear Algebra (Lay) 5e and 3e"],["r","Discrete Math (Rosen, Epp)"],["r","Calculus: Multivariable (Stewart)"],["r","Stats and Probability (Gupta)"],["r","Advanced Engineering Math (Kreyszig)"],["r","Signals and Systems (Oppenheim)"],["r","Griffiths, Harris, College Algebra"]]],
+ ["Security","--t-sec",[["w","Counter Hack Reloaded"],["w","Practical Packet Analysis"],["f","Serious Cryptography"],["f","The Manga Guide to Cryptography"],["f","Linux Basics for Hackers"],["r","The Ghidra Book"],["r","Malware Data Science"],["r","Computer Security (Gollmann)"],["r","Internet Security (Du)"],["r","Art of Software Security Assessment"]]],
+ ["Systems, Linux, cloud","--t-sys",[["f","Efficient Linux at the Command Line"],["f","How Linux Works"],["f","Operating Systems: Three Easy Pieces"],["w","Network+ guide and practice tests"],["w","AWS Cloud Practitioner guide"],["w","AWS ML Study Guide"],["r","Modern Operating Systems"],["r","APUE (Stevens)"],["r","A Practical Guide to Linux"],["r","Computer Networking (Kurose)"],["r","Data Science on AWS, Azure analytics"]]],
+ ["Programming and data","--t-prog",[["f","Python Data Science Handbook"],["f","Practical SQL"],["r","Python Data Analytics"],["r","Murach's MySQL"],["r","Learning Node.js"],["r","Java Concepts, Absolute Java, DS Using Java"],["r","A Book on C"],["r","APA Manual"]]],
+ ["Energy and hardware","--t-energy",[["f","Solar Farms"],["f","The BESS Book"],["r","Power System Operation"],["r","Digital Electronics"],["r","PLC Structured Text"],["r","Internet of Things, Analytics for IoT"]]],
+ ["People and persuasion","--t-people",[["f","How to Win Friends and Influence People"],["f","Influence (Cialdini)"],["f","Objections (Blount)"],["f","The Laws of Human Nature"],["f","The Persuasion Code"],["f","The Art of Talking to Anyone"],["f","The Structure of Magic"],["r","The Well-Spoken Thesaurus"]]],
+ ["Mind and self","--t-self",[["f","Atomic Habits (plus workbook)"],["f","The War of Art"],["f","Thinking, Fast and Slow"],["f","Range"],["f","The Courage to Be Disliked"],["f","The Road Less Traveled"],["f","The Body Keeps the Score"],["f","A Way of Being"],["f","Man and His Symbols"],["f","The Let Them Theory"],["f","The 4-Hour Workweek"],["f","clarity and connection"],["f","The Myth of Sisyphus"]]],
+ ["Big ideas and history","--t-ideas",[["f","Superintelligence"],["f","Artificial You"],["f","The Sovereign Individual"],["f","End Times (Turchin)"],["f","Rise and Kill First"],["f","The Devil in the White City"]]],
+ ["Fiction","--t-fic",[["f","Neuromancer, Count Zero, Mona Lisa Overdrive, Burning Chrome"],["f","Lonesome Dove"],["f","The Stand"],["f","The Great Alone"],["f","Notes from Underground, Brothers Karamazov"],["f","Beware of Pity (Zweig)"],["f","Ward No. 6 (Chekhov)"]]],
+ ["Languages","--t-lang",[["w","Genki I and II, workbooks, answer key"],["w","Integrated Chinese 1, textbooks and workbook"]]],
+ ["Faith and other","--t-faith",[["f","NIV, Life Application and NKJV Bibles"],["f","Jiu-Jitsu University"]]]
+];
+const counts=[21,5,3,11,13,10,12,10,7,8,14,6,10,8,4];
+const tagTxt={w:"WORK",f:"READ",r:"REF"};
+const shelf=document.getElementById("shelf"),legend=document.getElementById("legend"),tracks=document.getElementById("tracks");
+T.forEach(([name,c,books],i)=>{
+  const n=counts[i];
+  for(let k=0;k<n;k++){const s=document.createElement("span");s.className="spine";s.style.background=`var(${c})`;s.style.height=(62+((k*37+i*13)%38))+"%";s.style.opacity=(0.78+((k*7)%5)*0.05).toFixed(2);shelf.appendChild(s);}
+  legend.insertAdjacentHTML("beforeend",`<span><i style="background:var(${c})"></i>${name}</span>`);
+  tracks.insertAdjacentHTML("beforeend",`<article class="track"><span class="sw" style="background:var(${c})"></span><header><h3>${name}</h3><span class="n">~${n} books</span></header><ul>${books.map(([t,b])=>`<li><span class="tag ${t}">${tagTxt[t]}</span><span>${b}</span></li>`).join("")}</ul></article>`);
+});
+</script>
+
+</html>
